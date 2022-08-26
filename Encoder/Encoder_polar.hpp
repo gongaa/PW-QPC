@@ -2,6 +2,7 @@
 #define ENCODER_POLAR_HPP_
 
 #include <vector>
+#include "Encoder.hpp"
 using namespace std;
 
 class Encoder_polar : public Encoder
@@ -25,8 +26,8 @@ public:
   virtual void set_frozen_bits(const vector<bool>& frozen_bits);
 
 protected:
-  virtual void _encode(const int *U_K, B *X_N, const size_t frame_id);
-  void convert(const int *U_K, const *U_N);
+  virtual void _encode(const int *U_K, int *X_N, const size_t frame_id);
+  void convert(const int *U_K, int *U_N);
 
 };
 

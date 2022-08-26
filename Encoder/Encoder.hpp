@@ -11,7 +11,9 @@ public:
   int N = 0;
   
   explicit Encoder();
-  virtual ~Encoder() = decault;
+  Encoder(const int K, const int T);
+  
+  virtual ~Encoder() = default;
   virtual Encoder* clone() const;
 
   Encoder* build() const;

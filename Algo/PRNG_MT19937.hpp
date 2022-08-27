@@ -29,10 +29,6 @@
 #include <cstdint>
 #include <vector>
 
-namespace aff3ct
-{
-namespace tools
-{
 /*!
  * \class PRNG_MT19937
  * \brief The Mersenne Twister pseudo-random number generator (PRNG).
@@ -135,7 +131,5 @@ public:
 private:
 	void generate_numbers();
 };
-}
-}
 
 #endif // PRNG_MT19937_HPP

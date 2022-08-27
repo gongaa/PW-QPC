@@ -21,9 +21,7 @@
  * \section LICENSE
  * This file is under BSD license.
  */
-#include "Tools/Algo/PRNG/PRNG_MT19937.hpp"
-
-using namespace aff3ct::tools;
+#include "PRNG_MT19937.hpp"
 
 /*
  * We have an array of 624 32-bit values, and there are

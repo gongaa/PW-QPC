@@ -11,6 +11,7 @@ protected:
   const int    m;
   vector<bool> frozen_bits;
   vector<int>  X_N_tmp;
+  vector<uint32_t> info_bits_pos; /*!< Positions of the information bits in the codeword */
 
 public:
   Encoder_polar(const int& K, const int& N, const vector<bool>& frozen_bits);

@@ -15,9 +15,8 @@ public:
     virtual ~Channel_BSC_q() = default;
     virtual Channel_BSC_q* clone() const;
 
-protected:
     // no implicit codeword, only errors and syndrome (handled by decoder)
-    void _add_noise(const float *CP, const int *Y1_N, const int *Y2_N, const size_t frame_id);
+    void add_noise(const float *CP, const int *Y1_N, const int *Y2_N, const size_t frame_id);
 
 };
 

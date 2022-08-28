@@ -1,5 +1,6 @@
 #include <utility>
 #include <algorithm>
+#include <iostream>
 
 #include "Channel.hpp"
 #include "Channel_BSC_q.hpp"
@@ -27,7 +28,7 @@ void Channel_q::set_seed(const int seed)
     this->event_generator->set_seed(seed);
 }
 
-void Channel_q::_add_noise(const float *CP, int *Y1_N, int *Y2_N, const size_t frame_id)
+void Channel_q::add_noise(int *Y1_N, int *Y2_N, const size_t frame_id)
 {
     this->event_generator->generate(Y1_N, Y2_N, this->N);
 }
@@ -35,10 +36,13 @@ void Channel_q::_add_noise(const float *CP, int *Y1_N, int *Y2_N, const size_t f
 Channel_BSC::Channel_BSC(const int N, float p, const int seed = 0)
 :Channel_c(N, seed), p(p)
 {
-
+    if (p>1 || p<0)
+        cerr << "Channel_BSC 0<=p<=1 violated" << endl; 
 }
 
-void Channel_BSC::_add_noise(const float *CP, const int *X_N, const int *Y_N, const size_t frame_id)
+void Channel_BSC::add_noise(const int *X_N, int *Y_N, const size_t frame_id)
 {
-    mt19937.randf_cc() <= this->p;
+    for(auto i = 0; i < N; i++) {
+        Y_N[i] = ((mt19937.randf_cc() <= this->p) != X_N[i]) ? 0 : 1;
+    }
 }

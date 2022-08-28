@@ -34,8 +34,9 @@ public:
     // Channel_q* clone() const;
     virtual void set_seed(const int seed);
 
-protected:
-    virtual void _add_noise(const float *CP, int *Y1_N, int *Y2_N, const size_t frame_id);
+    // TODO: support a probability vector, this should go hand in hand with SIMD
+    // virtual void _add_noise(const float *CP, int *Y1_N, int *Y2_N, const size_t frame_id);
+    virtual void add_noise(int *Y1_N, int *Y2_N, const size_t frame_id);
 };
 
 class Channel_BSC : Channel_c
@@ -48,8 +49,9 @@ public:
     virtual ~Channel_BSC() = default;
     // virtual Channel_BSC* clone() const;
 
-protected:
-    void _add_noise(const float *CP, const int *X_N, const int *Y_N, const size_t frame_id);
+    // TODO: support a probability vector, this should go hand in hand with SIMD
+    // void _add_noise(const float *CP, const int *X_N, const int *Y_N, const size_t frame_id);
+    void add_noise(const int *X_N, int *Y_N, const size_t frame_id);
 
 };
 

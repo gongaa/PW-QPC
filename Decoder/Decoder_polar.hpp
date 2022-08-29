@@ -1,39 +1,16 @@
-#ifndef DECODER_POLAR_SCL
-#define DECODER_POLAR_SCL
+#ifndef DECODER_POLAR_SCL_HPP_
+#define DECODER_POLAR_SCL_HPP_
 
 #include <vector>
 #include <set>
+#include "Decoder.hpp"
 using namespace std;
-
-template <typename T = float>
-class Node
-{
-    friend Tree_metric<T>;
-
-public:
-    Node<T>* father;       // nullptr if is root
-    vector<Node<T>*> children;
-
-    T* contents;
-    const int depth;    // vertical indexing
-    const int lane_id;  // horizontal indexing
-    int child_id;
-
-    // implicitly inline
-    T* get_c() const { return contents; }
-    Node<T>* get_father() const { return father; }
-    bool is_root() const { return (father == nullptr); }
-    int get_child_id() const { return child_id; }
-    int get_depth() const { return depth; }
-    vector<Node<T>*> get_children() const { return children; }
-    T* get_contents() const { return contents; }
-};
 
 class Contents_SCL
 {
 public:
-    vector<int> l;
-    vector<float> s;
+    vector<float> l;     // probability pair array P
+    vector<int> s;       // bits array B
     bool is_frozen_bit;
     int max_depth_llrs;
 
@@ -41,39 +18,13 @@ public:
     virtual ~Contents_SCL() {}
 };
 
-template <typename T = float>
-class Tree_metric
-{
-// protected:
-    const vector<uint32_t> sequence;
-    int depth;
-    Node<T>* root;
-
-    float path_metric;
-
-public:
-    explicit Tree_metric(const int depth, const int base, float path_metric);
-    explicit Tree_metric(vector<uint32_t> &sequence, float path_metric);
-    virtual ~Tree_metric();
-    float get_path_metric() const { return path_metric; }
-    void set_path_metric(float path_metric) { this->path_metric = path_metric; }
-    int get_depth() const { return depth; }
-    Node<T>* get_root() const { return root; }
-};
-
-class Decoder
-{
-protected:
-    const int K, N;
-    vector<float> Y_N;
-};
-// TODO: move the aboce to Decoder.hpp
-
+// temporarily single kernel F=((1,1),(0,1))
 class Decoder_polar_SCL : Decoder
 {
 protected:
     const float metric_init; // init value of the metrics in the trees
     const int L;             // maximum path number
+    vector<uint32_t> stages; // number of stages = log_2(N)
     std::set<int> active_paths;
 
     vector<bool> frozen_bits;
@@ -82,7 +33,14 @@ protected:
 
     vector<float> LLRs;
     vector<int> bits; 
-    vector<vector<function<float(const vector<float> &LLRs, const vector<int> &bits)>>> lambdas;
+    // vector<vector<function<float(const vector<float> &LLRs, const vector<int> &bits)>>> lambdas;
+    vector<function<float(const vector<float> &LLRs, const vector<int> &bits)>> lambdas;
+
+public:
+    Decoder_polar_SCL(const int& K, const int& N, const int& L, const vector<bool>& frozen_bits);
+            // vector<function<float(const vector<float> &LLRS, const vector<int> &bits)>> lambdas);
+    virtual ~Decoder_polar_SCL();
+    vector<uint32_t> get_stages() const { return stages; }
 
 protected:
     void _load(const float *Y_N);
@@ -90,10 +48,16 @@ protected:
 
 private:
     void recursive_compute_llr(Node<Contents_SCL>* node_cur, int depth);
+    void recursive_propagate_sums(const Node<Contents_SCL>* node_cur);
+    void duplicate_path(int path, int leaf_index, vector<vector<Node<Contents_SCL>*>> leaves_array);
 
 protected:
     virtual void select_best_path(const size_t frame_id);
+    
+    void recursive_allocate_nodes_contents(Node<Contents_SCL>* node_curr, const int vector_size, int &max_depth_llrs);
+    void recursive_initialize_frozen_bits(const Node<Contents_SCL>* node_curr, const std::vector<bool>& frozen_bits);
+    void recursive_deallocate_nodes_contents(Node<Contents_SCL>* node_curr);
 
 };
 
-#endif /* DECODER_POLAR_SCL */
+#endif /* DECODER_POLAR_SCL_HPP_ */

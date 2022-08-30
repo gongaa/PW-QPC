@@ -7,18 +7,15 @@ using namespace std;
 Decoder_polar_SCL::Decoder_polar_SCL(const int& K, const int& N, const int& L, const vector<bool>& frozen_bits) 
                 //   vector<function<float(const vector<float> &LLRS, const vector<int> &bits)>> lambdas)
 : Decoder(K, N), metric_init(std::numeric_limits<float>::min()), L(L), stages((int)std::log(N), 0),
-  frozen_bits(frozen_bits), LLRs(2), bits(1), lambdas(2)
+  frozen_bits(frozen_bits), LLRs(2), bits(1), idx(2), u(2), Ke(4), lambdas(2)
 {
+    this->Ke[0] = 1; this->Ke[1] = 1; this->Ke[2] = 0; this->Ke[3] = 1;
     this->active_paths.insert(0);
-    vector<uint32_t> sequence(2);
-    // TODO: figure out what sequence does
-    sequence[0] = 2;
-    sequence[1] = 2;
-    // ------------
+    vector<uint32_t> sequence(stages.size(), 2); // each element of sequence is the kernel size of that stage
 
     for (auto i = 0; i < L; i++) {
         this->polar_trees.push_back(Tree_metric<Contents_SCL>(sequence, metric_init));
-        int max_depth_llrs = 1;
+        int max_depth_llrs = stages.size() - 1;
         this->recursive_allocate_nodes_contents(this->polar_trees[i].get_root(), this->N, max_depth_llrs);
         this->recursive_initialize_frozen_bits(this->polar_trees[i].get_root(), frozen_bits);
     }
@@ -26,7 +23,7 @@ Decoder_polar_SCL::Decoder_polar_SCL(const int& K, const int& N, const int& L, c
         leaves_array.push_back(this->polar_trees[i].get_leaves());
 
     this->lambdas[0] = [](const vector<float> &LLRs, const vector<int> &bits) -> float
-    {
+    {   // the hardware-efficient f- function
         auto sign = std::signbit((float)LLRs[0]) ^ std::signbit((float)LLRs[1]);
         auto abs0 = std::abs(LLRs[0]);
         auto abs1 = std::abs(LLRs[1]);
@@ -35,7 +32,7 @@ Decoder_polar_SCL::Decoder_polar_SCL(const int& K, const int& N, const int& L, c
     };
 
     this->lambdas[1] = [](const vector<float> &LLRs, const vector<int> &bits) -> float
-    {
+    {   // the f+ function
         return ((bits[0] == 0) ? LLRs[0] : -LLRs[0]) + LLRs[1];
     };
 }
@@ -63,7 +60,7 @@ void Decoder_polar_SCL::recursive_initialize_frozen_bits(const Node<Contents_SCL
 		for (auto c : node_curr->get_children())
 			this->recursive_initialize_frozen_bits(c, frozen_bits); 
 	}
-	else
+	else // TODO: hpw to generate frozen_bits (where to set frozen, what's their values) 
 		node_curr->get_contents()->is_frozen_bit = frozen_bits[node_curr->get_lane_id()];
 }
 
@@ -92,21 +89,22 @@ void Decoder_polar_SCL::recursive_compute_llr(Node<Contents_SCL>* node_cur, int 
 	if (!node_cur->is_root())
 	{
 		const auto child = node_cur->get_child_id();
-		const auto kern_size = (int)node_father->get_children().size(); // e.g. 2 in my case
-		const auto size = (int)node_father->get_c()->l.size();
-		const auto n_kernels = size / kern_size;
+		const auto kern_size = (int)node_father->get_children().size(); // 2 in my case
+		const auto size = (int)node_father->get_c()->l.size();          // N
+		const auto n_kernels = size / kern_size;                        // N/2 kernels (CNOT) in each stage
 
 		for (auto k = 0; k < n_kernels; k++)
 		{
 			for (auto l = 0; l < kern_size; l++) LLRs[l] = node_father->get_c()->l[l * n_kernels + k];
 			for (auto c = 0; c < child;     c++) bits[c] = node_father->get_children()[c]->get_c()->s[k];
+            //******************** update the LLR array **************************
 			node_cur->get_c()->l[k] = lambdas[child](LLRs, bits);
 		}
 	}
 }
 
 void Decoder_polar_SCL::select_best_path(const size_t frame_id)
-{
+{   // select the best one, not the best L ones.
 	int best_path = 0;
 	if (active_paths.size() >= 1)
 		best_path = *active_paths.begin();
@@ -122,12 +120,11 @@ void Decoder_polar_SCL::select_best_path(const size_t frame_id)
 inline float phi(const float& mu, const float& lambda, const int& u)
 {
 	float new_mu;
-
 	if (u == 0 && lambda < 0)
 		new_mu = mu - lambda;
 	else if (u != 0 && lambda > 0)
 		new_mu = mu + lambda;
-	else
+	else // if u = [1-sign(lambda)]/2 correct prediction
 		new_mu = mu;
 
 	return new_mu;
@@ -163,12 +160,12 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 
 		// if current leaf is a frozen bit
 		if (leaves_array[0][leaf_index]->get_c()->is_frozen_bit)
-		{
+		{   // penalize if the prediction for frozen bit is wrong, TODO: why defalut frozen value is 0?
 			auto min_phi = std::numeric_limits<float>::max();
 			for (auto path : active_paths)
 			{
 				auto cur_leaf = leaves_array[path][leaf_index];
-				cur_leaf->get_c()->s[0] = 0;
+				cur_leaf->get_c()->s[0] = 0; // TODO: shouldn't s (u_i) be set to the frozen value? why zero?
 				auto phi_cur = phi(polar_trees[path].get_path_metric(), cur_leaf->get_c()->l[0], 0);
 				this->polar_trees[path].set_path_metric(phi_cur);
 				min_phi = std::min<float>(min_phi, phi_cur);
@@ -261,4 +258,114 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 	}
 
 	this->select_best_path(frame_id);
+}
+
+void Decoder_polar_SCL::recursive_propagate_sums(const Node<Contents_SCL>* node_cur)
+{
+	if (!node_cur->is_leaf())
+	{
+		const auto stage = polar_trees[0].get_depth() - node_cur->get_depth() -2;
+		const auto kern_size = (int)node_cur->get_children().size(); // 2
+		const auto size = (int)node_cur->get_c()->s.size();          // N
+		const auto n_kernels = size / kern_size;                     // N/2
+
+        // stage is how many kernels
+        // Ke = {{1,0},{1,1}} linearized and (transposed) to {1,1,0,1}, size = 2
+		auto encode_polar_kernel = [](const int *u, const uint32_t *idx, const int *Ke, int *x, const int size)
+		{
+			for (auto i = 0; i < size; i++)
+			{
+				const auto stride = i * size;
+				auto sum = 0;
+				for (auto j = 0; j < size; j++)
+					sum += u[j] & Ke[stride +j];
+				x[idx[i]] = sum & 1;
+			}
+		};
+
+		// re-encode the bits (partial sums) (generalized to all kernels)
+		for (auto k = 0; k < n_kernels; k++)
+		{
+			for (auto i = 0; i < kern_size; i++)
+			{
+				this->idx[i] = (uint32_t)(n_kernels * i + k);
+				this->u[i] = node_cur->get_children()[(this->idx[i]/n_kernels)]->get_c()->s[this->idx[i]%n_kernels];
+			}
+
+			encode_polar_kernel(this->u.data(),
+			                    this->idx.data(),
+			                    this->Ke.data(),
+			                    node_cur->get_c()->s.data(),
+			                    kern_size);
+		}
+	}
+
+	if (!node_cur->is_root() &&
+	    ((size_t)node_cur->get_child_id() == node_cur->get_father()->get_children().size() -1))
+		this->recursive_propagate_sums(node_cur->get_father());
+}
+
+void Decoder_polar_SCL::duplicate_path(int path, int leaf_index, vector<vector<Node<Contents_SCL>*>> leaves_array)
+{
+	vector<Node<Contents_SCL>*> path_leaves, newpath_leaves;
+	int newpath = 0;
+	while (active_paths.find(newpath++) != active_paths.end()){};
+	newpath--;
+
+	active_paths.insert(newpath);
+
+	path_leaves = leaves_array[path];
+
+	newpath_leaves = leaves_array[newpath];
+
+	for (auto i = 0; i < leaf_index; i++)
+		newpath_leaves[i]->get_c()->s = path_leaves[i]->get_c()->s;
+
+	recursive_duplicate_tree_sums(leaves_array[path][leaf_index], leaves_array[newpath][leaf_index], nullptr);
+
+	if (leaf_index < this->N - 1)
+		recursive_duplicate_tree_llr(leaves_array[path][leaf_index + 1], leaves_array[newpath][leaf_index + 1]);
+
+	leaves_array[newpath][leaf_index]->get_c()->s[0] = 1;
+	polar_trees[newpath].set_path_metric(phi(polar_trees[path].get_path_metric(),
+	                                                     leaves_array[path][leaf_index]->get_c()->l[0], 1));
+
+	leaves_array[path][leaf_index]->get_c()->s[0] = 0;
+	polar_trees[path].set_path_metric(phi(polar_trees[path].get_path_metric(),
+	                                                  leaves_array[path][leaf_index]->get_c()->l[0], 0));
+}
+
+void Decoder_polar_SCL::recursive_duplicate_tree_llr(Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b)
+{
+	node_b->get_c()->l = node_a->get_c()->l;
+
+	if(!node_a->get_father()->is_root())
+		this->recursive_duplicate_tree_llr(node_a->get_father(), node_b->get_father());
+}
+
+void Decoder_polar_SCL::recursive_duplicate_tree_sums(Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b, Node<Contents_SCL>* node_caller)
+{
+	if (!node_a->is_leaf())
+		for (size_t c = 0; c < node_a->get_children().size()-1; c++)
+		{
+			auto child_a = node_a->get_children()[c];
+			if (child_a != node_caller)
+				node_b->get_children()[c]->get_c()->s = child_a->get_c()->s;
+		}
+
+	if (!node_a->is_root())
+		this->recursive_duplicate_tree_sums(node_a->get_father(), node_b->get_father(), node_a);
+}
+
+void Decoder_polar_SCL::_store(int *V) const
+{
+    auto *root = this->polar_trees[*active_paths.begin()].get_root();
+    std::copy(root->get_c()->s.begin(), root->get_c()->s.begin() + this->N, V);
+}
+
+int Decoder_polar_SCL::decode(const float *Y_N, int *V_K, const size_t frame_id)
+{
+    this->_load(Y_N);
+    this->_decode(frame_id);
+    this->_store(V_K);
 }

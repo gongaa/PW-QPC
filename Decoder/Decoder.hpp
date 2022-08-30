@@ -71,4 +71,8 @@ public:
     explicit Decoder(const int K, const int N) : K(K), N(N) {}
 };
 
+// template should have methods' implementation inline
+// a workaround to this is
+#include "Decoder.hxx"
+
 #endif /* DECODER_HPP_ */

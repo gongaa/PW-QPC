@@ -1,6 +1,6 @@
 #ifndef DECODER_POLAR_SCL_HPP_
 #define DECODER_POLAR_SCL_HPP_
-
+// based on the paper "LLR-Based Successive Canncellation List Decoding of Polar Codes"
 #include <vector>
 #include <set>
 #include "Decoder.hpp"
@@ -9,8 +9,12 @@ using namespace std;
 class Contents_SCL
 {
 public:
-    vector<float> l;     // probability pair array P
-    vector<int> s;       // bits array B
+    vector<float> l;     // Log-Likelihood Ratio array, size N
+    vector<int> s;       // partial sum array u, size N (but may not be fully used). 
+    // If root: effective size N. In total, Nlog(N) partial sums.
+    // update ruls for u_n^{(i)} := \hat{u}_i:
+    // u_{s-1}^{(2i-[i mode 2^{s-1}])} = u_s^{(2i)}\oplus u_s^{(2i+1)}
+    // u_{s-1}^{(2^2+2i-[i mod 2^{s-1}])} = u_s^{(2i+1)}
     bool is_frozen_bit;
     int max_depth_llrs;
 
@@ -18,21 +22,32 @@ public:
     virtual ~Contents_SCL() {}
 };
 
-// temporarily single kernel F=((1,1),(0,1))
+// temporarily single kernel F={{1,0},{1,1}}
 class Decoder_polar_SCL : Decoder
 {
 protected:
     const float metric_init; // init value of the metrics in the trees
     const int L;             // maximum path number
-    vector<uint32_t> stages; // number of stages = log_2(N)
+    vector<uint32_t> stages; // length = log_2(N) = n
+    // at each stage s\in {1,...,n}, use f- and f+ to update LLRs, 
+    // the decoder uses the rule above to keep track of NlogN partial sums u_s^{i},
+    // and update them after decoding each bit \hat{u}_i
     std::set<int> active_paths;
 
     vector<bool> frozen_bits;
     vector<Tree_metric<Contents_SCL>> polar_trees;
-    vector<vector<Node<Contents_SCL>*>> leaves_array;
-
+    vector<vector<Node<Contents_SCL>*>> leaves_array;   // possible leaf nodes to split on
     vector<float> LLRs;
     vector<int> bits; 
+
+    // temporary arrays used to update partial sums, 
+    // the only usage is in recursive_propagate_sums,
+    // to avoid allocating new temp memory every time
+    vector<uint32_t> idx;
+    vector<int> u;
+    // linearized kernel = {1,1,0,1}. TODO: maybe {1,0,1,1}
+    vector<int> Ke;
+
     // vector<vector<function<float(const vector<float> &LLRs, const vector<int> &bits)>>> lambdas;
     vector<function<float(const vector<float> &LLRs, const vector<int> &bits)>> lambdas;
 
@@ -40,16 +55,20 @@ public:
     Decoder_polar_SCL(const int& K, const int& N, const int& L, const vector<bool>& frozen_bits);
             // vector<function<float(const vector<float> &LLRS, const vector<int> &bits)>> lambdas);
     virtual ~Decoder_polar_SCL();
-    vector<uint32_t> get_stages() const { return stages; }
+    virtual int decode(const float *Y_N, int *V_K, const size_t frame_id);
 
 protected:
     void _load(const float *Y_N);
     void _decode(const size_t frame_id);
+    void _store(int *V_K) const;
 
 private:
     void recursive_compute_llr(Node<Contents_SCL>* node_cur, int depth);
     void recursive_propagate_sums(const Node<Contents_SCL>* node_cur);
     void duplicate_path(int path, int leaf_index, vector<vector<Node<Contents_SCL>*>> leaves_array);
+
+    void recursive_duplicate_tree_llr(Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b);
+    void recursive_duplicate_tree_sums(Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b, Node<Contents_SCL>* node_caller);
 
 protected:
     virtual void select_best_path(const size_t frame_id);

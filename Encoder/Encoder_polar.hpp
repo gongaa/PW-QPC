@@ -19,6 +19,7 @@ public:
   
   virtual Encoder_polar* clone() const;
 
+  virtual void encode(const int *U_K, int *X_N, const size_t frame_id);
   void light_encode(int *bits);
 
   bool is_codeword(const int *X_N);
@@ -27,9 +28,7 @@ public:
   virtual void set_frozen_bits(const vector<bool>& frozen_bits);
 
 protected:
-  virtual void _encode(const int *U_K, int *X_N, const size_t frame_id);
   void convert(const int *U_K, int *U_N);
-
 };
 
 #endif

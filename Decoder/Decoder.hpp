@@ -69,6 +69,7 @@ protected:
     // vector<float> Y_N;
 public:
     explicit Decoder(const int K, const int N) : K(K), N(N) {}
+    virtual int decode(const float *Y_N, int *V_K, const size_t frame_id);
 };
 
 // template should have methods' implementation inline

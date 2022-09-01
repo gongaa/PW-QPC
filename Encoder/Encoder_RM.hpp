@@ -13,21 +13,13 @@ protected:
 public:
     Encoder_RM(const int& m, const int& r);
     virtual ~Encoder_RM() = default;
-
+    static int calculate_K(const int& m, const int& r);
     void encode(const int *U_K, int *X_N, const size_t frame_id);
-    int encode_mm_code(const int* U_K, int *X_N, int N);
+    static int encode_mm_code(const int* U_K, int *X_N, int N);
+    static void recursive_encode_mm_code(const int* U_K, int *X_N, int N);
+    static int _encode(const int *U_K, int *X_N, int m, int r); // internal function called by encode()
 
     bool is_codeword(const int *X_N);
-
-private:
-    int calculate_K(const int& m, const int& r);
-    int _encode(const int *U_K, int *X_N, int m, int r); // internal function called by encode()
-    // two ways to encode an RM(m, m) code
-    void recursive_encode_mm_code(const int* U_K, int *X_N, int N);
-    void light_encode_mm(int *bits);
-
-
-
 };
       
 #endif

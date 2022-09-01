@@ -5,7 +5,7 @@
 #include <set>
 using namespace std;
 
-template <typename T = float>
+template <typename T = double>
 class Node
 {
     friend Tree_metric<T>;
@@ -35,7 +35,7 @@ public:
     bool is_empty() const { reutrn (contents == nullptr); }
 };
 
-template <typename T = float>
+template <typename T = double>
 class Tree_metric
 {
 // protected:
@@ -43,14 +43,14 @@ class Tree_metric
     int depth;
     Node<T>* root;
     vector<Node<T>*> leaves;
-    float path_metric;
+    double path_metric;
 
 public:
-    explicit Tree_metric(const int depth, const int base, float path_metric);
-    explicit Tree_metric(vector<uint32_t> &sequence, float path_metric);
+    explicit Tree_metric(const int depth, const int base, double path_metric);
+    explicit Tree_metric(vector<uint32_t> &sequence, double path_metric);
     virtual ~Tree_metric();
-    float get_path_metric() const { return path_metric; }
-    void set_path_metric(float path_metric) { this->path_metric = path_metric; }
+    double get_path_metric() const { return path_metric; }
+    void set_path_metric(double path_metric) { this->path_metric = path_metric; }
     int get_depth() const { return depth; }
     Node<T>* get_root() const { return root; }
     vector<Node<T>*> get_leaves() const { return leaves; }
@@ -66,11 +66,17 @@ class Decoder
 {
 protected:
     const int K, N;
-    // vector<float> Y_N;
+    // vector<double> Y_N;
+    // static: let different decoders share the lambdas
+    // lambdas are LLR update rules
+    static vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> lambdas;
+
 public:
-    explicit Decoder(const int K, const int N) : K(K), N(N) {}
-    virtual int decode(const float *Y_N, int *V_K, const size_t frame_id);
+    explicit Decoder(const int K, const int N);
+    virtual int decode(const double *Y_N, int *V_K, const size_t frame_id);
+    static double phi(const double& mu, const double& lambda, const int& u); // path metric update function
 };
+
 
 // template should have methods' implementation inline
 // a workaround to this is

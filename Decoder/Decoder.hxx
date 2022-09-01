@@ -1,16 +1,17 @@
 #include <vector>
+#include <cmath>
 #include "Decoder.hpp"
 using namespace std;
 
 template <typename T>
-Tree_metric<T>::Tree_metric(const int depth, const int base, float path_metric)
+Tree_metric<T>::Tree_metric(const int depth, const int base, double path_metric)
 : sequence(vector<uint32_t>(depth, base)), depth(depth), root(nullptr), path_metric(path_metric)
 {
     this->init();
 }
 
 template <typename T>
-Tree_metric<T>::Tree_metric(vector<uint32_t> &sequence, float path_metric)
+Tree_metric<T>::Tree_metric(vector<uint32_t> &sequence, double path_metric)
 : sequence(sequence), depth(sequence.size() + 1), root(nullptr), path_metric(path_metric)
 {
     this->init();
@@ -64,4 +65,34 @@ void Tree_metric<T>::delete_nodes(Node<T>* cur_node)
             this->delete_nodes(c);
         delete cur_nodes;
     }
+}
+
+Decoder::Decoder(const int K, const int N) : K(K), N(N)
+{
+    this->lambdas[0] = [](const vector<double> &LLRs, const vector<int> &bits) -> double
+    {   // the hardware-efficient f- function
+        auto sign = std::signbit(LLRs[0]) ^ std::signbit(LLRs[1]);
+        auto abs0 = std::abs(LLRs[0]);
+        auto abs1 = std::abs(LLRs[1]);
+        auto min = std::min(abs0, abs1);
+        return sign ? -min : min;
+    };
+
+    this->lambdas[1] = [](const vector<double> &LLRs, const vector<int> &bits) -> double
+    {   // the f+ function
+        return ((bits[0] == 0) ? LLRs[0] : -LLRs[0]) + LLRs[1];
+    };
+}
+
+double Decoder::phi(const double& mu, const double& lambda, const int& u)
+{   // path metric update functino
+    double new_mu;
+    if (u == 0 && lambda < 0)
+        new_mu = mu - lambda;
+    else if (u != 0 && lambda > 0)
+        new_mu = mu + lambda;
+    else // if u = [1-sign(lambda)]/2 correct prediction
+        new_mu = mu;
+
+    return new_mu;
 }

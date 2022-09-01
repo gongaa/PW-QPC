@@ -9,7 +9,7 @@ using namespace std;
 class Contents_SCL
 {
 public:
-    vector<float> l;     // Log-Likelihood Ratio array, size N
+    vector<double> l;     // Log-Likelihood Ratio array, size N
     vector<int> s;       // partial sum array u, size N (but may not be fully used). 
     // If root: effective size N. In total, Nlog(N) partial sums.
     // update ruls for u_n^{(i)} := \hat{u}_i:
@@ -26,7 +26,7 @@ public:
 class Decoder_polar_SCL : Decoder
 {
 protected:
-    const float metric_init; // init value of the metrics in the trees
+    const double metric_init; // init value of the metrics in the trees
     const int L;             // maximum path number
     vector<uint32_t> stages; // length = log_2(N) = n
     // at each stage s\in {1,...,n}, use f- and f+ to update LLRs, 
@@ -37,7 +37,7 @@ protected:
     vector<bool> frozen_bits;
     vector<Tree_metric<Contents_SCL>> polar_trees;
     vector<vector<Node<Contents_SCL>*>> leaves_array;   // possible leaf nodes to split on
-    vector<float> LLRs;
+    vector<double> LLRs;
     vector<int> bits; 
 
     // temporary arrays used to update partial sums, 
@@ -48,17 +48,17 @@ protected:
     // linearized kernel = {1,1,0,1}. TODO: maybe {1,0,1,1}
     vector<int> Ke;
 
-    // vector<vector<function<float(const vector<float> &LLRs, const vector<int> &bits)>>> lambdas;
-    vector<function<float(const vector<float> &LLRs, const vector<int> &bits)>> lambdas;
+    // refactor lambdas into the Decoder class, since RM needs this too
+    // vector<vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>>> lambdas;
 
 public:
     Decoder_polar_SCL(const int& K, const int& N, const int& L, const vector<bool>& frozen_bits);
-            // vector<function<float(const vector<float> &LLRS, const vector<int> &bits)>> lambdas);
+            // vector<function<double(const vector<double> &LLRS, const vector<int> &bits)>> lambdas);
     virtual ~Decoder_polar_SCL();
-    virtual int decode(const float *Y_N, int *V_K, const size_t frame_id);
+    virtual int decode(const double *Y_N, int *V_K, const size_t frame_id);
 
 protected:
-    void _load(const float *Y_N);
+    void _load(const double *Y_N);
     void _decode(const size_t frame_id);
     void _store(int *V_K) const;
 

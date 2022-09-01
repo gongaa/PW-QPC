@@ -28,22 +28,17 @@ int Encoder_RM::calculate_K(const int& m, const int& r)
 int Encoder_RM::encode_mm_code(const int* U_K, int *X_N, int N) // U_K: information vector, X_N: output codeword
 {   // Encode (m, m) code for BSC (X_N \in {0,1}).
     // Or decode, since the inverse matrix is the same.
-    this->recursive_encode_mm_code(U_K, X_N, N);
+    recursive_encode_mm_code(U_K, X_N, N);
     // or light encode
     // for (int i = 0; i < N; i++)
     //     X_N[i] = U_K[i];
-    // this->light_encode_mm(X_N);
+    // for (auto k = (N >> 1); k > 0; k >>= 1)
+    //     for (auto j = 0; j < N; j += 2 * k)
+    //         for (auto i = 0; i < k; i++)
+    //             X_N[j + i] = X_N[j + i] ^ X_N[k + j + i];
     // TODO: test that they are equal 
     return N;
 
-}
-
-void Encoder_RM::light_encode_mm(int *bits)
-{
-    for (auto k = (this->N >> 1); k > 0; k >>= 1)
-        for (auto j = 0; j < this->N; j += 2 * k)
-            for (auto i = 0; i < k; i++)
-                bits[j + i] = bits [j + i] ^ bits[k + j + i];
 }
 
 void Encoder_RM::recursive_encode_mm_code(const int* U_K, int *X_N, int N)

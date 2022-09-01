@@ -5,9 +5,9 @@
 using namespace std;
 
 Decoder_polar_SCL::Decoder_polar_SCL(const int& K, const int& N, const int& L, const vector<bool>& frozen_bits) 
-                //   vector<function<float(const vector<float> &LLRS, const vector<int> &bits)>> lambdas)
-: Decoder(K, N), metric_init(std::numeric_limits<float>::min()), L(L), stages((int)std::log(N), 0),
-  frozen_bits(frozen_bits), LLRs(2), bits(1), idx(2), u(2), Ke(4), lambdas(2)
+                //   vector<function<double(const vector<double> &LLRS, const vector<int> &bits)>> lambdas)
+: Decoder(K, N), metric_init(std::numeric_limits<double>::min()), L(L), stages((int)std::log(N), 0),
+  frozen_bits(frozen_bits), LLRs(2), bits(1), idx(2), u(2), Ke(4)
 {
     this->Ke[0] = 1; this->Ke[1] = 1; this->Ke[2] = 0; this->Ke[3] = 1;
     this->active_paths.insert(0);
@@ -21,20 +21,6 @@ Decoder_polar_SCL::Decoder_polar_SCL(const int& K, const int& N, const int& L, c
     }
     for (auto i = 0; i < L; i++) 
         leaves_array.push_back(this->polar_trees[i].get_leaves());
-
-    this->lambdas[0] = [](const vector<float> &LLRs, const vector<int> &bits) -> float
-    {   // the hardware-efficient f- function
-        auto sign = std::signbit((float)LLRs[0]) ^ std::signbit((float)LLRs[1]);
-        auto abs0 = std::abs(LLRs[0]);
-        auto abs1 = std::abs(LLRs[1]);
-        auto min = std::min(abs0, abs1);
-        return sign ? -min : min;
-    };
-
-    this->lambdas[1] = [](const vector<float> &LLRs, const vector<int> &bits) -> float
-    {   // the f+ function
-        return ((bits[0] == 0) ? LLRs[0] : -LLRs[0]) + LLRs[1];
-    };
 }
 
 void Decoder_polar_SCL::recursive_allocate_nodes_contents(Node<Contents_SCL>* node_curr, const int vector_size, int &max_depth_llrs)
@@ -117,20 +103,7 @@ void Decoder_polar_SCL::select_best_path(const size_t frame_id)
 	active_paths.insert(best_path);
 }
 
-inline float phi(const float& mu, const float& lambda, const int& u)
-{
-	float new_mu;
-	if (u == 0 && lambda < 0)
-		new_mu = mu - lambda;
-	else if (u != 0 && lambda > 0)
-		new_mu = mu + lambda;
-	else // if u = [1-sign(lambda)]/2 correct prediction
-		new_mu = mu;
-
-	return new_mu;
-}
-
-void Decoder_polar_SCL::_load(const float *Y_N)
+void Decoder_polar_SCL::_load(const double *Y_N)
 {
 	for (auto path = 0; path < this->L; path++) {
 		std::copy(Y_N, Y_N + this->N, this->polar_trees[path].get_root()->get_contents()->l.data());
@@ -148,7 +121,7 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 	int cur_path;
 
 	// tuples to be sorted. <Path,estimated bit,metric>
-	std::vector<std::tuple<int,int,float>> metrics_vec;
+	std::vector<std::tuple<int,int,double>> metrics_vec;
 
 	// run through each leaf
 	for (auto leaf_index = 0 ; leaf_index < this->N; leaf_index++)
@@ -161,14 +134,14 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 		// if current leaf is a frozen bit
 		if (leaves_array[0][leaf_index]->get_c()->is_frozen_bit)
 		{   // penalize if the prediction for frozen bit is wrong, TODO: why defalut frozen value is 0?
-			auto min_phi = std::numeric_limits<float>::max();
+			auto min_phi = std::numeric_limits<double>::max();
 			for (auto path : active_paths)
 			{
 				auto cur_leaf = leaves_array[path][leaf_index];
 				cur_leaf->get_c()->s[0] = 0; // TODO: shouldn't s (u_i) be set to the frozen value? why zero?
 				auto phi_cur = phi(polar_trees[path].get_path_metric(), cur_leaf->get_c()->l[0], 0);
 				this->polar_trees[path].set_path_metric(phi_cur);
-				min_phi = std::min<float>(min_phi, phi_cur);
+				min_phi = std::min<double>(min_phi, phi_cur);
 			}
 
 			// normalization
@@ -179,17 +152,17 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 		{
 			// metrics vec used to store values of hypothetic path metrics
 			metrics_vec.clear();
-			auto min_phi = std::numeric_limits<float>::max();
+			auto min_phi = std::numeric_limits<double>::max();
 			for (auto path : active_paths)
 			{
 				auto cur_leaf = leaves_array[path][leaf_index];
-				float phi0 = phi(polar_trees[path].get_path_metric(), cur_leaf->get_c()->l[0], 0);
-				float phi1 = phi(polar_trees[path].get_path_metric(), cur_leaf->get_c()->l[0], 1);
+				double phi0 = phi(polar_trees[path].get_path_metric(), cur_leaf->get_c()->l[0], 0);
+				double phi1 = phi(polar_trees[path].get_path_metric(), cur_leaf->get_c()->l[0], 1);
 				metrics_vec.push_back(std::make_tuple(path, 0, phi0));
 				metrics_vec.push_back(std::make_tuple(path, 1, phi1));
 
-				min_phi = std::min<float>(min_phi, phi0);
-				min_phi = std::min<float>(min_phi, phi1);
+				min_phi = std::min<double>(min_phi, phi0);
+				min_phi = std::min<double>(min_phi, phi1);
 			}
 
 			// normalization
@@ -206,7 +179,7 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 			{
 				// sort hypothetic metrics
 				std::sort(metrics_vec.begin(), metrics_vec.end(),
-					[](std::tuple<int,int,float> x, std::tuple<int,int,float> y){
+					[](std::tuple<int,int,double> x, std::tuple<int,int,double> y){
 						return std::get<2>(x) < std::get<2>(y);
 					});
 
@@ -216,7 +189,7 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 					cur_path = std::get<0>(*it);
 
 					auto it_double = std::find_if(it + 1, metrics_vec.end(),
-						[cur_path](std::tuple<int,int,float> x){
+						[cur_path](std::tuple<int,int,double> x){
 							return std::get<0>(x) == cur_path;
 						});
 
@@ -232,7 +205,7 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 					cur_path = std::get<0>(*it);
 
 					auto it_double = std::find_if(it +1, metrics_vec.end(),
-						[cur_path](std::tuple<int,int,float> x){
+						[cur_path](std::tuple<int,int,double> x){
 							return std::get<0>(x) == cur_path;
 						});
 
@@ -363,7 +336,7 @@ void Decoder_polar_SCL::_store(int *V) const
     std::copy(root->get_c()->s.begin(), root->get_c()->s.begin() + this->N, V);
 }
 
-int Decoder_polar_SCL::decode(const float *Y_N, int *V_K, const size_t frame_id)
+int Decoder_polar_SCL::decode(const double *Y_N, int *V_K, const size_t frame_id)
 {
     this->_load(Y_N);
     this->_decode(frame_id);

@@ -1,11 +1,10 @@
 #include <string>
 #include <cmath>
-#include <sstream>
 #include <algorithm>
 #include <vector>
 #include <iostream>
 
-#include "Encoder_RM.hpp"
+#include "Encoder/Encoder_RM.hpp"
 using namespace std;
 
 Encoder_RM::Encoder_RM(const int& m, const int& r)
@@ -15,7 +14,6 @@ Encoder_RM::Encoder_RM(const int& m, const int& r)
 
 int Encoder_RM::calculate_K(const int& m, const int& r) 
 {
-    // vector<vector<int>> s(m, vector<int>(r, 0));
     vector<int> s(r+1, 1);
     for (int i = 1; i <= m; i++) 
         for (int j = r; j >= 0; j--) 

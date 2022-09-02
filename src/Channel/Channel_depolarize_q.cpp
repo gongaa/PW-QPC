@@ -1,4 +1,4 @@
-#include "Channel_depolarize_q.hpp"
+#include "Channel/Channel_depolarize_q.hpp"
 #include <iostream>
 using namespace std;
 

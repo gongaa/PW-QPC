@@ -2,9 +2,9 @@
 #include <algorithm>
 #include <iostream>
 
-#include "Channel.hpp"
-#include "Channel_BSC_q.hpp"
-#include "Channel_depolarize_q.hpp"
+#include "Channel/Channel.hpp"
+#include "Channel/Channel_BSC_q.hpp"
+#include "Channel/Channel_depolarize_q.hpp"
 
 using namespace std;
 

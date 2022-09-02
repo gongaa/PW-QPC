@@ -22,6 +22,7 @@ private:
     int _decode_dumer(const double *Y_N, double *Y_dec_N, int *V_K, const int& m, const int& r, const int& N, int& V_K_len, double *buf);
     int _decode_m1(const double *Y_N, int *V_K, const int& m, const int& N);
     int _decode_llr(const double *Y_N, int *V_K, const int& m, const int& r, const int& N, int& V_K_len);
+    int _decode_m1_llr(const double *Y_N, int *V_K, const int& m, const int& N);
 };
 
 

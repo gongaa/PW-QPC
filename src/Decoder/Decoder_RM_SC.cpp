@@ -1,4 +1,4 @@
-#include "Decoder_RM_SC.hpp"
+#include "Decoder/Decoder_RM_SC.hpp"
 #include "Encoder/Encoder_RM.hpp"
 #include <vector>
 using namespace std;
@@ -75,16 +75,16 @@ int Decoder_RM_SC::_decode_dumer(const double *Y_N, double *Y_dec_N, int *V_K, c
 
 int Decoder_RM_SC::_decode_m1(const double *Y_N, int *V_K, const int& m, const int& N)
 {
-   int i = 0, j = 0, m_ = m, N_ = N, N_half = N / 2; // counters
-   vector<double> S_list(2 * N, 0);
+   int i = 0, j = 0, N_, N_half = N / 2; // counters
+   vector<double> S_list(2 * N, 0);      // TODO: why size 2*N instead of N?
    double s1, s2, y1;
    vector<double> Y_list((m+1) * N, 0); 
    for (i = 0; i < N; i++)
       Y_list[i] = Y_N[i];
    double *Y_1 = Y_list.data(), *Y_2, *Y_3, *Y_4;
-   for (m_ = m; m_ >= 1; m_--, N_ /= 2) {
+   for (N_ = N; N_ >= 2; N_ >>= 1) {
       N_half = N_ / 2;
-      for (i = 0; i < N; i += N_, Y_1 += N_) {
+      for (i = 0; i < N; i += N_, Y_1 += N_) { // TODO: Y_1 += N_ or Y_1 += N???
          Y_2 = Y_1 + N_half;
          Y_3 = Y_1 + N; 
          Y_4 = Y_2 + N;
@@ -92,10 +92,10 @@ int Decoder_RM_SC::_decode_m1(const double *Y_N, int *V_K, const int& m, const i
          for (j = 0; j < N_half; j++) {
             y1 = Y_1[j] * Y_2[j];
             if (y1 > 0.0) {
-               s1 += log(1.0 + y1);
+               s1 += log(1.0 + y1);          // y = 2q-1 e.g. BSC(1-q)
                s2 += log(1.0 - y1);
             } else {
-               s1 += log(1.0 + y1);
+               s1 += log(1.0 + y1); // TODO: either merge it, or is it the reverse way here?
                s2 += log(1.0 - y1);
             }
             Y_3[j] = (Y_1[j] + Y_2[j]) / (1.0 + Y_1[j] * Y_2[j]);
@@ -122,11 +122,10 @@ int Decoder_RM_SC::_decode_m1(const double *Y_N, int *V_K, const int& m, const i
       }
    }
 
-   // unpack j to get information bits
-   for (i = m; i >= 0; i--) {
+   // the information bits V_K is the bit representation of j
+   for (i = m; i >= 0; i--, j >>= 1) 
       V_K[i] = j & 1;
-      j >>= 1;
-   }
+
    return 0;
 }
 
@@ -178,6 +177,11 @@ int Decoder_RM_SC::_decode_llr(const double *Y_N, int *V_K, const int& m, const 
    V_K_len += curr_V_K_len;
 
    return 0;
+}
+
+int Decoder_RM_SC::_decode_m1_llr(const double *Y_N, int *V_K, const int& m, const int& N)
+{
+
 }
 
 int Decoder_RM_SC::FHT_decode()

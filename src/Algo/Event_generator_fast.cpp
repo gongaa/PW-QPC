@@ -2,7 +2,7 @@
 #include <mipp.h>
 
 #include "Tools/Exception/exception.hpp"
-#include "Tools/Algo/Draw_generator/Event_generator/Fast/Event_generator_fast.hpp"
+#include "Algo/Draw_generator/Event_generator/Fast/Event_generator_fast.hpp"
 
 using namespace aff3ct;
 using namespace aff3ct::tools;

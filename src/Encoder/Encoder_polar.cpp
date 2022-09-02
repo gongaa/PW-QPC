@@ -1,10 +1,9 @@
 #include <string>
 #include <cmath>
-#include <sstream>
 #include <algorithm>
 #include <vector>
 
-#include "Encoder_polar.hpp"
+#include "Encoder/Encoder_polar.hpp"
 using namespace std;
 
 Encoder_polar::Encoder_polar(const int& K, const int& N, const vector<bool>& frozen_bits)

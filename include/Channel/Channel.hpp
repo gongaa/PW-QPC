@@ -6,7 +6,7 @@
 
 using namespace std;
 #include "Algo/Event_generator_unitary.hpp"
-#include "PRNG_MT19937.hpp"
+#include "Algo/PRNG_MT19937.hpp"
 
 class Channel_c // classical, has codeword
 {

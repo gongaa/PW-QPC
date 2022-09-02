@@ -1,27 +1,8 @@
-/*!
- * \file
- * \brief The Mersenne Twister pseudo-random number generator (PRNG).
- *
- * This is an implementation of fast PRNG called MT19937,
- * meaning it has a period of 2^19937-1, which is a Mersenne
- * prime.
- *
- * This PRNG is fast and suitable for non-cryptographic code.
- * For instance, it would be perfect for Monte Carlo simulations,
- * etc.
- *
- * This code has been designed as a drop-in replacement for libc rand and
- * srand().
- *
- * \author Christian Stigen Larsen
- * \author Adrien Cassagne
- *
- * \date 2015-02-17
- *
- * \section LICENSE
- * This file is under BSD license.
- */
-#include "PRNG_MT19937.hpp"
+#include <limits>
+
+#include "Algo/PRNG/PRNG_MT19937_simd.hpp"
+
+using namespace aff3ct::tools;
 
 /*
  * We have an array of 624 32-bit values, and there are
@@ -32,26 +13,35 @@ constexpr unsigned SIZE   = 624;
 constexpr unsigned PERIOD = 397;
 constexpr unsigned DIFF   = SIZE-PERIOD;
 
-#define M32(x) (0x80000000 & x) // 32nd Most Significant Bit
-#define L31(x) (0x7FFFFFFF & x) // 31 Least Significant Bits
-#define ODD(x) (x & 1) // Check if number is odd
+#define M32(x) (x & 0x80000000) // 32nd Most Significant Bit
+#define L31(x) (x & 0x7FFFFFFF) // 31 Least Significant Bits
 
 #define UNROLL(expr) \
 	y = M32(MT[i]) | L31(MT[i+1]); \
-	MT[i] = MT[expr] ^ (y >> 1) ^ MATRIX[ODD(y)]; \
+	m = mipp::blend(MATRIX[1], MATRIX[0], (y & 1) == 1); \
+	MT[i] = MT[expr] ^ (y >> 1) ^ m; \
 	++i;
 
-PRNG_MT19937::PRNG_MT19937(const uint32_t seed)
+PRNG_MT19937_simd::PRNG_MT19937_simd(const mipp::Reg<int32_t> seed)
 : MT(SIZE), index(0)
 {
 	this->seed(seed);
 }
 
-PRNG_MT19937::~PRNG_MT19937()
+PRNG_MT19937_simd::PRNG_MT19937_simd()
+: MT(SIZE), index(0)
+{
+	mipp::vector<int32_t> seed(mipp::nElReg<int32_t>());
+	for (auto i = 0; i < mipp::N<int32_t>(); i++)
+		seed[i] = i;
+	this->seed(seed.data());
+}
+
+PRNG_MT19937_simd::~PRNG_MT19937_simd()
 {
 }
 
-void PRNG_MT19937::seed(const uint32_t seed)
+void PRNG_MT19937_simd::seed(const mipp::Reg<int32_t> seed)
 {
 	/*
 	 * The equation below is a linear congruential generator (LCG),
@@ -88,10 +78,10 @@ void PRNG_MT19937::seed(const uint32_t seed)
 	index = 0;
 
 	for (unsigned i = 1; i < SIZE; ++i)
-		MT[i] = 0x6c078965 * (MT[i-1] ^ MT[i-1] >> 30) +i;
+		MT[i] = (MT[i-1] ^ MT[i-1] >> 30) * 0x6c078965 +i;
 }
 
-void PRNG_MT19937::generate_numbers()
+void PRNG_MT19937_simd::generate_numbers()
 {
 	/*
 	 * Originally, we had one loop with i going from [0, SIZE) and
@@ -110,16 +100,17 @@ void PRNG_MT19937::generate_numbers()
 	 * http://www.quadibloc.com/crypto/co4814.htm
 	 *
 	 */
-	constexpr uint32_t MATRIX[2] = {0, 0x9908b0df};
-	uint32_t y, i = 0;
+	mipp::Reg<int32_t> MATRIX[2] = {mipp::Reg<int32_t>(0), mipp::Reg<int32_t>(0x9908b0df)};
+	mipp::Reg<int32_t> y, m;
+	uint32_t i = 0;
 
 	// i = [0 ... 225]
 	while (i < (DIFF -1))
 	{
 		/*
-	 	 * We're doing 226 = 113*2, an even number of steps, so we can
-	 	 * safely unroll one more step here for speed:
-	 	 */
+		 * We're doing 226 = 113*2, an even number of steps, so we can
+		 * safely unroll one more step here for speed:
+		 */
 		UNROLL(i+PERIOD);
 		UNROLL(i+PERIOD);
 	}
@@ -149,15 +140,16 @@ void PRNG_MT19937::generate_numbers()
 
 	// i = 623
 	y = M32(MT[SIZE-1]) | L31(MT[0]);
-	MT[SIZE-1] = MT[PERIOD-1] ^ (y >> 1) ^ MATRIX[ODD(y)];
+	m = mipp::blend(MATRIX[1], MATRIX[0], (y & 1) == 1);
+	MT[SIZE-1] = MT[PERIOD-1] ^ (y >> 1) ^ m;
 }
 
-uint32_t PRNG_MT19937::rand_u32()
+mipp::Reg<int32_t> PRNG_MT19937_simd::rand_s32()
 {
 	if (!index)
-	generate_numbers();
+		generate_numbers();
 
-	uint32_t y = MT[index];
+	auto y = MT[index];
 
 	// Tempering
 	y ^= y >> 11;
@@ -171,57 +163,26 @@ uint32_t PRNG_MT19937::rand_u32()
 	return y;
 }
 
-int PRNG_MT19937::rand()
+mipp::Reg<float> PRNG_MT19937_simd::randf_cc()
 {
-	/*
-	 * PORTABILITY WARNING:
-	 *
-	 * rand_u32() uses all 32-bits for the pseudo-random number,
-	 * but rand() must return a number from 0 ... RAND_MAX.
-	 *
-	 * We'll just assume that rand() only uses 31 bits worth of
-	 * data, and that we're on a two's complement system.
-	 *
-	 * So, to output an integer compatible with rand(), we have
-	 * two options: Either mask off the highest (32nd) bit, or
-	 * shift right by one bit.  Masking with 0x7FFFFFFF will be
-	 * compatible with 64-bit MT[], so we'll just use that here.
-	 *
-	 */
-	return static_cast<int>(0x7FFFFFFF & rand_u32());
+	mipp::Reg<int32_t> rand_s32 = this->rand_s32();
+	mipp::Reg<float>   max      = (float)std::numeric_limits<int32_t>::max();
+
+	return mipp::abs(rand_s32.cvt<float>() / max);
 }
 
-float PRNG_MT19937::randf_cc()
+mipp::Reg<float> PRNG_MT19937_simd::randf_co()
 {
-	return static_cast<float>(rand_u32()) / (float)UINT32_MAX;
+	mipp::Reg<int32_t> rand_s32 = this->rand_s32();
+	mipp::Reg<float>   max      = (float)std::numeric_limits<int32_t>::max();
+
+	return mipp::abs(rand_s32.cvt<float>() / (max + 1.0f));
 }
 
-float PRNG_MT19937::randf_co()
+mipp::Reg<float> PRNG_MT19937_simd::randf_oo()
 {
-	return static_cast<float>(rand_u32()) / ((float)UINT32_MAX +1.0f);
-}
+	mipp::Reg<int32_t> rand_s32 = this->rand_s32();
+	mipp::Reg<float>   max      = (float)std::numeric_limits<int32_t>::max();
 
-float PRNG_MT19937::randf_oo()
-{
-	return (static_cast<float>(rand_u32()) +0.5f) / ((float)UINT32_MAX +1.0f);
-}
-
-double PRNG_MT19937::randd_cc()
-{
-	return static_cast<double>(rand_u32()) / (double)UINT32_MAX;
-}
-
-double PRNG_MT19937::randd_co()
-{
-	return static_cast<double>(rand_u32()) / ((double)UINT32_MAX +1.0);
-}
-
-double PRNG_MT19937::randd_oo()
-{
-	return (static_cast<double>(rand_u32()) +0.5) / ((double)UINT32_MAX +1.0);
-}
-
-uint64_t PRNG_MT19937::rand_u64()
-{
-	return static_cast<uint64_t>(rand_u32()) << 32 | rand_u32();
+	return mipp::abs((rand_s32.cvt<float>() + 0.5f) / (max + 1.0f));
 }

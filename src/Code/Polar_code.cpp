@@ -3,7 +3,7 @@
 #include <cmath>
 #include <map>
 
-#include "Polar_code.hpp"
+#include "Code/Polar_code.hpp"
 
 std::string display_kernel(const std::vector<std::vector<bool>>& pattern_bits)
 {

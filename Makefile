@@ -1,18 +1,21 @@
-CXX      := -c++
-CXXFLAGS := -pedantic-errors -Wall -Wextra -Werror
+CXX      := g++
+CXXFLAGS := -pedantic-errors -Wall -std=c++17
 LDFLAGS  := -L/usr/lib -lstdc++ -lm
 BUILD    := ./build
 OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/apps
 TARGET   := program
 INCLUDE  := -Iinclude/
-SRC      :=                      \
-   $(wildcard src/Algo/*.cpp) 	 \
-   $(wildcard src/Channel/*.cpp) \
-   $(wildcard src/Code/*.cpp) 	 \
-   $(wildcard src/Decoder/*.cpp) \
-   $(wildcard src/Encoder/*.cpp) \
-   $(wildcard src/*.cpp)         \
+IGNORE   := src/Algo/PRNG_MT19937_simd.cpp src/Algo/Event_generator_fast.cpp src/Code/Polar_code.cpp
+SRC      :=                        \
+   $(wildcard src/Algo/*.cpp) 	   \
+   $(wildcard src/Channel/*.cpp)   \
+   $(wildcard src/Code/*.cpp) 	   \
+   $(wildcard src/Decoder/*.cpp)   \
+   $(wildcard src/Encoder/*.cpp)   \
+   $(wildcard src/*.cpp)           \
+   main.cpp
+SRC 	 := $(filter-out $(IGNORE), $(SRC)) 
 
 OBJECTS  := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
 DEPENDENCIES \

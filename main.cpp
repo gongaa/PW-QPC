@@ -43,9 +43,8 @@ int main(int argc, char** argv)
     } else {
       sources.push_back(argv[i]);
     }
-
   }
 
-
+  cerr << "沃滴任务完成啦" << endl;
   return 0;
 }

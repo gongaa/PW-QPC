@@ -25,14 +25,14 @@ void Tree_metric<T>::init()
     auto cur_depth = 0;
     this->root = new Node<T>(nullptr, vector<Node<T>*>(), nullptr, cur_depth, lanes[cur_depth]);
     this->create_nodes(this->root, cur_depth + 1, lanes, sequence);
-    recursive_get_leaves(this->get_root);
+    recursive_get_leaves(this->get_root());
 }
 
 template <typename T>
 void Tree_metric<T>::create_nodes(Node<T>* cur_node, int cur_depth, vector<int> &lanes, const vector<uint32_t> &sequence)
 {
     if (cur_depth < this->depth) {
-        for (auto c = 0; c < sequence[cur_depth - 1]; c++) {
+        for (auto c = 0; c < (int)sequence[cur_depth - 1]; c++) {
             auto child = new Node<T>(cur_node, vector<Node<T>*>(), nullptr, cur_depth, lanes[cur_depth]++, c);
             cur_node->children.push_back(child);
             this->create_nodes(child, cur_depth + 1, lanes, sequence);
@@ -61,38 +61,9 @@ template <typename T>
 void Tree_metric<T>::delete_nodes(Node<T>* cur_node)
 {
     if (cur_node != nullptr) {
-        for (auto c : cur_node->childre)
+        for (auto c : cur_node->children)
             this->delete_nodes(c);
-        delete cur_nodes;
+        delete cur_node;
     }
 }
 
-Decoder::Decoder(const int K, const int N) : K(K), N(N)
-{
-    this->lambdas[0] = [](const vector<double> &LLRs, const vector<int> &bits) -> double
-    {   // the hardware-efficient f- function
-        auto sign = std::signbit(LLRs[0]) ^ std::signbit(LLRs[1]);
-        auto abs0 = std::abs(LLRs[0]);
-        auto abs1 = std::abs(LLRs[1]);
-        auto min = std::min(abs0, abs1);
-        return sign ? -min : min;
-    };
-
-    this->lambdas[1] = [](const vector<double> &LLRs, const vector<int> &bits) -> double
-    {   // the f+ function
-        return ((bits[0] == 0) ? LLRs[0] : -LLRs[0]) + LLRs[1];
-    };
-}
-
-double Decoder::phi(const double& mu, const double& lambda, const int& u)
-{   // path metric update functino
-    double new_mu;
-    if (u == 0 && lambda < 0)
-        new_mu = mu - lambda;
-    else if (u != 0 && lambda > 0)
-        new_mu = mu + lambda;
-    else // if u = [1-sign(lambda)]/2 correct prediction
-        new_mu = mu;
-
-    return new_mu;
-}

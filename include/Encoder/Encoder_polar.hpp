@@ -17,14 +17,12 @@ public:
   Encoder_polar(const int& K, const int& N, const vector<bool>& frozen_bits);
   virtual ~Encoder_polar() = default;
   
-  virtual Encoder_polar* clone() const;
-
   virtual void encode(const int *U_K, int *X_N, const size_t frame_id);
   void light_encode(int *bits);
 
   bool is_codeword(const int *X_N);
 
-  virtual const vector<bool>& get_grozen_bits() const;
+  virtual const vector<bool> &get_frozen_bits() const { return frozen_bits; }
   virtual void set_frozen_bits(const vector<bool>& frozen_bits);
 
 protected:

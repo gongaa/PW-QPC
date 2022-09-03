@@ -11,10 +11,9 @@ public:
   int N = 0;
   
   explicit Encoder();
-  Encoder(const int K, const int T);
+  Encoder(const int K, const int N) : K(K), N(N) {}
   
   virtual ~Encoder() = default;
-  virtual Encoder* clone() const;
 
   Encoder* build() const;
 

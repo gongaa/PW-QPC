@@ -8,7 +8,7 @@
 using namespace std;
 
 Encoder_RM::Encoder_RM(const int& m, const int& r)
-: m(m), r(r), Encoder(calculate_K(m, r), 1 << m)
+: Encoder(calculate_K(m, r), 1 << m), m(m), r(r)
 {
 }
 

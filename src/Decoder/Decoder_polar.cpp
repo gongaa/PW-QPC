@@ -237,7 +237,6 @@ void Decoder_polar_SCL::recursive_propagate_sums(const Node<Contents_SCL>* node_
 {
 	if (!node_cur->is_leaf())
 	{
-		const auto stage = polar_trees[0].get_depth() - node_cur->get_depth() -2;
 		const auto kern_size = (int)node_cur->get_children().size(); // 2
 		const auto size = (int)node_cur->get_c()->s.size();          // N
 		const auto n_kernels = size / kern_size;                     // N/2
@@ -341,4 +340,5 @@ int Decoder_polar_SCL::decode(const double *Y_N, int *V_K, const size_t frame_id
     this->_load(Y_N);
     this->_decode(frame_id);
     this->_store(V_K);
+	return 0;
 }

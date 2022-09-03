@@ -4,7 +4,7 @@
 using namespace std;
 
 Decoder_RM_SC::Decoder_RM_SC(const int& m, const int& r, const int& L)
-: m(m), r(r), L(L), Decoder(Encoder_RM::calculate_K(m, r), 1 << m)
+: Decoder(Encoder_RM::calculate_K(m, r), 1 << m), m(m), r(r), L(L)
 {
 }
 
@@ -13,8 +13,8 @@ int Decoder_RM_SC::decode(const double *Y_N, int *V_K, const size_t frame_id)
    vector<double> Y_dec_N(N, 0); // TODO: move it to protected attribute
    vector<double> buf(N, 0);
    int V_K_len = K;
-   this->_decode_dumer(Y_N, Y_dec_N.data(), V_K, m, r, N, V_K_len, buf.data());
-   this->_decode_llr(Y_N, V_K, m, r, N, V_K_len);
+   return this->_decode_dumer(Y_N, Y_dec_N.data(), V_K, m, r, N, V_K_len, buf.data());
+   // this->_decode_llr(Y_N, V_K, m, r, N, V_K_len);
    // TODO: test whether they are equal
 }
 
@@ -181,15 +181,5 @@ int Decoder_RM_SC::_decode_llr(const double *Y_N, int *V_K, const int& m, const 
 
 int Decoder_RM_SC::_decode_m1_llr(const double *Y_N, int *V_K, const int& m, const int& N)
 {
-
-}
-
-int Decoder_RM_SC::FHT_decode()
-{  // r = 1 decoder, based on Fast Hadarmard Transform
-
-}
-
-int Decoder_RM_SC::ML_decode()
-{  // r = m decoder
-
+   return 0;
 }

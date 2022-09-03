@@ -4,6 +4,8 @@
 #include <vector>
 #include <set>
 using namespace std;
+ 
+template <typename T = double> class Tree_metric;
 
 template <typename T = double>
 class Node
@@ -31,11 +33,11 @@ public:
     int get_lane_id() const { return lane_id; }
     T* get_contents() const { return contents; }
     void set_contents(T* contents) { this->contents = contents; }
-    bool is_leaf() const { return !childern.size(); }
+    bool is_leaf() const { return !children.size(); }
     bool is_empty() const { reutrn (contents == nullptr); }
 };
 
-template <typename T = double>
+template <typename T>
 class Tree_metric
 {
 // protected:
@@ -73,7 +75,7 @@ protected:
 
 public:
     explicit Decoder(const int K, const int N);
-    virtual int decode(const double *Y_N, int *V_K, const size_t frame_id);
+    virtual int decode(const double *Y_N, int *V_K, const size_t frame_id) = 0;
     static double phi(const double& mu, const double& lambda, const int& u); // path metric update function
 };
 

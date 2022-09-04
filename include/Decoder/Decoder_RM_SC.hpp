@@ -1,11 +1,9 @@
 #ifndef DECODER_RM_SC_HPP_
 #define DECODER_RM_SC_HPP_
 #include "Decoder.hpp"
-#include <vector>
-#include "Decoder.hpp"
 using namespace std;
 
-class Decoder_RM_SC : Decoder
+class Decoder_RM_SC : public Decoder
 {
 protected:
     const int m, r;
@@ -21,7 +19,7 @@ private:
     // int ML_decode();  // r = m, ML decoder.
     int _decode_dumer(const double *Y_N, double *Y_dec_N, int *V_K, const int& m, const int& r, const int& N, int& V_K_len, double *buf);
     int _decode_m1(const double *Y_N, int *V_K, const int& m, const int& N);
-    int _decode_llr(const double *Y_N, int *V_K, const int& m, const int& r, const int& N, int& V_K_len);
+    int _decode_llr(const double *Y_N, double *Y_dec_N, int *V_K, const int& m, const int& r, const int& N, int& V_K_len);
     int _decode_m1_llr(const double *Y_N, int *V_K, const int& m, const int& N);
 };
 

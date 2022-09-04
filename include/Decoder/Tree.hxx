@@ -1,6 +1,6 @@
 #include <vector>
 #include <cmath>
-#include "Decoder.hpp"
+#include "Tree.hpp"
 using namespace std;
 
 template <typename T>

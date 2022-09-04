@@ -26,15 +26,22 @@ int Encoder_RM::calculate_K(const int& m, const int& r)
 int Encoder_RM::encode_mm_code(const int* U_K, int *X_N, int N) // U_K: information vector, X_N: output codeword
 {   // Encode (m, m) code for BSC (X_N \in {0,1}).
     // Or decode, since the inverse matrix is the same.
-    recursive_encode_mm_code(U_K, X_N, N);
+    // recursive_encode_mm_code(U_K, X_N, N);
     // or light encode
-    // for (int i = 0; i < N; i++)
-    //     X_N[i] = U_K[i];
-    // for (auto k = (N >> 1); k > 0; k >>= 1)
-    //     for (auto j = 0; j < N; j += 2 * k)
-    //         for (auto i = 0; i < k; i++)
-    //             X_N[j + i] = X_N[j + i] ^ X_N[k + j + i];
+    for (int i = 0; i < N; i++)
+        X_N[i] = U_K[i];
+    for (auto k = (N >> 1); k > 0; k >>= 1)
+        for (auto j = 0; j < N; j += 2 * k)
+            for (auto i = 0; i < k; i++)
+                X_N[j + i] = X_N[j + i] ^ X_N[k + j + i];
     // TODO: test that they are equal 
+    // vector<int> test_X_N(N);
+    // recursive_encode_mm_code(U_K, test_X_N.data(), N);
+    // for (int i = 0; i < N; i++) {
+    //     if (X_N[i] != test_X_N[i])
+    //         std::cerr << "light encode failed" << endl;
+    // }
+    // std::cerr << "light encoder succeeded" << endl;
     return N;
 
 }

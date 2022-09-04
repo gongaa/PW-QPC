@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 #include "Decoder.hpp"
+#include "Tree.hpp"
 using namespace std;
 
 class Contents_SCL

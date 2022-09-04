@@ -1,4 +1,5 @@
 #include "Decoder/Decoder.hpp"
+using namespace std;
 
 vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> my_lambdas =  {
     [](const vector<double> &LLRs, const vector<int> &bits) -> double

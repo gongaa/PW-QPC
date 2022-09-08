@@ -32,7 +32,7 @@ public:
     T* get_contents() const { return contents; }
     void set_contents(T* contents) { this->contents = contents; }
     bool is_leaf() const { return !children.size(); }
-    bool is_empty() const { reutrn (contents == nullptr); }
+    bool is_empty() const { return (contents == nullptr); }
 };
 
 template <typename T>
@@ -56,10 +56,24 @@ public:
     vector<Node<T>*> get_leaves() const { return leaves; }
 
 private:
-    void init ();
+    void init();
     void recursive_get_leaves(Node<T>* cur_node);
     void create_nodes(Node<T>* cur_node, int cur_depth, vector<int>& lanes, const vector<uint32_t> &sequence);
     void delete_nodes(Node<T>* cur_node);
+};
+
+template <typename T>
+class RM_Tree_metric : public Tree_metric<T>
+{
+public:
+    int m, r;
+    explicit RM_Tree_metric(const int m, const int r, double path_metric);
+    virtual ~RM_Tree_metric();
+
+private:
+    void RM_init();
+    void create_RM_nodes(Node<T>* cur_node, int cur_depth, int m, int r, vector<int>& lanes);
+    void delete_RM_nodes(Node<T>* cur_node);
 };
 
 // template should have methods' implementation inline

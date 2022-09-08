@@ -113,13 +113,9 @@ int Decoder_RM_SC::_decode_m1(const double *Y_N, int *V_K, const int& m, const i
             if (y1 > 0.0) {
                s1 += log(1.0 + y1);          // y = 2q-1 e.g. BSC(1-q)
                s2 += log(1.0 - y1);
-               // s1 += log(1.0 - y1); // TODO: either merge it, or is it the reverse way here?
-               // s2 += log(1.0 + y1);
             } else {
                s1 += log(1.0 + y1); // TODO: either merge it, or is it the reverse way here?
                s2 += log(1.0 - y1);
-               // s1 += log(1.0 - y1); // TODO: either merge it, or is it the reverse way here?
-               // s2 += log(1.0 + y1);
             }
             Y_3[j] = (Y_1[j] + Y_2[j]) / (1.0 + Y_1[j] * Y_2[j]);
             Y_4[j] = (-Y_1[j] + Y_2[j]) / (1.0 - Y_1[j] * Y_2[j]);

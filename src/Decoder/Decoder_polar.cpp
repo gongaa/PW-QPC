@@ -133,7 +133,7 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 
 		// if current leaf is a frozen bit
 		if (leaves_array[0][leaf_index]->get_c()->is_frozen_bit)
-		{   // penalize if the prediction for frozen bit is wrong, TODO: why defalut frozen value is 0?
+		{   // penalize if the prediction for frozen bit is wrong, TODO: why default frozen value is 0?
 			auto min_phi = std::numeric_limits<double>::max();
 			for (auto path : active_paths)
 			{
@@ -311,7 +311,7 @@ void Decoder_polar_SCL::recursive_duplicate_tree_llr(Node<Contents_SCL>* node_a,
 {
 	node_b->get_c()->l = node_a->get_c()->l;
 
-	if(!node_a->get_father()->is_root())
+	if (!node_a->get_father()->is_root())
 		this->recursive_duplicate_tree_llr(node_a->get_father(), node_b->get_father());
 }
 

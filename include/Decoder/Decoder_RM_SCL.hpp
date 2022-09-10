@@ -33,6 +33,7 @@ protected:
     // the decoder uses the rule above to keep track of NlogN partial sums u_s^{i},
     // and update them after decoding each bit \hat{u}_i
     std::set<int> active_paths;
+    // the active_paths may not store contiguous number, but all path indices are within [0, L)
 
     vector<bool> frozen_bits;
     vector<RM_Tree_metric<Contents_RM_SCL>> rm_trees;
@@ -41,8 +42,8 @@ protected:
     // and stores for each rm_tree, at which node to split next
     vector<double> LLRs;
     vector<int> bits; 
-	// tuples to be sorted. <Path,estimated codeword,metric>
-	vector<tuple<Node<Contents_RM_SCL>*, vector<int>, double>> metrics_vec;
+	// tuples to be sorted. <node, path idx, estimated codeword, metric>
+	vector<tuple<Node<Contents_RM_SCL>*, int, vector<int>, double>> metrics_vec;
 
     // temporary arrays used to update partial sums, 
     // the only usage is in recursive_propagate_sums,
@@ -60,19 +61,21 @@ public:
 
 protected:
     void _load(const double *Y_N);
-    void _decode(const size_t frame_id);
+    // input: an LLR array. output: a codeword (or a list of codewords)
+    // NOTE: output codeword instead of information bits 
+    void _decode(const double *Y_N, int* X_N, const size_t frame_id);
     // void _decode_llr(const int& m, const int& r); // recursive decoding
-    void _decode_llr(Node<Contents_RM_SCL>* node_curr); // recursive decoding
-    void _decode_mm(Node<Contents_RM_SCL>* node_curr, bool skip = false);
-    void _decode_11(Node<Contents_RM_SCL>* node_curr);
-    void _decode_m0(Node<Contents_RM_SCL>* node_curr, bool skip = false);
+    void _decode_leaf_llr(Node<Contents_RM_SCL>* node_curr, int i, double& pm); // recursive decoding
+    void _decode_mm(Node<Contents_RM_SCL>* node_curr, int i, double& pm); // TODO: const double& pm
+    void _decode_11(Node<Contents_RM_SCL>* node_curr, int i, double& pm);
+    void _decode_m0(Node<Contents_RM_SCL>* node_curr, int i, double& pm);
     void _store(int *V_K) const;
 
 private:
     void recursive_compute_llr(Node<Contents_RM_SCL>* node_cur);
     void recursive_propagate_sums(const Node<Contents_RM_SCL>* node_cur);
     void duplicate_path(int path, int leaf_index, vector<vector<Node<Contents_RM_SCL>*>> leaves_array);
-
+    void partition_copy_delete();
     void recursive_duplicate_tree_llr(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b);
     void recursive_duplicate_tree_sums(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b, Node<Contents_RM_SCL>* node_caller);
 

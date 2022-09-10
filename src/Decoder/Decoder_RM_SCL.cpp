@@ -27,7 +27,6 @@ Decoder_RM_SCL::Decoder_RM_SCL(const int& m, const int& r, const int& L, const v
   frozen_bits(frozen_bits), LLRs(2), bits(1), idx(2), u(2), Ke(4)
 {
     this->Ke[0] = 1; this->Ke[1] = 1; this->Ke[2] = 0; this->Ke[3] = 1;
-    this->active_paths.insert(0);
 
     for (auto i = 0; i < L; i++) {
         this->rm_trees.push_back(RM_Tree_metric<Contents_RM_SCL>(m, r, metric_init));
@@ -96,188 +95,216 @@ void Decoder_RM_SCL::recursive_compute_llr(Node<Contents_RM_SCL>* node_curr)
     recursive_compute_llr(left_child);
 }
 
-void Decoder_RM_SCL::_decode(const size_t frame_id)
+void Decoder_RM_SCL::_decode(const double *Y_N, int* X_N, const size_t frame_id)
 {
-    // while (active_nodes.size() != 0)
-    for (int i : active_paths) {
+    // initialization: only one active path, 
+    // and it's active node is RM(m-r, 0), obtained by recursive_compute_llr
+    this->active_paths.clear();
+    this->active_paths.insert(0);
+    for (auto i = 0; i < L; i++) {
+        rm_trees[i].get_root()->get_c()->l = vector<double>(Y_N, Y_N + this->N);
         this->recursive_compute_llr(rm_trees[i].get_root());
     }
-    for (auto active_node : active_nodes) {
-        this->_decode_llr(active_node);  // split nodes
+    // the active node of each rm_tree is in the same position, but with different content
+    while (active_nodes.size() != 0) {
+        vector<Node<Contents_RM_SCL>*> active_nodes_tmp(active_nodes);
+        active_nodes.clear();
+        for (int i : active_paths) {
+            _decode_leaf_llr(active_nodes_tmp[i], i, rm_trees[i].path_metric); // split nodes
+        }
+        // an active node is always a left child, except RM(1,1)
+        // update and decode parent's right child
+        // TODO: clean up both the active_paths and active_nodes array
+        //       through partitioning
+        // TODO: copy and delete some rm_tree, 
+        // update s for the active nodes,
+        // change active nodes' status from used to determined
+        metrics_vec.clear();
+
+
+
+        partition_copy_delete();
+
+		// propagate sums
+		for (int i : active_paths)
+			this->recursive_propagate_sums(active_nodes[i]);
+
+        for (int i : active_paths) {
+            this->recursive_compute_llr(active_nodes[i]); // for the right child
+            // cannot start from the root,
+            // because this function always only looks at the left node
+        }
     }
-    // TODO: clean up both the active_paths and active_nodes array
-    //       through partitioning
-    // TODO: copy and delete some rm_tree, 
-    // update s for the active nodes,
-    // change active nodes' status from used to determined
-    metrics_vec.clear();
+
+
+	this->select_best_path(frame_id);
+}
+void Decoder_RM_SCL::partition_copy_delete()
+{
+    // sort hypothetic metrics
+    std::sort(metrics_vec.begin(), metrics_vec.end(),
+        [](std::tuple<Node<Contents_RM_SCL>*, int, vector<int>, double> x, std::tuple<Node<Contents_RM_SCL>*, int, vector<int>, double> y){
+            return std::get<3>(x) < std::get<3>(y);
+        });
+    // sorted so that PM is in increasing order
+    // can there be duplicate path?
+    // search in worst metrics. If a path is found twice, erase it
+    for (auto it = metrics_vec.begin() + metrics_vec.size() / 2; it != metrics_vec.end(); ++it)
+    {
+        cur_path = std::get<0>(*it);
+
+        auto it_double = std::find_if(it + 1, metrics_vec.end(),
+            [cur_path](std::tuple<int,int,double> x){
+                return std::get<0>(x) == cur_path;
+            });
+
+        if (it_double != metrics_vec.end())
+            active_paths.erase(std::get<1>(*it));
+    }
+
+    // remove worst metrics from list
+    metrics_vec.resize(metrics_vec.size() / 2);
+
+    for (auto it = metrics_vec.begin(); it != metrics_vec.end(); ++it)
+    {
+        cur_path = std::get<0>(*it);
+
+        auto it_double = std::find_if(it +1, metrics_vec.end(),
+            [cur_path](std::tuple<int,int,double> x){
+                return std::get<0>(x) == cur_path;
+            });
+
+        if (it_double != metrics_vec.end())
+        {
+            // duplicate
+            metrics_vec.erase(it_double);
+            duplicate_path(std::get<0>(*it), leaf_index, leaves_array);
+        }
+        else
+        {
+            // choose
+            leaves_array[std::get<0>(*it)][leaf_index]->get_c()->s[0] = std::get<1>(*it);
+            polar_trees[std::get<0>(*it)].set_path_metric(std::get<2>(*it));
+        }
+    }
 }
 
-void Decoder_RM_SCL::_decode_llr(Node<Contents_RM_SCL>* node_curr)
+void Decoder_RM_SCL::duplicate_path(int path, int leaf_index, vector<vector<Node<Contents_RM_SCL>*>> leaves_array)
 {
+
+}
+void Decoder_RM_SCL::recursive_duplicate_tree_llr(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b)
+{   // duplicate starts from a leaf, and propagate up until the root
+    node_b->get_c()->l = node_a->get_c()->l;
+
+    if (!node_a->get_father()->is_root())
+        this->recursive_duplicate_tree_llr(node_a->get_father(), node_b->get_father());
+
+}
+
+void Decoder_RM_SCL::recursive_duplicate_tree_sums(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b, Node<Contents_RM_SCL>* node_caller)
+{   // again, propagate upwards until the root
+    // do not copy if the current node is a leaf
+    if (!node_a->is_leaf()) {
+        auto c2 = node_b->get_children().begin();
+        for (auto c1 : node_a->get_children()) {
+            if (c1 != node_caller)
+                (*c2)->get_c()->s = c1->get_c()->s;
+            ++c2;
+        }
+    }
+
+    if (!node_a->is_root())
+        recursive_duplicate_tree_sums(node_a->get_father(), node_b->get_father(), node_a);
+
+}
+
+void Decoder_RM_SCL::recursive_propagate_sums(const Node<Contents_RM_SCL>* node_cur)
+{
+
+}
+
+void Decoder_RM_SCL::_decode_leaf_llr(Node<Contents_RM_SCL>* node_curr, int i, double& pm)
+{   // an active node is always a leaf (RM(m,0), RM(m,m), RM(1,1))
+    // because otherwise can propogate back
     auto c = node_curr->get_c();
-    int m = c->m, r = c->r;
+    int m = c->m, r = c->r, N = 1 << m;
     if (m == r) {
         if (active_paths.size() >= L) { // I need a talbe of list sizes at the border nodes 
-            _decode_mm(node_curr, true);
+            _decode_mm(node_curr, i, pm);
         } else if (r == 1) {
-            _decode_11(node_curr);
+            _decode_11(node_curr, i, pm);
         } else {
-            _decode_mm(node_curr, false);
+            _decode_mm(node_curr, i, pm);
         }
-    }
-
-    if (r == 0) {
+    } else if (r == 0) {
         if (active_paths.size() >= L) { // again
-            _decode_m0(node_curr, true);
+            _decode_m0(node_curr, i, pm);
         } else {
-            _decode_m0(node_curr, false);
+            _decode_m0(node_curr, i, pm);
         }
-    }
-
+    } 
+    node_curr->get_c()->status = DETERMINED;
+    auto llr_v = c->l;  // llr for (u+v) + u = v
+    auto bits = c->s; // bit estimate for \hat{v}
+    auto p = node_curr->get_father();
+    auto llr_uv = p->get_c()->l; // llr for u+v, size N
+    auto right_child = p->get_children()[1];
+    // llr for u = (u+v) + \hat{v}
+    f_minus(llr_uv.data(), llr_v.data(), bits.data(), N, right_child->get_c()->l.data());
+    active_nodes.push_back(right_child);
+    // update parent's right child
     // split nodes: change status from used to determined
 }
 
-void Decoder_RM_SCL::_decode_m0(Node<Contents_RM_SCL>* node_curr, bool skip = false)
+void Decoder_RM_SCL::_decode_m0(Node<Contents_RM_SCL>* node_curr, int i, double& pm)
 {   // repetition code, take both 0 and 1
     // calculate path metric for estimate to 0
     // calculate path metric for estimate to 1
     auto c = node_curr->get_c();
     int m = c->m, N = 1 << m;
     vector<double> llr = c->l;
-    double pm0 = 0.0, pm1 = 0.0;
+    double pm0 = pm, pm1 = pm;
     for (int i = 0; i < N; i++) {
         pm0 = phi(pm0, llr[i], 0);
         pm1 = phi(pm1, llr[i], 1);
     }
-    metrics_vec.push_back(make_tuple(node_curr, vector(N, 0), pm0));
-    metrics_vec.push_back(make_tuple(node_curr, vector(N, 1), pm1));
+    metrics_vec.push_back(make_tuple(node_curr, i, vector(N, 0), pm0));
+    metrics_vec.push_back(make_tuple(node_curr, i, vector(N, 1), pm1));
 }
 
-void Decoder_RM_SCL::_decode_11(Node<Contents_RM_SCL>* node_curr)
-{
-
+void Decoder_RM_SCL::_decode_11(Node<Contents_RM_SCL>* node_curr, int i, double& pm)
+{   // push back all four possiblities: 00, 01, 10, 11
+    double pm00 = pm, pm01 = pm, pm10 = pm, pm11 = pm;
+    auto c = node_curr->get_c();
+    int m = c->m, N = 1 << m;
+    vector<double> llr = c->l;  // expect size 2
+    pm00 = phi(pm00, llr[0], 0); pm00 = phi(pm00, llr[1], 0);
+    pm01 = phi(pm01, llr[0], 0); pm01 = phi(pm01, llr[1], 1);
+    pm10 = phi(pm10, llr[0], 1); pm10 = phi(pm10, llr[1], 0);
+    pm11 = phi(pm11, llr[0], 1); pm11 = phi(pm11, llr[1], 1);
+    metrics_vec.push_back(make_tuple(node_curr, i, vector<int>{0,0}, pm00));
+    metrics_vec.push_back(make_tuple(node_curr, i, vector<int>{0,1}, pm01));
+    metrics_vec.push_back(make_tuple(node_curr, i, vector<int>{1,0}, pm10));
+    metrics_vec.push_back(make_tuple(node_curr, i, vector<int>{1,1}, pm11));
 }
 
-void Decoder_RM_SCL::_decode_mm(Node<Contents_RM_SCL>* node_curr, bool skip = false)
+void Decoder_RM_SCL::_decode_mm(Node<Contents_RM_SCL>* node_curr, int i, double& pm)
 {
-    int m = node_curr->get_c()->m, N = 1 << m;
-}
-
-void Decoder_RM_SCL::_decode(const size_t frame_id)
-{
-	std::set<int> last_active_paths;
-	int cur_path;
-
-	// tuples to be sorted. <Path,estimated bit,metric>
-	std::vector<std::tuple<int,int,double>> metrics_vec;
-
-	// run through each leaf
-	for (auto leaf_index = 0 ; leaf_index < this->N; leaf_index++)
-	{
-		// compute LLR for current leaf
-		for (auto path : active_paths)
-			this->recursive_compute_llr(leaves_array[path][leaf_index],
-			                            leaves_array[path][leaf_index]->get_c()->max_depth_llrs);
-
-		// if current leaf is a frozen bit
-		if (leaves_array[0][leaf_index]->get_c()->is_frozen_bit)
-		{   // penalize if the prediction for frozen bit is wrong, TODO: why defalut frozen value is 0?
-			auto min_phi = std::numeric_limits<double>::max();
-			for (auto path : active_paths)
-			{
-				auto cur_leaf = leaves_array[path][leaf_index];
-				cur_leaf->get_c()->s[0] = 0; // TODO: shouldn't s (u_i) be set to the frozen value? why zero?
-				auto phi_cur = phi(polar_trees[path].get_path_metric(), cur_leaf->get_c()->l[0], 0);
-				this->polar_trees[path].set_path_metric(phi_cur);
-				min_phi = std::min<double>(min_phi, phi_cur);
-			}
-
-			// normalization
-			for (auto path : active_paths)
-				this->polar_trees[path].set_path_metric(this->polar_trees[path].get_path_metric() - min_phi);
-		}
-		else
-		{
-			// metrics vec used to store values of hypothetic path metrics
-			metrics_vec.clear();
-			auto min_phi = std::numeric_limits<double>::max();
-			for (auto path : active_paths)
-			{
-				auto cur_leaf = leaves_array[path][leaf_index];
-				double phi0 = phi(polar_trees[path].get_path_metric(), cur_leaf->get_c()->l[0], 0);
-				double phi1 = phi(polar_trees[path].get_path_metric(), cur_leaf->get_c()->l[0], 1);
-				metrics_vec.push_back(std::make_tuple(path, 0, phi0));
-				metrics_vec.push_back(std::make_tuple(path, 1, phi1));
-
-				min_phi = std::min<double>(min_phi, phi0);
-				min_phi = std::min<double>(min_phi, phi1);
-			}
-
-			// normalization
-			for (auto vec : metrics_vec)
-				std::get<2>(vec) -= min_phi;
-
-			if (active_paths.size() <= (unsigned)(L / 2))
-			{
-				last_active_paths = active_paths;
-				for (auto path : last_active_paths)
-					this->duplicate_path(path, leaf_index, leaves_array);
-			}
-			else
-			{
-				// sort hypothetic metrics
-				std::sort(metrics_vec.begin(), metrics_vec.end(),
-					[](std::tuple<int,int,double> x, std::tuple<int,int,double> y){
-						return std::get<2>(x) < std::get<2>(y);
-					});
-
-				// search in worst metrics. If a path is found twice, erase it
-				for (auto it = metrics_vec.begin() + metrics_vec.size() / 2; it != metrics_vec.end(); ++it)
-				{
-					cur_path = std::get<0>(*it);
-
-					auto it_double = std::find_if(it + 1, metrics_vec.end(),
-						[cur_path](std::tuple<int,int,double> x){
-							return std::get<0>(x) == cur_path;
-						});
-
-					if (it_double != metrics_vec.end())
-						active_paths.erase(std::get<0>(*it));
-				}
-
-				// remove worst metrics from list
-				metrics_vec.resize(metrics_vec.size() / 2);
-
-				for (auto it = metrics_vec.begin(); it != metrics_vec.end(); ++it)
-				{
-					cur_path = std::get<0>(*it);
-
-					auto it_double = std::find_if(it +1, metrics_vec.end(),
-						[cur_path](std::tuple<int,int,double> x){
-							return std::get<0>(x) == cur_path;
-						});
-
-					if (it_double != metrics_vec.end())
-					{
-						// duplicate
-						metrics_vec.erase(it_double);
-						duplicate_path(std::get<0>(*it), leaf_index, leaves_array);
-					}
-					else
-					{
-						// choose
-						leaves_array[std::get<0>(*it)][leaf_index]->get_c()->s[0] = std::get<1>(*it);
-						polar_trees[std::get<0>(*it)].set_path_metric(std::get<2>(*it));
-					}
-				}
-			}
-		}
-
-		// propagate sums
-		for (auto path : active_paths)
-			this->recursive_propagate_sums(leaves_array[path][leaf_index]);
-	}
-
-	this->select_best_path(frame_id);
+    auto c = node_curr->get_c();
+    int m = c->m, N = 1 << m;
+    vector<double> llr = c->l; 
+    vector<int> tmp(N);
+    double pm_min = pm;
+    // temporarily only take 1 instead of 4. TODO: take 4
+    for (int i = 0; i < N; i++) {
+        if (llr[i] > 0) {
+            tmp[i] = 0;
+            pm_min = phi(pm_min, llr[i], tmp[i]); // expect \Delta PM = 0
+        } else {
+            tmp[i] = 1;
+            pm_min = phi(pm_min, llr[i], tmp[i]); // expect \Delta PM = 0
+        }
+    }
+    metrics_vec.push_back(make_tuple(node_curr, i, tmp, pm_min));
 }

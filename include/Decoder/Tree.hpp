@@ -38,14 +38,13 @@ public:
 template <typename T>
 class Tree_metric
 {
-// protected:
+public:
     const vector<uint32_t> sequence;
     int depth;
     Node<T>* root;
     vector<Node<T>*> leaves;
     double path_metric;
 
-public:
     explicit Tree_metric(const int depth, const int base, double path_metric);
     explicit Tree_metric(vector<uint32_t> &sequence, double path_metric);
     virtual ~Tree_metric();

@@ -18,7 +18,7 @@ vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> my
 
 auto Decoder::lambdas = vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>>(my_lambdas);
 
-void f_plus(const double* LLR_fst, const double* LLR_snd, const int size, double* LLR_new)
+void Decoder::f_plus(const double* LLR_fst, const double* LLR_snd, const int size, double* LLR_new)
 {
     for (int i = 0; i < size; i++) {
         auto sign = signbit(LLR_fst[i]) ^ signbit(LLR_snd[i]);
@@ -29,7 +29,7 @@ void f_plus(const double* LLR_fst, const double* LLR_snd, const int size, double
     }
 }
 
-void f_minus(const double* LLR_fst, const double* LLR_snd, const int* bits, const int size, double* LLR_new)
+void Decoder::f_minus(const double* LLR_fst, const double* LLR_snd, const int* bits, const int size, double* LLR_new)
 {
     for (int i = 0; i < size; i++) {
         LLR_new[i] = ((bits[i] == 0) ? LLR_fst[i] : -LLR_fst[i]) + LLR_snd[i];

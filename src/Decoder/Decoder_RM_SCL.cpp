@@ -5,32 +5,23 @@ greedily choose whether it is 0 or 1 (by comparing path metric)
 then partition and cut the list
 finalize the remaining branch
 
-(0, m)x2, (m, m)x4.
+(0, m)x2, (m, m)x4, (1,1)x4
 (m, m) add to path likelihoods.
 Optimized branching.
 List as a tree.
-
-what I need
-- a table of list sizes at the leaf nodes
-  and a counter for it
-- slist and plist
-
-
-
 */
+
 #include "Decoder/Decoder_RM_SCL.hpp"
+#include <iostream>
 using namespace std;
 
-Decoder_RM_SCL::Decoder_RM_SCL(const int& m, const int& r, const int& L, const vector<bool>& frozen_bits) 
-                //   vector<function<double(const vector<double> &LLRS, const vector<int> &bits)>> lambdas)
-: Decoder(Encoder_RM::calculate_K(m,r), 1 << m), m(m), r(r), metric_init(std::numeric_limits<double>::min()), L(L), stages((int)std::log(N), 0),
-  frozen_bits(frozen_bits), LLRs(2), bits(1), idx(2), u(2), Ke(4)
+Decoder_RM_SCL::Decoder_RM_SCL(const int& m, const int& r, const int& L) 
+: Decoder(Encoder_RM::calculate_K(m,r), 1 << m), m(m), r(r), metric_init(std::numeric_limits<double>::min()), L(L)
 {
-    this->Ke[0] = 1; this->Ke[1] = 1; this->Ke[2] = 0; this->Ke[3] = 1;
-
     for (auto i = 0; i < L; i++) {
-        this->rm_trees.push_back(RM_Tree_metric<Contents_RM_SCL>(m, r, metric_init));
-        this->recursive_allocate_nodes_contents(this->rm_trees[i].get_root(), this->N, this->m, this->r);
+        auto new_tree = new RM_Tree_metric<Contents_RM_SCL>(m, r, metric_init);
+        this->recursive_allocate_nodes_contents(new_tree->get_root(), this->N, this->m, this->r);
+        this->rm_trees.push_back(new_tree);
     }
     // TODO: only one active_path
     // TODO: recursive compute LLR for it
@@ -43,18 +34,20 @@ void Decoder_RM_SCL::recursive_allocate_nodes_contents(Node<Contents_RM_SCL>* no
 {
 	node_curr->set_contents(new Contents_RM_SCL(m, r, vector_size));
 
+    auto children = node_curr->get_children();
 	if (!node_curr->is_leaf())
 	{
+        assert(children.size() == 2);
 		const auto new_vector_size = vector_size / 2;
-		for (auto c : node_curr->get_children())
-			this->recursive_allocate_nodes_contents(c, new_vector_size, m-1, r--);
-	}
+		this->recursive_allocate_nodes_contents(children[0], new_vector_size, m-1, r-1);
+		this->recursive_allocate_nodes_contents(children[1], new_vector_size, m-1, r);
+	} 
 }
 
 Decoder_RM_SCL::~Decoder_RM_SCL()
 {
     for (auto i = 0; i < L; i++)
-        this->recursive_deallocate_nodes_contents(this->rm_trees[i].get_root());
+        this->recursive_deallocate_nodes_contents(this->rm_trees[i]->get_root());
 }
 
 void Decoder_RM_SCL::recursive_deallocate_nodes_contents(Node<Contents_RM_SCL>* node_curr)
@@ -73,7 +66,7 @@ void Decoder_RM_SCL::select_best_path(const size_t frame_id)
 		best_path = *active_paths.begin();
 
 	for (int path : active_paths)
-		if(rm_trees[path].get_path_metric() < rm_trees[best_path].get_path_metric())
+		if(rm_trees[path]->get_path_metric() < rm_trees[best_path]->get_path_metric())
 			best_path = path;
 
 	active_paths.clear();
@@ -84,9 +77,10 @@ void Decoder_RM_SCL::recursive_compute_llr(Node<Contents_RM_SCL>* node_curr)
 {
     if (node_curr->is_leaf()) {
         active_nodes.push_back(node_curr);
+        return;
     }
     Contents_RM_SCL* c = node_curr->get_c();
-    int m = c->m, r = c->r, N = 1 << m, N_half = N / 2;
+    int m = c->m, N = 1 << m, N_half = N / 2;
     vector<double> llr = c->l;
     vector<Node<Contents_RM_SCL>*> children = node_curr->get_children();
     auto left_child = children[0], right_child = children[1];
@@ -95,22 +89,23 @@ void Decoder_RM_SCL::recursive_compute_llr(Node<Contents_RM_SCL>* node_curr)
     recursive_compute_llr(left_child);
 }
 
-void Decoder_RM_SCL::_decode(const double *Y_N, int* X_N, const size_t frame_id)
+
+int Decoder_RM_SCL::decode(const double *Y_N, int* X_N, const size_t frame_id)
 {
     // initialization: only one active path, 
     // and it's active node is RM(m-r, 0), obtained by recursive_compute_llr
     this->active_paths.clear();
     this->active_paths.insert(0);
     for (auto i = 0; i < L; i++) {
-        rm_trees[i].get_root()->get_c()->l = vector<double>(Y_N, Y_N + this->N);
-        this->recursive_compute_llr(rm_trees[i].get_root());
+        rm_trees[i]->get_root()->get_c()->l = vector<double>(Y_N, Y_N + this->N);
+        this->recursive_compute_llr(rm_trees[i]->get_root());
     }
     // the active node of each rm_tree is in the same position, but with different content
     while (active_nodes.size() != 0) {
         vector<Node<Contents_RM_SCL>*> active_nodes_tmp(active_nodes);
         active_nodes.clear();
         for (int i : active_paths) {
-            _decode_leaf_llr(active_nodes_tmp[i], i, rm_trees[i].path_metric); // split nodes
+            _decode_leaf_llr(active_nodes_tmp[i], i, rm_trees[i]->path_metric); // split nodes
         }
         // an active node is always a left child, except RM(1,1)
         // update and decode parent's right child
@@ -138,7 +133,9 @@ void Decoder_RM_SCL::_decode(const double *Y_N, int* X_N, const size_t frame_id)
 
 
 	this->select_best_path(frame_id);
+    return 0;
 }
+
 void Decoder_RM_SCL::partition_copy_delete()
 {
     // sort hypothetic metrics
@@ -151,48 +148,57 @@ void Decoder_RM_SCL::partition_copy_delete()
     // search in worst metrics. If a path is found twice, erase it
     for (auto it = metrics_vec.begin() + metrics_vec.size() / 2; it != metrics_vec.end(); ++it)
     {
-        cur_path = std::get<0>(*it);
+        auto cur_path_node = get<0>(*it);
+        int cur_path_idx = get<1>(*it);
 
-        auto it_double = std::find_if(it + 1, metrics_vec.end(),
-            [cur_path](std::tuple<int,int,double> x){
-                return std::get<0>(x) == cur_path;
+        auto it_double = find_if(it + 1, metrics_vec.end(),
+            [cur_path_node, cur_path_idx](tuple<Node<Contents_RM_SCL>*, int, vector<int>, double> x){
+                return (get<0>(x) == cur_path_node && get<1>(x) == cur_path_idx);
             });
 
-        if (it_double != metrics_vec.end())
+        if (it_double != metrics_vec.end()) {
+            cerr << "found duplicated path" << endl;
             active_paths.erase(std::get<1>(*it));
+        }
     }
 
     // remove worst metrics from list
-    metrics_vec.resize(metrics_vec.size() / 2);
+    if (metrics_vec.size() > L) {
+        metrics_vec.resize(L);
+    } else {
+        // TODO: only do copy
+    }
 
     for (auto it = metrics_vec.begin(); it != metrics_vec.end(); ++it)
     {
-        cur_path = std::get<0>(*it);
+        auto cur_path_node = get<0>(*it);
+        int cur_path_idx = get<1>(*it);
 
-        auto it_double = std::find_if(it +1, metrics_vec.end(),
-            [cur_path](std::tuple<int,int,double> x){
-                return std::get<0>(x) == cur_path;
+        auto it_double = find_if(it + 1, metrics_vec.end(),
+            [cur_path_node, cur_path_idx](tuple<Node<Contents_RM_SCL>*, int, vector<int>, double> x){
+                return (get<0>(x) == cur_path_node && get<1>(x) == cur_path_idx);
             });
 
         if (it_double != metrics_vec.end())
         {
             // duplicate
             metrics_vec.erase(it_double);
-            duplicate_path(std::get<0>(*it), leaf_index, leaves_array);
+            duplicate_path(get<1>(*it), get<0>(*it));
         }
         else
         {
             // choose
-            leaves_array[std::get<0>(*it)][leaf_index]->get_c()->s[0] = std::get<1>(*it);
-            polar_trees[std::get<0>(*it)].set_path_metric(std::get<2>(*it));
+            get<0>(*it)->get_contents()->s = get<2>(*it);
+            rm_trees[get<1>(*it)]->set_path_metric(get<3>(*it));
         }
     }
 }
 
-void Decoder_RM_SCL::duplicate_path(int path, int leaf_index, vector<vector<Node<Contents_RM_SCL>*>> leaves_array)
+void Decoder_RM_SCL::duplicate_path(int path, Node<Contents_RM_SCL>* leaf_node)
 {
 
 }
+
 void Decoder_RM_SCL::recursive_duplicate_tree_llr(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b)
 {   // duplicate starts from a leaf, and propagate up until the root
     node_b->get_c()->l = node_a->get_c()->l;
@@ -218,6 +224,89 @@ void Decoder_RM_SCL::recursive_duplicate_tree_sums(Node<Contents_RM_SCL>* node_a
         recursive_duplicate_tree_sums(node_a->get_father(), node_b->get_father(), node_a);
 
 }
+
+bool Decoder_RM_SCL::copy_until(Node<Contents_RM_SCL>* node_stop, Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b)
+{   // copy tree 1 (to which node_a and node_stop belong) into copy tree 2 (to which node_b belongs) until node_stop
+    // return: whether reached or not
+    auto c = node_a->get_contents();
+    // cerr << "in node with m=" << c->m << ", r=" << c->r << endl;
+    auto children_a = node_a->get_children();
+    auto children_b = node_b->get_children();
+    if (node_a->is_root()) {
+        assert(node_stop != node_a);
+        if (!copy_until(node_stop, children_a[0], children_b[0])) {
+            return copy_until(node_stop, children_a[1], children_b[1]);
+        } else return true;
+    } else if (node_a->is_leaf()) {
+        // copy and return;
+        if (node_a == node_stop)
+            return true;
+        else return false;
+    } else {
+        if (!copy_until(node_stop, children_a[0], children_b[0])) {
+            if (!copy_until(node_stop, children_a[1], children_b[1])) {
+                if (node_stop == node_a) {
+                    cerr << "reached m=" << c->m << ", r=" << c->r << endl;
+                    return true; 
+                }
+                // copy self
+            }
+        }
+    }
+    return false;
+
+}
+
+void Decoder_RM_SCL::test_copy_until()
+{
+    auto r1 = rm_trees[0]->get_root(), r2 = rm_trees[1]->get_root();
+    cerr << "root children size " << r1->get_children().size() << endl;
+    auto c = r1->get_contents();
+    cerr << "root m=" << c->m << ", r=" << c->r << endl;
+    // auto node_stop = (((r1->get_children()[0])->get_children()[0])->get_children()[0])->get_children()[1];
+    auto node_stop = (r1->get_children()[0])->get_children()[1];
+    cerr << "in test_copy_until" << endl;
+    copy_until(node_stop, r1, r2);
+}
+
+/*
+void Decoder_RM_SCL::get_pre_in_post_order(Node<Contents_RM_SCL>* node_curr, Node<Contents_RM_SCL>* node_caller)
+{   // get all the nodes before the current node in the post-order traversal of the tree
+    // post-order: left, right, father 
+    reversed_post_order(node_curr);
+    auto p = node_curr->get_father();
+    if (p != nullptr) { // not the root
+        auto children = p->get_children();
+        if (node_curr == children[0]) {  
+            // if node_curr is a left child
+            // node_curr, node_curr->p (do not print), 
+        } else if (node_curr == children[1]) {
+            // if node_curr is a right child
+            // node_curr->p->left_child, node_curr->p (do not print)
+        } else {
+            // this should not happen, so add an assert to check
+            assert(0);
+            cerr << "more than two childern" << endl;
+        }
+    } else {
+        // is the root, the last node in the post-order traversal
+    }
+
+
+}
+
+void Decoder_RM_SCL::reversed_post_order(Node<Contents_RM_SCL>* node_curr) 
+{
+    // copy self, right, left
+    auto children = node_curr->get_children();
+    if (children.size() == 0) {
+        // is a leaf, copy itself and return
+        return;
+    }
+    reversed_post_order(children[1]);
+    reversed_post_order(children[0]);
+}
+*/
 
 void Decoder_RM_SCL::recursive_propagate_sums(const Node<Contents_RM_SCL>* node_cur)
 {

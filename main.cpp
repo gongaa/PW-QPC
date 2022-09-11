@@ -3,6 +3,7 @@
 #include <vector>
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"
+#include "Decoder/Decoder_RM_SCL.hpp"
 #include "Test/Test_RM.hpp"
 
 // #define _OPENMP
@@ -48,6 +49,9 @@ int main(int argc, char** argv)
     }
   }
   int m = 20, r = 5;
+  Decoder_RM_SCL* decoder = new Decoder_RM_SCL(m ,r, 2);
+  decoder->test_copy_until();
+  /*
   Encoder* encoder = new Encoder_RM(m, r);
   Decoder* decoder = new Decoder_RM_SC(m ,r, 1);
   int K = encoder->get_K(), N = encoder->get_N();
@@ -73,5 +77,6 @@ int main(int argc, char** argv)
     cerr << "decode successfully" << endl;
   else 
     cerr << "decoding failed" << endl;
+  */
   return 0;
 }

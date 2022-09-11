@@ -54,7 +54,7 @@ public:
     Node<T>* get_root() const { return root; }
     vector<Node<T>*> get_leaves() const { return leaves; }
 
-private:
+protected:
     void init();
     void recursive_get_leaves(Node<T>* cur_node);
     void create_nodes(Node<T>* cur_node, int cur_depth, vector<int>& lanes, const vector<uint32_t> &sequence);
@@ -62,12 +62,17 @@ private:
 };
 
 template <typename T>
-class RM_Tree_metric : public Tree_metric<T>
+class RM_Tree_metric 
 {
 public:
     int m, r;
+    Node<T>* root;
+    double path_metric;
     explicit RM_Tree_metric(const int m, const int r, double path_metric);
     virtual ~RM_Tree_metric();
+    Node<T>* get_root() const { return root; }
+    double get_path_metric() const { return path_metric; }
+    void set_path_metric(double path_metric) { this->path_metric = path_metric; }
 
 private:
     void RM_init();

@@ -37,7 +37,7 @@ void Decoder_RM_SCL::recursive_allocate_nodes_contents(Node<Contents_RM_SCL>* no
     auto children = node_curr->get_children();
 	if (!node_curr->is_leaf())
 	{
-        assert(children.size() == 2);
+        // assert(children.size() == 2);
 		const auto new_vector_size = vector_size / 2;
 		this->recursive_allocate_nodes_contents(children[0], new_vector_size, m-1, r-1);
 		this->recursive_allocate_nodes_contents(children[1], new_vector_size, m-1, r);
@@ -194,67 +194,36 @@ void Decoder_RM_SCL::partition_copy_delete()
     }
 }
 
-void Decoder_RM_SCL::duplicate_path(int path, Node<Contents_RM_SCL>* leaf_node)
-{
-
-}
-
-void Decoder_RM_SCL::recursive_duplicate_tree_llr(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b)
-{   // duplicate starts from a leaf, and propagate up until the root
-    node_b->get_c()->l = node_a->get_c()->l;
-
-    if (!node_a->get_father()->is_root())
-        this->recursive_duplicate_tree_llr(node_a->get_father(), node_b->get_father());
-
-}
-
-void Decoder_RM_SCL::recursive_duplicate_tree_sums(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b, Node<Contents_RM_SCL>* node_caller)
-{   // again, propagate upwards until the root
-    // do not copy if the current node is a leaf
-    if (!node_a->is_leaf()) {
-        auto c2 = node_b->get_children().begin();
-        for (auto c1 : node_a->get_children()) {
-            if (c1 != node_caller)
-                (*c2)->get_c()->s = c1->get_c()->s;
-            ++c2;
-        }
-    }
-
-    if (!node_a->is_root())
-        recursive_duplicate_tree_sums(node_a->get_father(), node_b->get_father(), node_a);
-
-}
-
 bool Decoder_RM_SCL::copy_until(Node<Contents_RM_SCL>* node_stop, Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b)
 {   // copy tree 1 (to which node_a and node_stop belong) into copy tree 2 (to which node_b belongs) until node_stop
     // return: whether reached or not
     auto c = node_a->get_contents();
-    // cerr << "in node with m=" << c->m << ", r=" << c->r << endl;
+    cerr << "in node with m=" << c->m << ", r=" << c->r << endl;
     auto children_a = node_a->get_children();
     auto children_b = node_b->get_children();
     if (node_a->is_root()) {
         assert(node_stop != node_a);
-        if (!copy_until(node_stop, children_a[0], children_b[0])) {
-            return copy_until(node_stop, children_a[1], children_b[1]);
-        } else return true;
+        if (copy_until(node_stop, children_a[0], children_b[0])) return true;
+        else return copy_until(node_stop, children_a[1], children_b[1]);
     } else if (node_a->is_leaf()) {
         // copy and return;
-        if (node_a == node_stop)
+        if (node_a == node_stop) {
+            cerr << "reached m=" << c->m << ", r=" << c->r << endl;
             return true;
+        }
         else return false;
     } else {
-        if (!copy_until(node_stop, children_a[0], children_b[0])) {
-            if (!copy_until(node_stop, children_a[1], children_b[1])) {
-                if (node_stop == node_a) {
-                    cerr << "reached m=" << c->m << ", r=" << c->r << endl;
-                    return true; 
-                }
-                // copy self
-            }
+        if (copy_until(node_stop, children_a[0], children_b[0])) return true;
+        else if (copy_until(node_stop, children_a[1], children_b[1])) return true;
+        else {
+            // copy self
+            if (node_stop == node_a) {
+                cerr << "reached m=" << c->m << ", r=" << c->r << endl;
+                return true; 
+            } else return false;
         }
-    }
-    return false;
 
+    }
 }
 
 void Decoder_RM_SCL::test_copy_until()
@@ -264,49 +233,12 @@ void Decoder_RM_SCL::test_copy_until()
     auto c = r1->get_contents();
     cerr << "root m=" << c->m << ", r=" << c->r << endl;
     // auto node_stop = (((r1->get_children()[0])->get_children()[0])->get_children()[0])->get_children()[1];
-    auto node_stop = (r1->get_children()[0])->get_children()[1];
+    auto node_stop = r1;
+    while (!node_stop->is_leaf())
+        node_stop = node_stop->get_children()[0];
     cerr << "in test_copy_until" << endl;
-    copy_until(node_stop, r1, r2);
+    copy_until(node_stop->get_father(), r1, r2);
 }
-
-/*
-void Decoder_RM_SCL::get_pre_in_post_order(Node<Contents_RM_SCL>* node_curr, Node<Contents_RM_SCL>* node_caller)
-{   // get all the nodes before the current node in the post-order traversal of the tree
-    // post-order: left, right, father 
-    reversed_post_order(node_curr);
-    auto p = node_curr->get_father();
-    if (p != nullptr) { // not the root
-        auto children = p->get_children();
-        if (node_curr == children[0]) {  
-            // if node_curr is a left child
-            // node_curr, node_curr->p (do not print), 
-        } else if (node_curr == children[1]) {
-            // if node_curr is a right child
-            // node_curr->p->left_child, node_curr->p (do not print)
-        } else {
-            // this should not happen, so add an assert to check
-            assert(0);
-            cerr << "more than two childern" << endl;
-        }
-    } else {
-        // is the root, the last node in the post-order traversal
-    }
-
-
-}
-
-void Decoder_RM_SCL::reversed_post_order(Node<Contents_RM_SCL>* node_curr) 
-{
-    // copy self, right, left
-    auto children = node_curr->get_children();
-    if (children.size() == 0) {
-        // is a leaf, copy itself and return
-        return;
-    }
-    reversed_post_order(children[1]);
-    reversed_post_order(children[0]);
-}
-*/
 
 void Decoder_RM_SCL::recursive_propagate_sums(const Node<Contents_RM_SCL>* node_cur)
 {
@@ -397,3 +329,74 @@ void Decoder_RM_SCL::_decode_mm(Node<Contents_RM_SCL>* node_curr, int i, double&
     }
     metrics_vec.push_back(make_tuple(node_curr, i, tmp, pm_min));
 }
+
+//*************************** UNUSED **********************************************
+void Decoder_RM_SCL::duplicate_path(int path, Node<Contents_RM_SCL>* leaf_node)
+{
+
+}
+
+void Decoder_RM_SCL::recursive_duplicate_tree_llr(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b)
+{   // duplicate starts from a leaf, and propagate up until the root
+    node_b->get_c()->l = node_a->get_c()->l;
+
+    if (!node_a->get_father()->is_root())
+        this->recursive_duplicate_tree_llr(node_a->get_father(), node_b->get_father());
+
+}
+
+void Decoder_RM_SCL::recursive_duplicate_tree_sums(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b, Node<Contents_RM_SCL>* node_caller)
+{   // again, propagate upwards until the root
+    // do not copy if the current node is a leaf
+    if (!node_a->is_leaf()) {
+        auto c2 = node_b->get_children().begin();
+        for (auto c1 : node_a->get_children()) {
+            if (c1 != node_caller)
+                (*c2)->get_c()->s = c1->get_c()->s;
+            ++c2;
+        }
+    }
+
+    if (!node_a->is_root())
+        recursive_duplicate_tree_sums(node_a->get_father(), node_b->get_father(), node_a);
+
+}
+
+/*
+void Decoder_RM_SCL::get_pre_in_post_order(Node<Contents_RM_SCL>* node_curr, Node<Contents_RM_SCL>* node_caller)
+{   // get all the nodes before the current node in the post-order traversal of the tree
+    // post-order: left, right, father 
+    reversed_post_order(node_curr);
+    auto p = node_curr->get_father();
+    if (p != nullptr) { // not the root
+        auto children = p->get_children();
+        if (node_curr == children[0]) {  
+            // if node_curr is a left child
+            // node_curr, node_curr->p (do not print), 
+        } else if (node_curr == children[1]) {
+            // if node_curr is a right child
+            // node_curr->p->left_child, node_curr->p (do not print)
+        } else {
+            // this should not happen, so add an assert to check
+            assert(0);
+            cerr << "more than two childern" << endl;
+        }
+    } else {
+        // is the root, the last node in the post-order traversal
+    }
+
+
+}
+
+void Decoder_RM_SCL::reversed_post_order(Node<Contents_RM_SCL>* node_curr) 
+{
+    // copy self, right, left
+    auto children = node_curr->get_children();
+    if (children.size() == 0) {
+        // is a leaf, copy itself and return
+        return;
+    }
+    reversed_post_order(children[1]);
+    reversed_post_order(children[0]);
+}
+*/

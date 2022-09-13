@@ -197,30 +197,21 @@ int Decoder_RM_SC::_decode_llr(const double *Y_N, double *Y_dec_N, int *V_K, con
    const double *Y_fst = Y_N, *Y_snd = Y_N + N_half;
    double *Y_dec_fst = Y_dec_N, *Y_dec_snd = Y_dec_N + N_half;
    vector<double> LLRs_buffer(N_half); // store LLR of (u+v) + u = v 
-   vector<double> LLRs(2);
-   vector<int> bits(1);
-   for (i = 0; i < N_half; i++) {
-      LLRs = {Y_fst[i], Y_snd[i]};
-      LLRs_buffer[i] = lambdas[0](LLRs, bits);
-   }
+   f_plus(Y_fst, Y_snd, N_half, LLRs_buffer.data());
    int curr_V_K_len = 0;
-   _decode_llr(LLRs_buffer.data(), Y_dec_fst, V_K, m-1, r-1, N_half, curr_V_K_len);
+   _decode_llr(LLRs_buffer.data(), Y_dec_fst, V_K, m-1, r-1, N_half, curr_V_K_len); // decode v
    V_K_len = curr_V_K_len;
 
    // decode u
-   for (i = 0; i < N_half; i++) {
-      bits[0] = (Y_dec_fst[i] > 0) ? 0 : 1;
-      LLRs = {Y_fst[i], Y_snd[i]};
-      LLRs_buffer[i] = lambdas[1](LLRs, bits); // \hat{u} = (u+v) + \hat{v}
-   } 
+   vector<int> bits(N_half);
+   for (i = 0; i < N_half; i++) 
+      bits[i] = (Y_dec_fst[i] > 0) ? 0 : 1;
+   f_minus(Y_fst, Y_snd, bits.data(), N_half, LLRs_buffer.data());
    _decode_llr(LLRs_buffer.data(), Y_dec_snd, V_K + curr_V_K_len, m-1, r, N_half, curr_V_K_len);
    V_K_len += curr_V_K_len;
 
    // first half = \hat{u} + \hat{v}
-   for (i = 0; i < N_half; i++) {
-      LLRs = {Y_dec_fst[i], Y_dec_snd[i]};
-      Y_dec_fst[i] = lambdas[0](LLRs, bits);
-   }
+   f_plus(Y_dec_fst, Y_dec_snd, N_half, Y_dec_fst);
 
    return 0;
 }

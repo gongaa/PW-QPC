@@ -49,8 +49,9 @@ int main(int argc, char** argv)
     }
   }
   int m = 20, r = 5;
-  Decoder_RM_SCL* decoder = new Decoder_RM_SCL(m ,r, 2);
+  Decoder_RM_SCL* decoder = new Decoder_RM_SCL(m ,r, 10);
   decoder->test_copy_until();
+  decoder->test_assign_path_idx();
   /*
   Encoder* encoder = new Encoder_RM(m, r);
   Decoder* decoder = new Decoder_RM_SC(m ,r, 1);

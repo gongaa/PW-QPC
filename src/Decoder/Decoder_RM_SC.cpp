@@ -10,11 +10,12 @@ Decoder_RM_SC::Decoder_RM_SC(const int& m, const int& r, const int& L)
 
 int Decoder_RM_SC::decode(const double *Y_N, int *V_K, const size_t frame_id)
 {  // recursive decoding down to (1, m) and (m, m)
-   vector<double> Y_dec_N(N, 0); // TODO: move it to protected attribute
-   vector<double> buf(N, 0);
+   // vector<double> Y_dec_N(N, 0); // TODO: move it to protected attribute
+   // vector<double> buf(N, 0);
    int V_K_len = K;
    // return this->_decode_dumer(Y_N, Y_dec_N.data(), V_K, m, r, N, V_K_len, buf.data());
-   return this->_decode_llr(Y_N, Y_dec_N.data(), V_K, m, r, N, V_K_len);
+   vector<int> X_dec_N(N, 0);
+   return this->_decode_llr(Y_N, X_dec_N.data(), V_K, m, r, N, V_K_len);
    // TODO: test whether they are equal
 }
 
@@ -148,7 +149,7 @@ int Decoder_RM_SC::_decode_m1(const double *Y_N, int *V_K, const int& m, const i
    return 0;
 }
 
-int Decoder_RM_SC::_decode_llr(const double *Y_N, double *Y_dec_N, int *V_K, const int& m, const int& r, const int& N, int& V_K_len)
+int Decoder_RM_SC::_decode_llr(const double *Y_N, int *X_dec_N, int *V_K, const int& m, const int& r, const int& N, int& V_K_len)
 {  // return 0 if succeed, return 1 if fail (e.g. in FHT decoder)
    int i = 0;
    vector<int> tmp(N); 
@@ -157,10 +158,10 @@ int Decoder_RM_SC::_decode_llr(const double *Y_N, double *Y_dec_N, int *V_K, con
       for (i = 0; i < N; i++) {
          if (Y_N[i] > 0) { // LLR > 0, more likely to be 0
             tmp[i] = 0;
-            Y_dec_N[i] = 1.0;
+            X_dec_N[i] = 0;
          } else {          // LLR <= 0, more likely to be 1
             tmp[i] = 1;
-            Y_dec_N[i] = -1.0;
+            X_dec_N[i] = 1;
          }
       }
       Encoder_RM::encode_mm_code(tmp.data(), V_K, N);
@@ -176,12 +177,12 @@ int Decoder_RM_SC::_decode_llr(const double *Y_N, double *Y_dec_N, int *V_K, con
       if (sum_llr > 0.0) { // 1 + (-1)
          V_K[0] = 0;
          for (i = 0; i < N; i++)
-            Y_dec_N[i] = 1.0;
+            X_dec_N[i] = 0;
       }
       else {
          V_K[0] = 1;
          for (i = 0; i < N; i++)
-            Y_dec_N[i] = -1.0;
+            X_dec_N[i] = 1;
       }
       return 0;
    }
@@ -195,23 +196,21 @@ int Decoder_RM_SC::_decode_llr(const double *Y_N, double *Y_dec_N, int *V_K, con
 
    int N_half = N / 2;
    const double *Y_fst = Y_N, *Y_snd = Y_N + N_half;
-   double *Y_dec_fst = Y_dec_N, *Y_dec_snd = Y_dec_N + N_half;
+   int *X_dec_fst = X_dec_N, *X_dec_snd = X_dec_N + N_half;
    vector<double> LLRs_buffer(N_half); // store LLR of (u+v) + u = v 
    f_plus(Y_fst, Y_snd, N_half, LLRs_buffer.data());
    int curr_V_K_len = 0;
-   _decode_llr(LLRs_buffer.data(), Y_dec_fst, V_K, m-1, r-1, N_half, curr_V_K_len); // decode v
+   _decode_llr(LLRs_buffer.data(), X_dec_fst, V_K, m-1, r-1, N_half, curr_V_K_len); // decode v
    V_K_len = curr_V_K_len;
 
    // decode u
-   vector<int> bits(N_half);
-   for (i = 0; i < N_half; i++) 
-      bits[i] = (Y_dec_fst[i] > 0) ? 0 : 1;
-   f_minus(Y_fst, Y_snd, bits.data(), N_half, LLRs_buffer.data());
-   _decode_llr(LLRs_buffer.data(), Y_dec_snd, V_K + curr_V_K_len, m-1, r, N_half, curr_V_K_len);
+   f_minus(Y_fst, Y_snd, X_dec_fst, N_half, LLRs_buffer.data());
+   _decode_llr(LLRs_buffer.data(), X_dec_snd, V_K + curr_V_K_len, m-1, r, N_half, curr_V_K_len);
    V_K_len += curr_V_K_len;
 
    // first half = \hat{u} + \hat{v}
-   f_plus(Y_dec_fst, Y_dec_snd, N_half, Y_dec_fst);
+   for (i = 0; i < N_half; i++)
+      X_dec_fst[i] ^= X_dec_snd[i]; 
 
    return 0;
 }

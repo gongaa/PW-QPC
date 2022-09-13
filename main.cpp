@@ -48,36 +48,36 @@ int main(int argc, char** argv)
       sources.push_back(argv[i]);
     }
   }
-  int m = 20, r = 5;
+  int m = 5, r = 2;
   Decoder_RM_SCL* decoder = new Decoder_RM_SCL(m ,r, 10);
-  decoder->test_copy_until();
-  decoder->test_assign_path_idx();
-  /*
+  // decoder->test_copy_until();
+  // decoder->test_assign_path_idx();
   Encoder* encoder = new Encoder_RM(m, r);
-  Decoder* decoder = new Decoder_RM_SC(m ,r, 1);
+  // Decoder* decoder = new Decoder_RM_SC(m ,r, 1);
   int K = encoder->get_K(), N = encoder->get_N();
   cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
   vector<int> info_bits(K, 1);
   vector<int> codeword(N, 0);
   generate_random(K, info_bits.data());
   vector<double> noisy_codeword(N, 0);
+  vector<int> denoised_codeword(N, 0);
   vector<int> decoded(K, 0);
   encoder->encode(info_bits.data(), codeword.data(), 1);
-  // cerr << "codeword is ";
-  // for (int i : codeword)
-  //   cerr << i << " ";
-  // cerr << endl;
+  cerr << "codeword is ";
+  for (int i : codeword)
+    cerr << i << " ";
+  cerr << endl;
   for (int i = 0; i < N; i++)
     noisy_codeword[i] = codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
-  decoder->decode(noisy_codeword.data(), decoded.data(), 1);
-  // cerr << "decoded result: ";
-  // for (int i : decoded)
-  //   cerr << i << " ";
-  // cerr << endl;
-  if (verify(K, info_bits.data(), decoded.data()))
-    cerr << "decode successfully" << endl;
-  else 
-    cerr << "decoding failed" << endl;
-  */
+  // decoder->decode(noisy_codeword.data(), decoded.data(), 1);
+  decoder->decode(noisy_codeword.data(), denoised_codeword.data(), 1);
+  cerr << "denoised codeword result: ";
+  for (int i : denoised_codeword)
+    cerr << i << " ";
+  cerr << endl;
+  // if (verify(K, info_bits.data(), decoded.data()))
+  //   cerr << "decode successfully" << endl;
+  // else 
+  //   cerr << "decoding failed" << endl;
   return 0;
 }

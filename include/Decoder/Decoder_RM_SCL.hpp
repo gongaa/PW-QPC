@@ -7,14 +7,14 @@
 #include "Tree.hpp"
 using namespace std;
 
-enum Status {UNUSED, USED, DETERMINED};
+// enum Status {UNUSED, USED, DETERMINED};
 class Contents_RM_SCL
 {
 public:
     int m, r;
     vector<double> l;     // Log-Likelihood Ratio array, size 2^m 
     vector<int> s;       // estimated codeword array u, size 2^m (but may not be fully used). 
-    Status status = UNUSED;
+    // Status status = UNUSED;
 
     explicit Contents_RM_SCL(int m, int r, int size) 
     : m(m), r(r), l(size), s(size) {}
@@ -26,7 +26,6 @@ class Decoder_RM_SCL : public Decoder
 {
 protected:
     const int m, r;
-    const double metric_init; // init value of the metrics in the trees
     const int L;             // maximum path number
     // at each stage s\in {1,...,n}, use f- and f+ to update LLRs, 
     // the decoder uses the rule above to keep track of NlogN partial sums u_s^{i},

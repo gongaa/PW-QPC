@@ -62,11 +62,11 @@ protected:
     // void _store(int *V_K) const;
 
 private:
-    void recursive_compute_llr(Node<Contents_RM_SCL>* node_cur);
+    void recursive_compute_llr(int path_idx, Node<Contents_RM_SCL>* node_cur);
     Node<Contents_RM_SCL>* recursive_propagate_sums(const Node<Contents_RM_SCL>* node_cur);
     // void duplicate_path(int path, int leaf_index, vector<vector<Node<Contents_RM_SCL>*>> leaves_array);
     void duplicate_path(int path, Node<Contents_RM_SCL>* leaf_node);
-    void partition_and_copy();
+    bool partition_and_copy();
     void recursive_duplicate_tree_llr(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b);
     void recursive_duplicate_tree_sums(Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b, Node<Contents_RM_SCL>* node_caller);
     Node<Contents_RM_SCL>* copy_until(Node<Contents_RM_SCL>* node_stop, Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b);

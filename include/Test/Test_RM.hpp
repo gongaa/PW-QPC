@@ -13,4 +13,6 @@ void generate_random(int N, int *Y_N);
 // verify the encoded and decoded info bits are the same
 bool verify(int K, int *U_K_1, int *U_K_2);
 
+int simulation();
+
 #endif

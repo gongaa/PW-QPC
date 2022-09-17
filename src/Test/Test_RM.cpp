@@ -4,6 +4,7 @@
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"
 #include "Decoder/Decoder_RM_SCL.hpp"
+#include "Channel/Channel.hpp"
 
 using namespace std;
 
@@ -78,3 +79,58 @@ void test_copy_until() {
 
 
 
+int simulation() {
+    // each time a decoding failure occurred, 
+    // we checked whether the decoded codeword was more likely than the transmitted codeword.
+    // If so, then the optimal ML decoder would surely misdecode y as well.
+    int m = 10, r = 3;
+    Decoder_RM_SCL* decoder = new Decoder_RM_SCL(m ,r, 10);
+    Encoder* encoder = new Encoder_RM(m, r);
+    // Decoder* decoder = new Decoder_RM_SC(m ,r, 1);
+    int K = encoder->get_K(), N = encoder->get_N();
+    cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
+    Channel_BSC* chn_bsc = new Channel_BSC(N, 1e-1, 42);
+    vector<int> info_bits(K, 1);
+    vector<int> codeword(N, 0);
+    vector<int> noisy_codeword(N, 0);
+    vector<double> llr_noisy_codeword(N, 0);
+    vector<int> denoised_codeword(N, 0);
+    vector<int> decoded(K, 0);
+    int num_total = 1000, num_err = 0, num_ml_failed = 0, num_flips = 0, ml_flips=0;
+    for (int i = 0; i < num_total; i++) {
+        generate_random(K, info_bits.data());
+        encoder->encode(info_bits.data(), codeword.data(), 1);
+        // cerr << "codeword is " << endl;
+        // for (int i : codeword)
+        //     cerr << i << " ";
+        // cerr << endl;
+        num_flips = chn_bsc->add_noise(codeword.data(), noisy_codeword.data(), 0);
+        // cerr << "noisy codeword is" << endl;
+        // for (int i : noisy_codeword)
+        // cerr << i << " ";
+        // cerr << endl;
+        for (int i = 0; i < N; i++)
+            llr_noisy_codeword[i] = noisy_codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
+        decoder->decode(llr_noisy_codeword.data(), denoised_codeword.data(), 1);
+        // cerr << "denoised codeword result: " << endl;
+        // for (int i : denoised_codeword)
+        //   cerr << i << " ";
+        // cerr << endl;
+        if (!verify(N, codeword.data(), denoised_codeword.data())) {
+            num_err++;
+            // test whether ml decoding will fail
+            ml_flips = 0;
+            for (int i = 0; i < N; i++)
+                if (codeword[i] != denoised_codeword[i]) 
+                    ml_flips++;
+            if (num_flips < ml_flips) {
+                // cerr << "ml failed" << endl;
+                num_ml_failed++;
+            }
+        }
+    }
+    cerr << "num_err: " << num_err << endl;
+    cerr << "Frame Error Rate: " << (double)num_err / num_total << endl;
+    cerr << "ML decoding failed rate: " << (double)num_ml_failed / num_total << endl;
+    return 0;
+}

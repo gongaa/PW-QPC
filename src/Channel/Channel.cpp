@@ -38,9 +38,16 @@ Channel_BSC::Channel_BSC(const int N, float p, const int seed)
         cerr << "Channel_BSC 0<=p<=1 violated" << endl; 
 }
 
-void Channel_BSC::add_noise(const int *X_N, int *Y_N, const size_t frame_id)
+int Channel_BSC::add_noise(const int* X_N, int *Y_N, const size_t frame_id)
 {
-    for(auto i = 0; i < N; i++) {
-        Y_N[i] = ((mt19937.randf_cc() <= this->p) != X_N[i]) ? 0 : 1;
+    // X_N[i] = ((mt19937.randf_cc() >= this->p) != X_N[i]) ? 0 : 1;
+    int num_flips = 0;
+    for(int i = 0; i < N; i++) {
+        if (mt19937.randf_cc() <= this->p) {
+            num_flips++;
+            Y_N[i] = !X_N[i]; 
+        } else Y_N[i] = X_N[i];
     }
+    cerr << "num_flips " << num_flips << endl;
+    return num_flips;
 }

@@ -34,7 +34,7 @@ public:
 
     // TODO: support a probability vector, this should go hand in hand with SIMD
     // void _add_noise(const float *CP, const int *X_N, const int *Y_N, const size_t frame_id);
-    void add_noise(const int *X_N, int *Y_N, const size_t frame_id);
+    int add_noise(const int* X_N, int *Y_N, const size_t frame_id);
 
 };
 

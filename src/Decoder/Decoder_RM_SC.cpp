@@ -1,6 +1,7 @@
 #include "Decoder/Decoder_RM_SC.hpp"
 #include "Encoder/Encoder_RM.hpp"
 #include <vector>
+#include <iostream>
 using namespace std;
 
 Decoder_RM_SC::Decoder_RM_SC(const int& m, const int& r, const int& L)
@@ -8,15 +9,17 @@ Decoder_RM_SC::Decoder_RM_SC(const int& m, const int& r, const int& L)
 {
 }
 
-int Decoder_RM_SC::decode(const double *Y_N, int *V_K, const size_t frame_id)
+int Decoder_RM_SC::decode(const double *Y_N, int *X_N, const size_t frame_id)
 {  // recursive decoding down to (1, m) and (m, m)
-   // vector<double> Y_dec_N(N, 0); // TODO: move it to protected attribute
-   // vector<double> buf(N, 0);
    int V_K_len = K;
-   // return this->_decode_dumer(Y_N, Y_dec_N.data(), V_K, m, r, N, V_K_len, buf.data());
-   vector<int> X_dec_N(N, 0);
-   return this->_decode_llr(Y_N, X_dec_N.data(), V_K, m, r, N, V_K_len);
-   // TODO: test whether they are equal
+   vector<double> Y_dec_N(N, 0); // TODO: move it to protected attribute
+   vector<double> buf(N, 0);
+   vector<int> V_K(K, 0);
+   this->_decode_dumer(Y_N, Y_dec_N.data(), V_K.data(), m, r, N, V_K_len, buf.data());
+   for (int i = 0; i < N; i++)
+      X_N[i] = (Y_dec_N[i] > 0) ? 1 : 0;
+   // this->_decode_llr(Y_N, X_N, V_K.data(), m, r, N, V_K_len);
+   return 0;
 }
 
 int Decoder_RM_SC::_decode_dumer(const double *Y_N, double *Y_dec_N, int *V_K, const int& m, const int& r, const int& N, int& V_K_len, double *aux_buf)
@@ -100,9 +103,10 @@ int Decoder_RM_SC::_decode_m1(const double *Y_N, int *V_K, const int& m, const i
    double s1, s2, y1;
    vector<double> Y_list((m+1) * N, 0); 
    for (i = 0; i < N; i++)
-      Y_list[i] = Y_N[i];
+      // Y_list[i] = Y_N[i];
+      Y_list[i] = (1.0 - exp(Y_N[i])) / (1.0 + exp(Y_N[i]));
    double *Y_1 = Y_list.data(), *Y_2, *Y_3, *Y_4;
-   for (N_ = N; N_ >= 2; N_ >>= 1) {      // m loops 
+   for (N_ = N; N_ >= 2; N_ /= 2) {      // m loops 
       N_half = N_ / 2;
       for (i = 0; i < N; i += N_, Y_1 += N_) { // TODO: Y_1 += N_ or Y_1 += N???
          Y_2 = Y_1 + N_half;
@@ -130,12 +134,12 @@ int Decoder_RM_SC::_decode_m1(const double *Y_N, int *V_K, const int& m, const i
    s2 = S_list[0] + log(1.0 + Y_1[0]);
    j = 0;
    for (i = 0; i < N; i++) {
-      s1 = S_list[i] + log(1.0 + Y_1[0]);
+      s1 = S_list[i] + log(1.0 + Y_1[i]);
       if (s1 > s2) {
          s2 = s1;
          j = i << 1;
       }
-      s1 = S_list[i] + log(1.0 - Y_1[0]);
+      s1 = S_list[i] + log(1.0 - Y_1[i]);
       if (s1 > s2) {
          s2 = s1;
          j = (i << 1) + 1;

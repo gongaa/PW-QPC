@@ -47,12 +47,13 @@ public:
     virtual int decode(const double *Y_N, int *V_K, const size_t frame_id);
     void test_copy_until();
     void test_assign_path_idx();
+    int is_codeword_in_list(const int* X_N);
 
 protected:
-    void _decode_leaf_llr(Node<Contents_RM_SCL>* node_curr, int i, double& pm); 
-    void _decode_mm(Node<Contents_RM_SCL>* node_curr, int i, double& pm); 
-    void _decode_11(Node<Contents_RM_SCL>* node_curr, int i, double& pm);
-    void _decode_m0(Node<Contents_RM_SCL>* node_curr, int i, double& pm);
+    void _decode_leaf_llr(Node<Contents_RM_SCL>* node_curr, int i, const double& pm); 
+    void _decode_mm(Node<Contents_RM_SCL>* node_curr, int i, const double& pm); 
+    void _decode_11(Node<Contents_RM_SCL>* node_curr, int i, const double& pm);
+    void _decode_m0(Node<Contents_RM_SCL>* node_curr, int i, const double& pm);
 
 private:
     void recursive_compute_llr(int path_idx, Node<Contents_RM_SCL>* node_cur);

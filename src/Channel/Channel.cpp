@@ -48,6 +48,6 @@ int Channel_BSC::add_noise(const int* X_N, int *Y_N, const size_t frame_id)
             Y_N[i] = !X_N[i]; 
         } else Y_N[i] = X_N[i];
     }
-    cerr << "num_flips " << num_flips << endl;
+    // cerr << "num_flips " << num_flips << endl;
     return num_flips;
 }

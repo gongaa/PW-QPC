@@ -34,7 +34,7 @@ void Decoder_RM_SCL::recursive_allocate_nodes_contents(Node<Contents_RM_SCL>* no
 	if (!node_curr->is_leaf())
 	{
         // assert(children.size() == 2);
-		const auto new_vector_size = vector_size / 2;
+		const int new_vector_size = vector_size / 2;
 		this->recursive_allocate_nodes_contents(children[0], new_vector_size, m-1, r-1);
 		this->recursive_allocate_nodes_contents(children[1], new_vector_size, m-1, r);
 	} 
@@ -62,9 +62,35 @@ int Decoder_RM_SCL::select_best_path(const size_t frame_id)
 		best_path = *active_paths.begin();
 
 	for (int path : active_paths)
-		if(rm_trees[path]->get_path_metric() < rm_trees[best_path]->get_path_metric())
+		if (rm_trees[path]->get_path_metric() < rm_trees[best_path]->get_path_metric())
 			best_path = path;
     return best_path;
+}
+
+int Decoder_RM_SCL::is_codeword_in_list(const int* X_N)
+{
+    bool is_same = true;
+    int num_flips = 0;
+    int path_idx_same = -1;
+    for (int path : active_paths) {
+        is_same = true;
+        num_flips = 0;
+        const int* X = rm_trees[path]->get_root()->get_contents()->s.data();
+        for (int i = 0; i < N; i++) {
+            if (X[i] != X_N[i]) {
+                is_same = false;
+                num_flips++;
+                // break;
+            }
+        }
+        cerr << "path_idx=" << path << ", metric=" << rm_trees[path]->get_path_metric() << ", num_flips=" << num_flips << endl;
+        if (is_same) {
+            path_idx_same = path;
+            cerr << "codeword matches, path_idx=" << path_idx_same << endl;
+            // return path;
+        }
+    }
+    return path_idx_same;
 }
 
 void Decoder_RM_SCL::recursive_compute_llr(int path_idx, Node<Contents_RM_SCL>* node_curr)
@@ -92,13 +118,12 @@ int Decoder_RM_SCL::decode(const double *Y_N, int* X_N, const size_t frame_id)
     this->active_paths.insert(0);
     for (auto i = 0; i < L; i++) {
         rm_trees[i]->get_root()->get_c()->l = vector<double>(Y_N, Y_N + this->N);
+        rm_trees[i]->set_path_metric(0.0);
     }
     this->recursive_compute_llr(0, rm_trees[0]->get_root());
     // the active node of each rm_tree is in the same position, but with different content
     while (true) {
         for (int path_idx : active_paths) {
-            assert(active_nodes[path_idx] != nullptr);
-            assert(rm_trees[path_idx] != nullptr);
             _decode_leaf_llr(active_nodes[path_idx], path_idx, rm_trees[path_idx]->path_metric); // split nodes
         }
         active_paths.clear();
@@ -107,15 +132,10 @@ int Decoder_RM_SCL::decode(const double *Y_N, int* X_N, const size_t frame_id)
     }
 
 	int best_path = this->select_best_path(frame_id);
-    // cerr << "best path is " << best_path << endl;
     auto s = this->rm_trees[best_path]->get_root()->get_c()->s;
-    // for (int i : this->rm_trees[1]->get_root()->get_c()->s)
-    //     cerr << i << " ";
-    // cerr << endl;
     copy(s.begin(), s.end(), X_N);
     return 0;
 }
-
 
 bool Decoder_RM_SCL::partition_and_copy()
 {
@@ -127,12 +147,12 @@ bool Decoder_RM_SCL::partition_and_copy()
     // remove worst metrics from list
     if (metrics_vec.size() > L)
         metrics_vec.resize(L);
-    vector<int> all_indices(L);
+    vector<int> all_indices(L); // set to 0,...,L-1
     iota(all_indices.begin(), all_indices.end(), 0);
     set<int> used_path_indices;
     transform(metrics_vec.begin(), metrics_vec.end(), inserter(used_path_indices, used_path_indices.begin()),
             [] (auto& m) { return get<1>(m); });
-    vector<int> path_indices_to_reuse;
+    vector<int> path_indices_to_reuse; // = all_indices \ used_path_indices
     set_difference(all_indices.begin(), all_indices.end(), used_path_indices.begin(), used_path_indices.end(), 
             inserter(path_indices_to_reuse, path_indices_to_reuse.begin()));
     vector<bool> used(L, false);
@@ -143,7 +163,7 @@ bool Decoder_RM_SCL::partition_and_copy()
         if (!used[cur_path_idx]) {
             used[cur_path_idx] = true;
             active_paths.insert(cur_path_idx);
-            get<0>(m)->get_contents()->s = get<2>(m);
+            cur_path_node->get_contents()->s = get<2>(m);
             rm_trees[cur_path_idx]->set_path_metric(get<3>(m));
         } else {
             auto idx_it = path_indices_to_reuse.begin();
@@ -151,9 +171,9 @@ bool Decoder_RM_SCL::partition_and_copy()
             path_indices_to_reuse.erase(idx_it);
             used[new_path_idx] = true;
             active_paths.insert(new_path_idx);
-            rm_trees[new_path_idx]->set_path_metric(get<3>(m));
             Node<Contents_RM_SCL>* new_path_node = copy_until(cur_path_node, rm_trees[cur_path_idx]->get_root(), rm_trees[new_path_idx]->get_root());
             new_path_node->get_contents()->s = get<2>(m);
+            rm_trees[new_path_idx]->set_path_metric(get<3>(m));
             cur_path_node = new_path_node;
             cur_path_idx = new_path_idx;
         }
@@ -223,7 +243,6 @@ Node<Contents_RM_SCL>* Decoder_RM_SCL::recursive_propagate_sums(const Node<Conte
             auto left_child = children[0];
             vector<int> left_s = left_child->get_contents()->s;
             vector<int> right_s = node_cur->get_contents()->s;
-            assert(N_half == left_s.size());
             copy(right_s.begin(), right_s.end(), p_c->s.begin() + N_half);
             for (int i = 0; i < N_half; i++) {
                 p_c->s[i] = left_s[i] ^ right_s[i];
@@ -233,11 +252,13 @@ Node<Contents_RM_SCL>* Decoder_RM_SCL::recursive_propagate_sums(const Node<Conte
     }
 }
 
-void Decoder_RM_SCL::_decode_leaf_llr(Node<Contents_RM_SCL>* node_curr, int i, double& pm)
+void Decoder_RM_SCL::_decode_leaf_llr(Node<Contents_RM_SCL>* node_curr, int i, const double& pm)
 {   // an active node is always a leaf (RM(m,0), RM(m,m), RM(1,1))
     // because otherwise can propogate back
     auto c = node_curr->get_c();
     int m = c->m, r = c->r;
+    // cerr << "node m=" << m << ", r=" << r << ", pm=" << pm << endl;
+    assert (!isnan(pm));
     if (m == r) {
         if (r == 1) {
             _decode_11(node_curr, i, pm);
@@ -249,23 +270,27 @@ void Decoder_RM_SCL::_decode_leaf_llr(Node<Contents_RM_SCL>* node_curr, int i, d
     } 
 }
 
-void Decoder_RM_SCL::_decode_m0(Node<Contents_RM_SCL>* node_curr, int i, double& pm)
+void Decoder_RM_SCL::_decode_m0(Node<Contents_RM_SCL>* node_curr, int i, const double& pm)
 {   // repetition code, take both 0 and 1
     // calculate path metric for estimate to 0
     // calculate path metric for estimate to 1
     auto c = node_curr->get_c();
     int m = c->m, N = 1 << m;
+    // cerr << "in m=" << m << ", r=0" << endl;
     vector<double> llr = c->l;
     double pm0 = pm, pm1 = pm;
-    for (int i = 0; i < N; i++) {
-        pm0 = phi(pm0, llr[i], 0);
-        pm1 = phi(pm1, llr[i], 1);
+    // double sum_llr = 0;
+    for (int j = 0; j < N; j++) {
+        // sum_llr += llr[i];
+        pm0 = phi(pm0, llr[j], 0);
+        pm1 = phi(pm1, llr[j], 1);
     }
+    // cerr << "pm0=" << pm0 << ", pm1=" << pm1 << ", decision=" << (sum_llr>0.0 ? 0 : 1) << endl;
     metrics_vec.push_back(make_tuple(node_curr, i, vector(N, 0), pm0));
     metrics_vec.push_back(make_tuple(node_curr, i, vector(N, 1), pm1));
 }
 
-void Decoder_RM_SCL::_decode_11(Node<Contents_RM_SCL>* node_curr, int i, double& pm)
+void Decoder_RM_SCL::_decode_11(Node<Contents_RM_SCL>* node_curr, int i, const double& pm)
 {   // push back all four possiblities: 00, 01, 10, 11
     double pm00 = pm, pm01 = pm, pm10 = pm, pm11 = pm;
     auto c = node_curr->get_c();
@@ -281,7 +306,7 @@ void Decoder_RM_SCL::_decode_11(Node<Contents_RM_SCL>* node_curr, int i, double&
     metrics_vec.push_back(make_tuple(node_curr, i, vector<int>{1,1}, pm11));
 }
 
-void Decoder_RM_SCL::_decode_mm(Node<Contents_RM_SCL>* node_curr, int i, double& pm)
+void Decoder_RM_SCL::_decode_mm(Node<Contents_RM_SCL>* node_curr, int i, const double& pm)
 {
     auto c = node_curr->get_c();
     int m = c->m, N = 1 << m;
@@ -298,6 +323,8 @@ void Decoder_RM_SCL::_decode_mm(Node<Contents_RM_SCL>* node_curr, int i, double&
             pm_min = phi(pm_min, llr[i], tmp[i]); // expect \Delta PM = 0
         }
     }
+    // assert (pm_min == pm);
+    // cerr << "decode_mm " << pm_min << endl;
     metrics_vec.push_back(make_tuple(node_curr, i, tmp, pm_min));
 }
 

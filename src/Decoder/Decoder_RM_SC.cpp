@@ -2,6 +2,8 @@
 #include "Encoder/Encoder_RM.hpp"
 #include <vector>
 #include <iostream>
+#define USE_DUMER
+#define DOWN_TO_M0
 using namespace std;
 
 Decoder_RM_SC::Decoder_RM_SC(const int& m, const int& r, const int& L)
@@ -13,12 +15,15 @@ int Decoder_RM_SC::decode(const double *Y_N, int *X_N, const size_t frame_id)
 {  // recursive decoding down to (1, m) and (m, m)
    int V_K_len = K;
    vector<double> Y_dec_N(N, 0); // TODO: move it to protected attribute
-   vector<double> buf(N, 0);
    vector<int> V_K(K, 0);
+#ifdef USE_DUMER
+   vector<double> buf(N, 0);
    this->_decode_dumer(Y_N, Y_dec_N.data(), V_K.data(), m, r, N, V_K_len, buf.data());
    for (int i = 0; i < N; i++)
-      X_N[i] = (Y_dec_N[i] > 0) ? 1 : 0;
-   // this->_decode_llr(Y_N, X_N, V_K.data(), m, r, N, V_K_len);
+      X_N[i] = (Y_dec_N[i] > 0) ? 0 : 1;
+#else
+   this->_decode_llr(Y_N, X_N, V_K.data(), m, r, N, V_K_len);
+#endif // USE_DUMER
    return 0;
 }
 
@@ -41,25 +46,26 @@ int Decoder_RM_SC::_decode_dumer(const double *Y_N, double *Y_dec_N, int *V_K, c
       return 0; 
    }
 
-   // if (r == 0) {
-   //    V_K_len = 1; // one information bit.
-   //    double p = 0.0;
-   //    for (i = 0; i < N; i++) {
-   //       p += log((1.0 + Y_N[i]) / (1.0 - Y_N[i]));
-   //    }
-   //    if (p > 0.0) {
-   //       V_K[0] = 0;
-   //       for (i = 0; i < N; i++) 
-   //          Y_dec_N[i] = 1.0;
-   //    }
-   //    else {
-   //       V_K[0] = 1;
-   //       for (i = 0; i < N; i++) 
-   //          Y_dec_N[i] = -1.0;
-   //    }
-   //    return 0;
-   // }
-
+#ifdef DOWN_TO_M0
+   if (r == 0) {
+      V_K_len = 1; // one information bit.
+      double p = 0.0;
+      for (i = 0; i < N; i++) {
+         p += log((1.0 + Y_N[i]) / (1.0 - Y_N[i]));
+      }
+      if (p > 0.0) {
+         V_K[0] = 0;
+         for (i = 0; i < N; i++) 
+            Y_dec_N[i] = 1.0;
+      }
+      else {
+         V_K[0] = 1;
+         for (i = 0; i < N; i++) 
+            Y_dec_N[i] = -1.0;
+      }
+      return 0;
+   }
+#else
    if (r == 1) {
       V_K_len = m + 1; // {m\choose 1} + {m\choose 0}
       // TODO: use FHT decoder
@@ -69,6 +75,7 @@ int Decoder_RM_SC::_decode_dumer(const double *Y_N, double *Y_dec_N, int *V_K, c
          Y_dec_N[i] = (double)(1 - (tmp[i] << 1));
       return 0;
    }
+#endif // DOWN_TO_M0
 
    int N_half = N / 2;
    int curr_V_K_len = 0;
@@ -103,8 +110,9 @@ int Decoder_RM_SC::_decode_m1(const double *Y_N, int *V_K, const int& m, const i
    double s1, s2, y1;
    vector<double> Y_list((m+1) * N, 0); 
    for (i = 0; i < N; i++)
-      // Y_list[i] = Y_N[i];
-      Y_list[i] = (1.0 - exp(Y_N[i])) / (1.0 + exp(Y_N[i]));
+      Y_list[i] = Y_N[i];
+      // Y_list[i] = (1.0 - Y_N[i]) / (1.0 + Y_N[i]);
+      // Y_list[i] = (1.0 - exp(Y_N[i])) / (1.0 + exp(Y_N[i]));
    double *Y_1 = Y_list.data(), *Y_2, *Y_3, *Y_4;
    for (N_ = N; N_ >= 2; N_ /= 2) {      // m loops 
       N_half = N_ / 2;

@@ -34,8 +34,19 @@ public:
 
     // TODO: support a probability vector, this should go hand in hand with SIMD
     // void _add_noise(const float *CP, const int *X_N, const int *Y_N, const size_t frame_id);
-    int add_noise(const int* X_N, int *Y_N, const size_t frame_id);
+    int add_noise(const int *X_N, int *Y_N, const size_t frame_id);
 
+};
+
+class Channel_AWGN : Channel_c
+{
+protected:
+    double sigma;
+
+public: 
+    Channel_AWGN(const int N, double sigma, const int seed = 0);
+    virtual ~Channel_AWGN() = default;
+    int add_noise(const double *X_N, double* Y_N, const size_t frame_id);
 };
 
 class Channel_q // classical, has codeword

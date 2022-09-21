@@ -85,18 +85,19 @@ int simulation() {
     // each time a decoding failure occurred, 
     // we checked whether the decoded codeword was more likely than the transmitted codeword.
     // If so, then the optimal ML decoder would surely misdecode y as well.
-    int m = 7, r = 1;
+    int m = 7, r = 3;
     Encoder* encoder = new Encoder_RM(m, r);
     Decoder_RM_SC* SC_decoder = new Decoder_RM_SC(m ,r, 1);
-    Decoder_RM_SCL* SCL_decoder = new Decoder_RM_SCL(m ,r, 32);
+    Decoder_RM_SCL* SCL_decoder = new Decoder_RM_SCL(m ,r, 8);
     int K = encoder->get_K(), N = encoder->get_N();
-    double p = 0.0;
+    double p = 0.08;
     cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
     Channel_BSC* chn_bsc = new Channel_BSC(N, p, 42);
     vector<int> info_bits(K, 1);
     vector<int> codeword(N, 0);
     vector<int> noisy_codeword(N, 0);
     vector<double> llr_noisy_codeword(N, 0);
+    vector<double> dumer_noisy_codeword(N, 0);
     vector<int> SC_denoised_codeword(N, 0);
     vector<int> SCL_denoised_codeword(N, 0);
     vector<int> decoded(K, 0);
@@ -106,20 +107,23 @@ int simulation() {
         generate_random(K, info_bits.data());
         encoder->encode(info_bits.data(), codeword.data(), 1);
         ml_flips = chn_bsc->add_noise(codeword.data(), noisy_codeword.data(), 0);
-        for (int i = 0; i < N; i++)
-            // llr_noisy_codeword[i] = noisy_codeword[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
-            llr_noisy_codeword[i] = noisy_codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
-        SC_decoder->decode(llr_noisy_codeword.data(), SC_denoised_codeword.data(), 1);
+        for (int i = 0; i < N; i++) {
+            llr_noisy_codeword[i] = noisy_codeword[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
+            // llr_noisy_codeword[i] = noisy_codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
+            dumer_noisy_codeword[i] = noisy_codeword[i] ? (2*p-1) : (1-2*p);
+        }
+        // SC_decoder->decode(llr_noisy_codeword.data(), SC_denoised_codeword.data(), 1);
+        SC_decoder->decode(dumer_noisy_codeword.data(), SC_denoised_codeword.data(), 1);
         SCL_decoder->decode(llr_noisy_codeword.data(), SCL_denoised_codeword.data(), 1);
         if (!verify(N, codeword.data(), SC_denoised_codeword.data())) {
-        cerr << "codeword is " << endl;
-        for (int i : codeword)
-            cerr << i << " ";
-        cerr << endl;
-        cerr << "denoised codeword result: " << endl;
-        for (int i : SC_denoised_codeword)
-            cerr << i << " ";
-        cerr << endl;
+            // cerr << "codeword is " << endl;
+            // for (int i : codeword)
+            //     cerr << i << " ";
+            // cerr << endl;
+            // cerr << "denoised codeword result: " << endl;
+            // for (int i : SC_denoised_codeword)
+            //     cerr << i << " ";
+            // cerr << endl;
             SC_num_err++;
             // test whether ml decoding will fail
             SC_num_flips = 0;
@@ -139,9 +143,9 @@ int simulation() {
                 if (codeword[i] != SCL_denoised_codeword[i]) 
                     SCL_num_flips++;
             if (SCL_num_flips > SC_num_flips) {
-                cerr << "SCL is worse than SC, SC_num_flips=" << SC_num_flips << ", SCL_num_flips=" << SCL_num_flips << endl;
-                int path_idx = SCL_decoder->is_codeword_in_list(SC_denoised_codeword.data());
-                cerr << "path_idx=" << path_idx << endl;
+                // cerr << "SCL is worse than SC, SC_num_flips=" << SC_num_flips << ", SCL_num_flips=" << SCL_num_flips << endl;
+                // int path_idx = SCL_decoder->is_codeword_in_list(SC_denoised_codeword.data());
+                // cerr << "path_idx=" << path_idx << endl;
             }
         }
     }

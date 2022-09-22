@@ -308,24 +308,56 @@ void Decoder_RM_SCL::_decode_11(Node<Contents_RM_SCL>* node_curr, int i, const d
 
 void Decoder_RM_SCL::_decode_mm(Node<Contents_RM_SCL>* node_curr, int i, const double& pm)
 {
+    // if u = 0, flip to 1, PM = PM - log(1+exp(-lambda)) + log(1+exp(lambda)) = PM + lambda
+    // if u = 1, flip to 0, PM = PM - lambda
     auto c = node_curr->get_c();
     int m = c->m, N = 1 << m;
     vector<double> llr = c->l; 
     vector<int> tmp(N);
     double pm_min = pm;
+    double llr_min = abs(llr[0]), llr_snd_min = abs(llr[0]), llr_third_min = abs(llr[0]);
+    int min_idx = 0, snd_min_idx = 0, third_min_idx = 0;
+    double l, l_abs;
     // temporarily only take 1 instead of 4. TODO: take 4
     for (int i = 0; i < N; i++) {
-        if (llr[i] > 0) {
+        l = llr[i];
+        if (l > 0) {
             tmp[i] = 0;
-            pm_min = phi(pm_min, llr[i], tmp[i]); // expect \Delta PM = 0
+            pm_min = phi(pm_min, l, tmp[i]); // expect \Delta PM = 0
         } else {
             tmp[i] = 1;
-            pm_min = phi(pm_min, llr[i], tmp[i]); // expect \Delta PM = 0
+            pm_min = phi(pm_min, l, tmp[i]); // expect \Delta PM = 0
         }
+        l_abs = abs(l);
+        if (l_abs < llr_min) {
+            llr_third_min = llr_snd_min; third_min_idx = snd_min_idx;
+            llr_snd_min = llr_min; snd_min_idx = min_idx;
+            llr_min = l_abs; min_idx = i;
+        } else if (l_abs < llr_snd_min) {
+            llr_third_min = llr_snd_min; third_min_idx = snd_min_idx;
+            llr_snd_min = l_abs; snd_min_idx = i;
+        } else if (l_abs < llr_third_min) {
+            llr_third_min = l_abs; third_min_idx = i;
+        }
+    }
+    vector<int> snd_best(tmp); double pm_snd_min = pm_min;
+    snd_best[min_idx] = !snd_best[min_idx]; pm_snd_min += llr_min;
+    vector<int> third_best(tmp); double pm_third_min = pm_min;
+    third_best[snd_min_idx] = !third_best[snd_min_idx]; pm_third_min += llr_snd_min;
+    vector<int> fourth_best(tmp); double pm_fourth_min = pm_min;
+    if (llr_min + llr_snd_min < llr_third_min) {
+        fourth_best[min_idx] = !fourth_best[min_idx]; fourth_best[snd_min_idx] = !fourth_best[snd_min_idx];
+        pm_fourth_min += llr_min + llr_snd_min;
+    } else {
+        fourth_best[third_min_idx] = !fourth_best[third_min_idx];
+        pm_fourth_min += llr_third_min;
     }
     // assert (pm_min == pm);
     // cerr << "decode_mm " << pm_min << endl;
     metrics_vec.push_back(make_tuple(node_curr, i, tmp, pm_min));
+    metrics_vec.push_back(make_tuple(node_curr, i, snd_best, pm_snd_min));
+    metrics_vec.push_back(make_tuple(node_curr, i, third_best, pm_third_min));
+    metrics_vec.push_back(make_tuple(node_curr, i, fourth_best, pm_fourth_min));
 }
 
 //*************************** TESTS **********************************************

@@ -2,7 +2,7 @@
 #include "Encoder/Encoder_RM.hpp"
 #include <vector>
 #include <iostream>
-#define USE_DUMER
+// #define USE_DUMER
 #define DOWN_TO_M0
 using namespace std;
 

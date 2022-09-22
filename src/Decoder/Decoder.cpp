@@ -1,5 +1,6 @@
 #include "Decoder/Decoder.hpp"
 using namespace std;
+// #define USE_APPROXIMATION
 
 vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> my_lambdas =  {
     [](const vector<double> &LLRs, const vector<int> &bits) -> double
@@ -21,12 +22,15 @@ auto Decoder::lambdas = vector<function<double(const vector<double> &LLRs, const
 void Decoder::f_plus(const double* LLR_fst, const double* LLR_snd, const int size, double* LLR_new)
 {
     for (int i = 0; i < size; i++) {
-        // auto sign = signbit(LLR_fst[i]) ^ signbit(LLR_snd[i]);
-        // auto abs0 = abs(LLR_fst[i]);
-        // auto abs1 = abs(LLR_snd[i]);
-        // auto min = std::min(abs0, abs1);
-        // LLR_new[i] = sign ? -min : min;
+#ifdef USE_APPROXIMATION
+        auto sign = signbit(LLR_fst[i]) ^ signbit(LLR_snd[i]);
+        auto abs0 = abs(LLR_fst[i]);
+        auto abs1 = abs(LLR_snd[i]);
+        auto min = std::min(abs0, abs1);
+        LLR_new[i] = sign ? -min : min;
+#else
         LLR_new[i] = log(exp(LLR_fst[i] + LLR_snd[i]) + 1) - log(exp(LLR_fst[i]) + exp(LLR_snd[i]));
+#endif // USE_APPROXIMATION
     }
 }
 
@@ -46,13 +50,16 @@ double Decoder::phi(const double& mu, const double& lambda, const int& u)
     assert(!isnan(mu));
     assert(!isnan(lambda));
     double new_mu;
-    // if (u == 0 && lambda < 0)
-    //     new_mu = mu - lambda;
-    // else if (u != 0 && lambda > 0)
-    //     new_mu = mu + lambda;
-    // else // if u = [1-sign(lambda)]/2 correct prediction
-    //     new_mu = mu;
+#ifdef USE_APPROXIMATION
+    if (u == 0 && lambda < 0)
+        new_mu = mu - lambda;
+    else if (u != 0 && lambda > 0)
+        new_mu = mu + lambda;
+    else // if u = [1-sign(lambda)]/2 correct prediction
+        new_mu = mu;
+#else
     new_mu = mu + ((u == 0) ? log(1 + exp(-lambda)) : log(1 + exp(lambda)));
     assert(!isnan(new_mu));
+#endif // USE_APPROXIMATION
     return new_mu;
 }

@@ -46,7 +46,7 @@ protected:
 public: 
     Channel_AWGN(const int N, double sigma, const int seed = 0);
     virtual ~Channel_AWGN() = default;
-    int add_noise(const double *X_N, double* Y_N, const size_t frame_id);
+    int add_noise(const int *X_N, double* Y_N, const size_t frame_id);
 };
 
 class Channel_q // classical, has codeword

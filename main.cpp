@@ -49,7 +49,6 @@ int main(int argc, char** argv)
       sources.push_back(argv[i]);
     }
   }
-
   simulation();
   /*
   int m = 10, r = 3;

@@ -87,13 +87,13 @@ int simulation() {
     // each time a decoding failure occurred, 
     // we checked whether the decoded codeword was more likely than the transmitted codeword.
     // If so, then the optimal ML decoder would surely misdecode y as well.
-    int m = 8, r = 2;
+    int m = 8, r = 3;
     Encoder* encoder = new Encoder_RM(m, r);
     Decoder_RM_SC* SC_decoder = new Decoder_RM_SC(m ,r, 1);
-    Decoder_RM_SCL* SCL_decoder = new Decoder_RM_SCL(m ,r, 8);
+    Decoder_RM_SCL* SCL_decoder = new Decoder_RM_SCL(m ,r, 16);
     int K = encoder->get_K(), N = encoder->get_N();
     // double p = 0.04;
-    double db = 2;
+    double db = 3;
     double code_rate = (double)K / N;
     double sigma = 1 / sqrt(2 * code_rate * db2val(db));
     cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
@@ -111,7 +111,7 @@ int simulation() {
     vector<int> SC_denoised_codeword(N, 0);
     vector<int> SCL_denoised_codeword(N, 0);
     vector<int> decoded(K, 0);
-    int num_total = 100, SC_num_err = 0, SCL_num_err = 0, num_ml_failed = 0;
+    int num_total = 10000, SC_num_err = 0, SCL_num_err = 0, num_ml_failed = 0;
     int SC_num_flips = 0, SCL_num_flips = 0, ml_flips=0;
     for (int i = 0; i < num_total; i++) {
         generate_random(K, info_bits.data());

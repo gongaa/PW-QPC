@@ -118,16 +118,17 @@ int Decoder_RM_SCL::decode(const double *Y_N, int* X_N, const size_t frame_id)
     this->active_paths.insert(0);
     for (auto i = 0; i < L; i++) {
         rm_trees[i]->get_root()->get_c()->l = vector<double>(Y_N, Y_N + this->N);
+        this->recursive_compute_llr(i, rm_trees[i]->get_root());
         rm_trees[i]->set_path_metric(0.0);
     }
-    this->recursive_compute_llr(0, rm_trees[0]->get_root());
+    // this->recursive_compute_llr(0, rm_trees[0]->get_root());
     // the active node of each rm_tree is in the same position, but with different content
     while (true) {
         for (int path_idx : active_paths) {
             _decode_leaf_llr(active_nodes[path_idx], path_idx, rm_trees[path_idx]->path_metric); // split nodes
         }
         active_paths.clear();
-        if (partition_and_copy()) break;
+        if (partition_and_copy()) break; // update active_paths
         metrics_vec.clear();
     }
 
@@ -179,12 +180,11 @@ bool Decoder_RM_SCL::partition_and_copy()
         }
         // propagate back LLR to obtain bit estimation and return the node to stop
         auto next_node = recursive_propagate_sums(cur_path_node);
-        if (next_node == nullptr) {
+        if (next_node == nullptr) 
             reach_root = true;
-            continue;
-        }
-        // active_nodes will be updated in this step for each tree
-        recursive_compute_llr(cur_path_idx, next_node);
+        else  
+            // active_nodes will be updated in this step for each tree
+            recursive_compute_llr(cur_path_idx, next_node);
     }
     return reach_root;
 }
@@ -194,6 +194,7 @@ Node<Contents_RM_SCL>* Decoder_RM_SCL::copy_until(Node<Contents_RM_SCL>* node_st
     // return: whether reached or not
     auto c_a = node_a->get_contents();
     auto c_b = node_b->get_contents();
+    c_b->l = c_a->l;
     auto children_a = node_a->get_children();
     auto children_b = node_b->get_children();
     if (node_a->is_root()) {
@@ -204,7 +205,7 @@ Node<Contents_RM_SCL>* Decoder_RM_SCL::copy_until(Node<Contents_RM_SCL>* node_st
     } else if (node_a->is_leaf()) {
         if (node_a == node_stop) return node_b;
         else {
-            c_b->l = c_a->l;
+            // c_b->l = c_a->l;
             c_b->s = c_a->s;
             return nullptr;
         }
@@ -217,7 +218,7 @@ Node<Contents_RM_SCL>* Decoder_RM_SCL::copy_until(Node<Contents_RM_SCL>* node_st
         }
         if (node_stop == node_a) return node_b; 
         else {
-            c_b->l = c_a->l;
+            // c_b->l = c_a->l;
             c_b->s = c_a->s;
             return nullptr;
         }
@@ -241,10 +242,10 @@ Node<Contents_RM_SCL>* Decoder_RM_SCL::recursive_propagate_sums(const Node<Conte
             return right_child;
         } else {                       // if is the right child
             auto left_child = children[0];
-            vector<int> left_s = left_child->get_contents()->s;
-            vector<int> right_s = node_cur->get_contents()->s;
-            copy(right_s.begin(), right_s.end(), p_c->s.begin() + N_half);
-            for (int i = 0; i < N_half; i++) {
+            vector<int> left_s = left_child->get_contents()->s; // v
+            vector<int> right_s = node_cur->get_contents()->s;  // u
+            copy(right_s.begin(), right_s.end(), p_c->s.begin() + N_half); // copy u to (u+v, u)
+            for (int i = 0; i < N_half; i++) { // copy u+v to (u+v, u)
                 p_c->s[i] = left_s[i] ^ right_s[i];
             }
             return recursive_propagate_sums(p); 
@@ -371,7 +372,7 @@ void Decoder_RM_SCL::test_copy_until()
         node_stop = node_stop->get_children()[0];
     auto node_reached = copy_until(node_stop->get_father(), r1, r2);
     auto c_reached = node_reached->get_contents();
-    cerr << "reaced node m=" << c_reached->m << ", r=" << c_reached->r << endl;
+    cerr << "reached node m=" << c_reached->m << ", r=" << c_reached->r << endl;
 
 }
 

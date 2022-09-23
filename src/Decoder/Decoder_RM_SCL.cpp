@@ -194,7 +194,8 @@ Node<Contents_RM_SCL>* Decoder_RM_SCL::copy_until(Node<Contents_RM_SCL>* node_st
     // return: whether reached or not
     auto c_a = node_a->get_contents();
     auto c_b = node_b->get_contents();
-    c_b->l = c_a->l;
+    if (!node_a->is_root())
+        c_b->l = c_a->l;
     auto children_a = node_a->get_children();
     auto children_b = node_b->get_children();
     if (node_a->is_root()) {

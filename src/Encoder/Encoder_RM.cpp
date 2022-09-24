@@ -23,7 +23,7 @@ int Encoder_RM::calculate_K(const int& m, const int& r)
 
 }
 
-int Encoder_RM::encode_mm_code(const int* U_K, int *X_N, int N) // U_K: information vector, X_N: output codeword
+int Encoder_RM::encode_mm_code(const int *U_K, int *X_N, int N) // U_K: information vector, X_N: output codeword
 {   // Encode (m, m) code for BSC (X_N \in {0,1}).
     // Or decode, since the inverse matrix is the same.
     // recursive_encode_mm_code(U_K, X_N, N);
@@ -34,14 +34,8 @@ int Encoder_RM::encode_mm_code(const int* U_K, int *X_N, int N) // U_K: informat
         for (auto j = 0; j < N; j += 2 * k)
             for (auto i = 0; i < k; i++)
                 X_N[j + i] = X_N[j + i] ^ X_N[k + j + i];
-    // TODO: test that they are equal 
-    // vector<int> test_X_N(N);
-    // recursive_encode_mm_code(U_K, test_X_N.data(), N);
-    // for (int i = 0; i < N; i++) {
-    //     if (X_N[i] != test_X_N[i])
-    //         std::cerr << "light encode failed" << endl;
-    // }
-    // std::cerr << "light encoder succeeded" << endl;
+    // the above code has the same effect as:
+    // recursive_encode_mm_code(U_K, X_N, N);
     return N;
 
 }
@@ -82,4 +76,37 @@ int Encoder_RM::_encode(const int *U_K, int *X_N, int m, int r)
     for (int i = 0; i < N_half; i++)
         X_N[i] ^= X_N[i + N_half]; // after bit reversal, get Plotkin (u, u+v)
     return K_v + K_u;
+}
+
+bool Encoder_RM::is_codeword(const int *X_N, int m, int r)
+{   // (u+v, u) where u\in RM(m-1, r), v\in RM(m-1, r-1)
+    int N = 1 << m;
+    vector<int> X_N_tmp(X_N, X_N + N);
+    return _is_codeword(X_N_tmp.data(), m, r);
+}
+
+bool Encoder_RM::_is_codeword(int *X_N, int m, int r)
+{
+    cerr << "m=" << m << ", r=" << r << endl;
+    if (m == r) return true;
+    int N = 1 << m, N_half = N >> 1;
+    if (r == 0) return std::equal(X_N + 1, X_N + N, X_N);
+    if (!_is_codeword(X_N + N_half, m-1, r)) return false;
+    cerr << "before folding" << endl;
+    for (int i = 0; i < N; i++) cerr << X_N[i] << " ";
+    std::transform(X_N, X_N + N_half, X_N + N_half,
+               X_N, std::bit_xor<bool>());
+    cerr << endl << "after folding" << endl;
+    for (int i = 0; i < N; i++) cerr << X_N[i] << " ";
+    return _is_codeword(X_N, m-1, r-1); 
+}
+
+bool Encoder_RM::is_logical(const int *X_N, int m, int r1, int r2)
+{
+    assert (r1 > r2);
+    int N = 1 << m;
+    vector<int> X_N_tmp(X_N, X_N + N);
+    if (!_is_codeword(X_N_tmp.data(), m, r1)) return false;
+    copy(X_N, X_N + N, X_N_tmp.data());
+    return !_is_codeword(X_N_tmp.data(), m, r2);
 }

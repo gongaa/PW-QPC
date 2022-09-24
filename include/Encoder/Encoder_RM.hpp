@@ -19,7 +19,9 @@ public:
     static void recursive_encode_mm_code(const int* U_K, int *X_N, int N);
     static int _encode(const int *U_K, int *X_N, int m, int r); // internal function called by encode()
 
-    bool is_codeword(const int *X_N);
+    static bool is_codeword(const int *X_N, int m, int r);
+    static bool _is_codeword(int *X_N, int m, int r);
+    static bool is_logical(const int *X_N, int m, int r1, int r2);
 };
       
 #endif

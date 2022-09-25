@@ -60,14 +60,14 @@ public:
     explicit Channel_q(const int N, Event_generator_unitary* event_generator, const int seed = 0);
     virtual ~Channel_q() = default;
     // Channel_q* clone() const;
-    virtual void set_seed(const int seed);
+    void set_seed(const int seed);
 
     // TODO: support a probability vector, this should go hand in hand with SIMD
-    // virtual void _add_noise(const float *CP, int *Y1_N, int *Y2_N, const size_t frame_id);
-    virtual void add_noise(int *Y1_N, int *Y2_N, const size_t frame_id);
+    // always add to the all zero codeword
+    void add_noise(int *Y1_N, int *Y2_N, const size_t frame_id);
 };
 
-class Channel_depolarize_q : Channel_q
+class Channel_depolarize_q : public Channel_q
 {
 protected:
     float p;
@@ -81,7 +81,7 @@ public:
     }
 };
 
-class Channel_BSC_q : Channel_q
+class Channel_BSC_q : public Channel_q
 {
 protected:
     float px, pz;

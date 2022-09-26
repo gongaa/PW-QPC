@@ -50,37 +50,5 @@ int main(int argc, char** argv)
     }
   }
   simulation_RM_CSS();
-  /*
-  int m = 13, r = 7;
-  Decoder_RM_SCL* decoder = new Decoder_RM_SCL(m ,r, 10);
-  // decoder->test_copy_until();
-  // decoder->test_assign_path_idx();
-  Encoder* encoder = new Encoder_RM(m, r);
-  // Decoder* decoder = new Decoder_RM_SC(m ,r, 1);
-  int K = encoder->get_K(), N = encoder->get_N();
-  cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
-  Channel_BSC* chn_bsc = new Channel_BSC(N, 1e-2, 42);
-  vector<int> info_bits(K, 1);
-  vector<int> codeword(N, 0);
-  generate_random(K, info_bits.data());
-  vector<int> noisy_codeword(N, 0);
-  vector<int> denoised_codeword(N, 0);
-  vector<int> decoded(K, 0);
-  encoder->encode(info_bits.data(), codeword.data(), 1);
-  */
-  // cerr << "codeword is " << endl;
-  // for (int i : codeword)
-  //   cerr << i << " ";
-  // cerr << endl;
-
-  // cerr << "flipped codeword is" << endl;
-  // for (int i : flipped_codeword)
-  //   cerr << i << " ";
-  // cerr << endl;
-  // cerr << "denoised codeword result: " << endl;
-  // for (int i : denoised_codeword)
-  //   cerr << i << " ";
-  // cerr << endl;
-  // if (verify(K, info_bits.data(), decoded.data()))
   return 0;
 }

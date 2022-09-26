@@ -6,6 +6,9 @@
 #include "Decoder/Decoder_RM_SCL.hpp"
 #include "Channel/Channel.hpp"
 // #define CHN_AWGN
+// #define IS_VERBOSE
+// #define VANILLA_LIST_DECODING
+#define DEGENERACY_LIST_DECODING
 using namespace std;
 
 // generate codeword of information bits
@@ -60,31 +63,49 @@ void verify_RM_is_codeword() {
 
 
 // check both dumer SC and LLR SC give the same result under no noise
-void test_dumer_llr(bool no_noise = true) {
+void test_dumer_llr() {
     int m = 20, r = 5;
     Encoder* encoder = new Encoder_RM(m, r);
     Decoder* decoder = new Decoder_RM_SC(m ,r, 1);
     int K = encoder->get_K(), N = encoder->get_N();
     cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
+#ifdef CHN_AWGN
+    double db = 4;
+    double code_rate = (double)K / N;
+    double sigma = 1 / sqrt(2 * code_rate * db2val(db));
+    cerr << "sigma=" << sigma << ", db=" << db << endl;
+    Channel_AWGN* chn_awgn = new Channel_AWGN(N, sigma, 42);
+#else
+    double p = 0.07;
+    cerr << "p=" << p << endl;
+    Channel_BSC* chn_bsc = new Channel_BSC(N, p, 42);
+#endif // USE_AWGN
     vector<int> info_bits(K, 1);
     vector<int> codeword(N, 0);
     generate_random(K, info_bits.data());
-    vector<double> noisy_codeword(N, 0);
+    vector<int> noisy_codeword(N, 0);
+    vector<double> llr_noisy_codeword(N, 0);
+    vector<double> dumer_noisy_codeword(N, 0);
     vector<int> decoded(K, 0);
+    vector<int> denoised_codeword(N, 0);
+    int num_total = 10000, SC_num_err = 0, num_ml_failed = 0;
+    int SC_num_flips = 0, SCL_num_flips = 0, ml_flips=0;
     encoder->encode(info_bits.data(), codeword.data(), 1);
-    // cerr << "codeword is ";
-    // for (int i : codeword)
-    //   cerr << i << " ";
-    // cerr << endl;
-    if (no_noise)
+#ifdef CHN_AWGN
+    chn_awgn->add_noise(codeword.data(), llr_noisy_codeword.data(), 0);
+#else
+    ml_flips = chn_bsc->add_noise(codeword.data(), noisy_codeword.data(), 0);
+    if (p == 0.0)
         for (int i = 0; i < N; i++)
             noisy_codeword[i] = codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
-    decoder->decode(noisy_codeword.data(), decoded.data(), 1);
-    // cerr << "decoded result: ";
-    // for (int i : decoded)
-    //   cerr << i << " ";
-    // cerr << endl;
-    if (verify(K, info_bits.data(), decoded.data()))
+    else 
+        for (int i = 0; i < N; i++) {
+            llr_noisy_codeword[i] = noisy_codeword[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
+            dumer_noisy_codeword[i] = noisy_codeword[i] ? (2*p-1) : (1-2*p);
+        }
+#endif // USE_AWGN
+    decoder->decode(llr_noisy_codeword.data(), denoised_codeword.data(), 1);
+    if (verify(N, codeword.data(), denoised_codeword.data()))
         cerr << "decode successfully" << endl;
     else 
         cerr << "decoding failed" << endl;
@@ -143,22 +164,12 @@ int simulation_RM_SCL() {
         for (int i = 0; i < N; i++) {
             llr_noisy_codeword[i] = noisy_codeword[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
             // llr_noisy_codeword[i] = noisy_codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
-            // dumer_noisy_codeword[i] = noisy_codeword[i] ? (2*p-1) : (1-2*p);
         }
 #endif // USE_AWGN
         // SC_decoder->decode(llr_noisy_codeword.data(), SC_denoised_codeword.data(), 0);
-        // SC_decoder->decode(dumer_noisy_codeword.data(), SC_denoised_codeword.data(), 0);
         SCL_decoder->decode(llr_noisy_codeword.data(), SCL_denoised_codeword.data(), 0);
-        /*
+#ifdef IS_VERBOSE
         if (!verify(N, codeword.data(), SC_denoised_codeword.data())) {
-            // cerr << "codeword is " << endl;
-            // for (int i : codeword)
-            //     cerr << i << " ";
-            // cerr << endl;
-            // cerr << "denoised codeword result: " << endl;
-            // for (int i : SC_denoised_codeword)
-            //     cerr << i << " ";
-            // cerr << endl;
             SC_num_err++;
             // test whether ml decoding will fail
             SC_num_flips = 0;
@@ -170,11 +181,11 @@ int simulation_RM_SCL() {
                 num_ml_failed++;
             }
         }
-        */
+#endif // IS_VERBOSE
         if (!verify(N, codeword.data(), SCL_denoised_codeword.data())) {
             SCL_num_err++;
+#ifdef IS_VERBOSE
             // test whether ml decoding will fail
-            /*
             SCL_num_flips = 0;
             for (int i = 0; i < N; i++)
                 if (codeword[i] != SCL_denoised_codeword[i]) 
@@ -184,7 +195,7 @@ int simulation_RM_SCL() {
                 int path_idx = SCL_decoder->is_codeword_in_list(SC_denoised_codeword.data());
                 cerr << "path_idx=" << path_idx << endl;
             }
-            */
+#endif // IS_VERBOSE
         }
     }
     cerr << "SC_num_err: " << SC_num_err << ". SCL_num_err: " << SCL_num_err << endl;
@@ -195,7 +206,7 @@ int simulation_RM_SCL() {
 }
 
 int simulation_RM_CSS() {
-    int m = 7, rx = 3, rz = 3, list_size = 16;
+    int m = 8, rx = 4, rz = 4, list_size = 16;
     Encoder_RM_CSS* encoder = new Encoder_RM_CSS(m, rx, rz);
     // if two X-type errors differ by a codeword of RM(m, rz)
     // they will have the same syndrome
@@ -205,35 +216,57 @@ int simulation_RM_CSS() {
     cerr << "For m=" << m << ", rx="<< rx << ", rz=" << rz
          << ", K=" << K << ", N=" << N << endl;
     cerr << "List size=" << list_size << endl;
-    double px = 0.7, pz = 0;
+    double px = 0.1, pz = 0;
     cerr << "px=" << px << ", pz=" << pz << endl;
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, px, pz, 42);
     // ideally, the noise_X should be decoded to the all-zero codeword
     // but it also can be any codeword of RM(m, rz)
     vector<int> noise_X(N, 0);
+    vector<int> noise_X_diff(N, 0);
     vector<int> noise_Z(N, 0);
     vector<double> llr_noisy_codeword_X(N, 0);
     vector<double> llr_noisy_codeword_Z(N, 0);
     vector<int> SCL_denoised_codeword_X(N, 0);
-    vector<int> SCL_denoised_codeword_Z(N, 0);
-    int num_total = 10000, SCL_num_err = 0, num_ml_failed = 0;
+    vector<vector<int>> X_list(list_size, vector<int>(N, 0));
+    vector<double> pm_X_list(list_size, 0.0);
+    // vector<int> SCL_denoised_codeword_Z(N, 0);
+    // vector<vector<int>> Z_list(list_size, vector<int>(N, 0));
+    vector<double> pm_Z_list(list_size, 0.0);
+    int num_total = 1000, SCL_num_X_err = 0, SCL_num_Z_err = 0, num_ml_failed = 0;
+    int num_X_list_err = 0, SCL_num_X_err_deg = 0;
     int SC_num_flips = 0, SCL_num_flips = 0, ml_flips=0;
     for (int i = 0; i < num_total; i++) {
         chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
-        cerr << "noise_X: ";
-        for (int i : noise_X) cerr << i << " ";
-        cerr << endl << "noise_Z: ";
-        for (int i : noise_Z) cerr << i << " ";
-        cerr << endl;
         for (int i = 0; i < N; i++) {
             llr_noisy_codeword_X[i] = noise_X[i] ? -log((1-px)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
-            llr_noisy_codeword_Z[i] = noise_Z[i] ? -log((1-pz)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
+            // llr_noisy_codeword_Z[i] = noise_Z[i] ? -log((1-pz)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
         }
         SCL_decoder_X->decode(llr_noisy_codeword_X.data(), SCL_denoised_codeword_X.data(), 0);
-        SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
+        // SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
+        // SCL_decoder_Z->copy_codeword_list(Z_list, pm_Z_list);
+#ifdef VANILLA_LIST_DECODING
+        if (!std::all_of(SCL_denoised_codeword_X.begin(), SCL_denoised_codeword_X.end(), [](int i) { return i==0; })) 
+            SCL_num_X_err++;
+        if (encoder->is_logical_X(SCL_denoised_codeword_X.data()))
+            SCL_num_X_err_deg++;
+#elif defined DEGENERACY_LIST_DECODING
+        vector<bool> is_classified(list_size, false);
+        SCL_decoder_X->copy_codeword_list(X_list, pm_X_list);
+        for (int i = 0; i < list_size; i++) {
+            std::transform(noise_X.begin(), noise_X.end(), X_list[i].begin(), noise_X_diff.begin(), 
+            [](bool e1, bool e2) { return e1 ^ e2; });
+            if (encoder->is_logical_X(noise_X_diff.data())) {
+                cerr << "is in RM(8,4)/RM(8,3)" << endl;
+                num_X_list_err++;
+            }
+        }
+#endif
     }
-    cerr << "SCL_num_err: " << SCL_num_err << endl;
-    cerr << "SCL Frame Error Rate: " << (double)SCL_num_err / num_total << endl;
-    cerr << "ML decoding failed rate: " << (double)num_ml_failed / num_total << endl;
+    cerr << "SCL_num_err: " << SCL_num_X_err << endl;
+    cerr << "SCL_num_err_deg: " << SCL_num_X_err_deg << endl;
+    cerr << "SCL Frame Error Rate: " << (double)SCL_num_X_err / num_total << endl;
+    // cerr << "num_X_list_err: " << num_X_list_err << endl;
+    // cerr << "average SCL Frame List Error Rate: " << (double)num_X_list_err / num_total << endl;
+    // cerr << "ML decoding failed rate: " << (double)num_ml_failed / num_total << endl;
     return 0;
 }

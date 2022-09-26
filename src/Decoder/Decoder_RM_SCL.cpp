@@ -93,6 +93,17 @@ int Decoder_RM_SCL::is_codeword_in_list(const int* X_N)
     return path_idx_same;
 }
 
+void Decoder_RM_SCL::copy_codeword_list(vector<vector<int>>& c_list, vector<double>& pm_list)
+{
+    int i = 0;
+    for (int path : active_paths) {
+        const int* X = rm_trees[path]->get_root()->get_contents()->s.data();
+        copy(X, X+N, c_list[i].data());
+        pm_list[i] = rm_trees[path]->get_path_metric(); 
+        ++i;
+    }
+}
+
 void Decoder_RM_SCL::recursive_compute_llr(int path_idx, Node<Contents_RM_SCL>* node_curr)
 {
     if (node_curr->is_leaf()) {

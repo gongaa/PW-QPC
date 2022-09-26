@@ -56,6 +56,7 @@ int Channel_AWGN::add_noise(const int *X_N, double *Y_N, const size_t frame_id)
     }
     // dec_input <-- 2 * c_out / sg^2.
     for (int i = 0; i < N; i++) Y_N[i] = -Y_N[i] * 2 / (sigma * sigma);
+    return 0;
 }
 
 Channel_BSC::Channel_BSC(const int N, float p, const int seed)

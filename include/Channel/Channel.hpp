@@ -89,7 +89,7 @@ protected:
 
 public:
     Channel_BSC_q(const int N, float px, float pz, const int seed = 0) 
-    : Channel_q(N, new Event_generator_unitary(seed, px*(1-pz), (1-px)*(1-pz), (1-px)*pz)), px(px), pz(pz) {}
+    : Channel_q(N, new Event_generator_unitary(seed, px, px*pz, pz)), px(px), pz(pz) {}
 };
 
 #endif /* CHANNEL_HPP */

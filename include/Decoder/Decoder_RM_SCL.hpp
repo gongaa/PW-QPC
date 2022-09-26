@@ -48,6 +48,7 @@ public:
     void test_copy_until();
     void test_assign_path_idx();
     int is_codeword_in_list(const int* X_N);
+    void copy_codeword_list(vector<vector<int>>& codeword_list, vector<double>& pm_list);
 
 protected:
     void _decode_leaf_llr(Node<Contents_RM_SCL>* node_curr, int i, const double& pm); 

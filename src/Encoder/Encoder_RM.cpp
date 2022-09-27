@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <iostream>
+#include <cassert>
 
 #include "Encoder/Encoder_RM.hpp"
 using namespace std;

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cmath>
+#include <functional>
 using namespace std;
  
 class Decoder
@@ -12,7 +13,7 @@ public:
     // vector<double> Y_N;
     // static: let different decoders share the lambdas
     // lambdas are LLR update rules
-    static vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> lambdas;
+    // static vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> lambdas;
 
 public:
     explicit Decoder(const int K, const int N);

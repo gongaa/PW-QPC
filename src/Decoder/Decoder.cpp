@@ -1,4 +1,5 @@
 #include "Decoder/Decoder.hpp"
+#include <cassert>
 using namespace std;
 // #define USE_APPROXIMATION
 
@@ -17,7 +18,7 @@ vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> my
     }
 };
 
-auto Decoder::lambdas = vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>>(my_lambdas);
+// auto Decoder::lambdas = vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>>(my_lambdas);
 
 void Decoder::f_plus(const double* LLR_fst, const double* LLR_snd, const int size, double* LLR_new)
 {

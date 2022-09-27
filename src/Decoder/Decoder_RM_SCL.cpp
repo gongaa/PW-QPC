@@ -14,6 +14,10 @@ List as a tree.
 #include "Decoder/Decoder_RM_SCL.hpp"
 #include <iostream>
 #include <numeric>
+#include <algorithm>
+#include <set>
+#include <tuple>
+#include <cassert>
 using namespace std;
 
 Decoder_RM_SCL::Decoder_RM_SCL(const int& m, const int& r, const int& L) 
@@ -33,7 +37,6 @@ void Decoder_RM_SCL::recursive_allocate_nodes_contents(Node<Contents_RM_SCL>* no
     auto children = node_curr->get_children();
 	if (!node_curr->is_leaf())
 	{
-        // assert(children.size() == 2);
 		const int new_vector_size = vector_size / 2;
 		this->recursive_allocate_nodes_contents(children[0], new_vector_size, m-1, r-1);
 		this->recursive_allocate_nodes_contents(children[1], new_vector_size, m-1, r);
@@ -83,10 +86,10 @@ int Decoder_RM_SCL::is_codeword_in_list(const int* X_N)
                 // break;
             }
         }
-        cerr << "path_idx=" << path << ", metric=" << rm_trees[path]->get_path_metric() << ", num_flips=" << num_flips << endl;
+        // cerr << "path_idx=" << path << ", metric=" << rm_trees[path]->get_path_metric() << ", num_flips=" << num_flips << endl;
         if (is_same) {
             path_idx_same = path;
-            cerr << "codeword matches, path_idx=" << path_idx_same << endl;
+            // cerr << "codeword matches, path_idx=" << path_idx_same << endl;
             // return path;
         }
     }

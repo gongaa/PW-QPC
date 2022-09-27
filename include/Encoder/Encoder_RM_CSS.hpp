@@ -12,7 +12,9 @@ public:
     int get_K() { return K; }
     int get_N() { return N; }
     bool is_logical_X(const int *X_N);
+    bool is_X_stabilizer(const int *X_N);
     bool is_logical_Z(const int *X_N);
+    bool is_Z_stabilizer(const int *X_N);
 };
 
 #endif // ENCODER_RM_CSS_HPP_

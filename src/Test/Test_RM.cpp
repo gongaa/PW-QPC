@@ -118,6 +118,24 @@ void test_copy_until() {
     decoder->test_copy_until();
 }
 
+void test_is_logical() {
+    int m = 8, r = 5;
+    Encoder* encoder = new Encoder_RM(m, r);
+    int K = encoder->get_K(), N = encoder->get_N();
+    vector<int> info_bits(K, 1);
+    vector<int> codeword(N, 0);
+    int num_total = 10000, SC_num_err = 0, SCL_num_err = 0, num_ml_failed = 0;
+
+    for (int i = 0; i < num_total; i++) {
+        generate_random(K, info_bits.data());
+        encoder->encode(info_bits.data(), codeword.data(), 1);
+        if (Encoder_RM::is_logical(codeword.data(), m, r, r-1)) {
+            for (int i : codeword) cerr << i << " ";
+            cerr << endl;
+        }
+    }
+}
+
 static double db2val(double x) {
   return exp(log(10.0) * x / 10.0);
 }
@@ -206,23 +224,24 @@ int simulation_RM_SCL() {
 }
 
 int simulation_RM_CSS() {
-    int m = 8, rx = 4, rz = 4, list_size = 16;
+    int m = 6, rx = 3, rz = 3, list_size = 64;
     Encoder_RM_CSS* encoder = new Encoder_RM_CSS(m, rx, rz);
     // if two X-type errors differ by a codeword of RM(m, rz)
     // they will have the same syndrome
-    Decoder_RM_SCL* SCL_decoder_X = new Decoder_RM_SCL(m ,rz, list_size);
-    Decoder_RM_SCL* SCL_decoder_Z = new Decoder_RM_SCL(m ,rx, list_size);
+    Decoder_RM_SCL* SCL_decoder_X = new Decoder_RM_SCL(m, rz, list_size);
+    Decoder_RM_SCL* SCL_decoder_Z = new Decoder_RM_SCL(m, rx, list_size);
     int K = encoder->get_K(), N = encoder->get_N();
     cerr << "For m=" << m << ", rx="<< rx << ", rz=" << rz
          << ", K=" << K << ", N=" << N << endl;
     cerr << "List size=" << list_size << endl;
-    double px = 0.1, pz = 0;
+    double px = 0.05, pz = 0;
     cerr << "px=" << px << ", pz=" << pz << endl;
-    Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, px, pz, 42);
+    Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, px, pz, 41);
     // ideally, the noise_X should be decoded to the all-zero codeword
     // but it also can be any codeword of RM(m, rz)
     vector<int> noise_X(N, 0);
     vector<int> noise_X_diff(N, 0);
+    vector<int> desired_X(N, 0);
     vector<int> noise_Z(N, 0);
     vector<double> llr_noisy_codeword_X(N, 0);
     vector<double> llr_noisy_codeword_Z(N, 0);
@@ -231,39 +250,70 @@ int simulation_RM_CSS() {
     vector<double> pm_X_list(list_size, 0.0);
     // vector<int> SCL_denoised_codeword_Z(N, 0);
     // vector<vector<int>> Z_list(list_size, vector<int>(N, 0));
-    vector<double> pm_Z_list(list_size, 0.0);
-    int num_total = 1000, SCL_num_X_err = 0, SCL_num_Z_err = 0, num_ml_failed = 0;
-    int num_X_list_err = 0, SCL_num_X_err_deg = 0;
-    int SC_num_flips = 0, SCL_num_flips = 0, ml_flips=0;
-    for (int i = 0; i < num_total; i++) {
+    // vector<double> pm_Z_list(list_size, 0.0);
+    vector<vector<int>> equiv_class;
+    bool is_in_one_class; int largest_class_size; int *largest_class;
+    int num_total = 1000, SCL_num_X_err = 0, SCL_num_Z_err = 0;
+    int num_X_list_err = 0, SCL_num_X_err_deg = 0, SCL_num_X_err_deg_list = 0;
+    int num_Z_list_err = 0, SCL_num_Z_err_deg = 0, SCL_num_Z_err_deg_list = 0;
+    for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
         chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
         for (int i = 0; i < N; i++) {
             llr_noisy_codeword_X[i] = noise_X[i] ? -log((1-px)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
             // llr_noisy_codeword_Z[i] = noise_Z[i] ? -log((1-pz)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
         }
         SCL_decoder_X->decode(llr_noisy_codeword_X.data(), SCL_denoised_codeword_X.data(), 0);
+        SCL_decoder_X->copy_codeword_list(X_list, pm_X_list);
         // SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
         // SCL_decoder_Z->copy_codeword_list(Z_list, pm_Z_list);
-#ifdef VANILLA_LIST_DECODING
-        if (!std::all_of(SCL_denoised_codeword_X.begin(), SCL_denoised_codeword_X.end(), [](int i) { return i==0; })) 
+// #ifdef VANILLA_LIST_DECODING
+        cerr << "******* turn " << turn_idx << endl;
+        if (!std::all_of(SCL_denoised_codeword_X.begin(), SCL_denoised_codeword_X.end(), [](int i) { return i==0; })) {
             SCL_num_X_err++;
-        if (encoder->is_logical_X(SCL_denoised_codeword_X.data()))
-            SCL_num_X_err_deg++;
-#elif defined DEGENERACY_LIST_DECODING
-        vector<bool> is_classified(list_size, false);
-        SCL_decoder_X->copy_codeword_list(X_list, pm_X_list);
-        for (int i = 0; i < list_size; i++) {
-            std::transform(noise_X.begin(), noise_X.end(), X_list[i].begin(), noise_X_diff.begin(), 
-            [](bool e1, bool e2) { return e1 ^ e2; });
-            if (encoder->is_logical_X(noise_X_diff.data())) {
-                cerr << "is in RM(8,4)/RM(8,3)" << endl;
-                num_X_list_err++;
+            for (int i = 0; i < list_size; i++) {
+                // if (!encoder->is_logical_X(X_list[i].data())) 
+                if (encoder->is_X_stabilizer(X_list[i].data())) {
+                    cerr << "wrong but idx=" << i << " differs by only a stabilizer" << endl;
+                }
             }
         }
-#endif
+        if (!encoder->is_X_stabilizer(SCL_denoised_codeword_X.data()))
+            SCL_num_X_err_deg++;
+// #elif defined DEGENERACY_LIST_DECODING
+        equiv_class.clear();
+        equiv_class.push_back({0});
+        for (int i = 1; i < list_size; i++) {
+            is_in_one_class = false;
+            for (auto& ec : equiv_class) {
+                std::transform(X_list[ec[0]].begin(), X_list[ec[0]].end(), X_list[i].begin(), noise_X_diff.begin(), 
+                [](bool e1, bool e2) { return e1 ^ e2; });
+                if (encoder->is_X_stabilizer(noise_X_diff.data())) {
+                    ec.push_back(i);
+                    is_in_one_class = true;
+                    break;
+                }
+            }
+            if (!is_in_one_class)
+                equiv_class.push_back({i});
+        }
+        cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
+        largest_class_size = 0;
+        for (auto& ec : equiv_class) {
+            if (ec.size() > largest_class_size) {
+                largest_class_size = ec.size();
+                largest_class = X_list[ec[0]].data();
+            }
+        }
+        cerr << "larget equiv class size " << largest_class_size << endl;
+        if (!encoder->is_X_stabilizer(largest_class))
+            SCL_num_X_err_deg_list++;
+        else
+            cerr << "turn " << turn_idx << " 00....0 is correctly decoded considering degeneracy, largest equiv class size " << largest_class_size << endl;
+// #endif
     }
     cerr << "SCL_num_err: " << SCL_num_X_err << endl;
     cerr << "SCL_num_err_deg: " << SCL_num_X_err_deg << endl;
+    cerr << "SCL_num_err_deg_list: " << SCL_num_X_err_deg_list << endl;
     cerr << "SCL Frame Error Rate: " << (double)SCL_num_X_err / num_total << endl;
     // cerr << "num_X_list_err: " << num_X_list_err << endl;
     // cerr << "average SCL Frame List Error Rate: " << (double)num_X_list_err / num_total << endl;

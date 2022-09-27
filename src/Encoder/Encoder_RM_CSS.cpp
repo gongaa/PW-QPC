@@ -31,9 +31,19 @@ bool Encoder_RM_CSS::is_logical_X(const int *X_N)
     return Encoder_RM::is_logical(X_N, m, rz, m-rx-1);
 }
 
+bool Encoder_RM_CSS::is_X_stabilizer(const int *X_N)
+{
+    return Encoder_RM::is_codeword(X_N, m, m-rx-1);
+}
+
 // the logical Z's are the quotient
 // RM(m, rx) / RM(m, m-rz-1)
 bool Encoder_RM_CSS::is_logical_Z(const int *X_N)
 {
     return Encoder_RM::is_logical(X_N, m, rx, m-rz-1);
+}
+
+bool Encoder_RM_CSS::is_Z_stabilizer(const int *X_N)
+{
+    return Encoder_RM::is_codeword(X_N, m, m-rz-1);
 }

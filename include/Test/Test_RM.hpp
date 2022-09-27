@@ -17,6 +17,8 @@ bool verify(int K, int *U_K_1, int *U_K_2);
 // check RM is_codeword
 void verify_RM_is_codeword();
 
+void test_is_logical();
+
 int simulation_RM_SCL();
 
 int simulation_RM_CSS();

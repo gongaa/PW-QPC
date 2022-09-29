@@ -21,6 +21,6 @@ void test_is_logical();
 
 int simulation_RM_SCL();
 
-int simulation_RM_CSS();
+int simulation_RM_CSS(int m, int rx, int rz, int list_size);
 
 #endif

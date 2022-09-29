@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"
@@ -31,24 +32,27 @@ int main(int argc, char** argv)
   // write a simple parser for selecting number of threads
   // which code to use
   // which channel to use and what's their parameters.
-  vector <string> sources;
-  string destination;
+  int m, rx, rz, list_size;
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
     if ((arg == "-h") || (arg == "--help")) {
       show_usage(argv[0]);
       return 0;
-    } else if ((arg == "-d") || (arg == "--destination")) {
-      if (i + 1 < argc) {
-        destination = argv[i++];
-      } else {
-        cerr << "--destination option requires one argument." << endl;
-        return 1;
-      }
+    } 
+    std::istringstream iss( argv[++i] );
+    if (arg == "-m") {
+      iss >> m;
+    } else if (arg == "-rx") {
+      iss >> rx;
+    } else if (arg == "-rz") {
+      iss >> rz;
+    } else if ((arg == "-l") || (arg == "--list_size")) {
+      iss >> list_size;
     } else {
-      sources.push_back(argv[i]);
+      cerr << "argument not supported" << endl;
+      return 1;
     }
   }
-  simulation_RM_CSS();
+  simulation_RM_CSS(m, rx, rz, list_size);
   return 0;
 }

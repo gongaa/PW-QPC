@@ -224,8 +224,8 @@ int simulation_RM_SCL() {
     return 0;
 }
 
-int simulation_RM_CSS() {
-    int m = 6, rx = 3, rz = 3, list_size = 64;
+int simulation_RM_CSS(int m, int rx, int rz, int list_size) {
+    // int m = 5, rx = 3, rz = 2, list_size = 16384;
     Encoder_RM_CSS* encoder = new Encoder_RM_CSS(m, rx, rz);
     // if two X-type errors differ by a codeword of RM(m, rz)
     // they will have the same syndrome
@@ -235,7 +235,7 @@ int simulation_RM_CSS() {
     cerr << "For m=" << m << ", rx="<< rx << ", rz=" << rz
          << ", K=" << K << ", N=" << N << endl;
     cerr << "List size=" << list_size << endl;
-    double px = 0.05, pz = 0;
+    double px = 0.08, pz = 0;
     cerr << "px=" << px << ", pz=" << pz << endl;
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, px, pz, 41);
     // ideally, the noise_X should be decoded to the all-zero codeword
@@ -254,8 +254,8 @@ int simulation_RM_CSS() {
     // vector<double> pm_Z_list(list_size, 0.0);
     vector<vector<int>> equiv_class;
     bool is_in_one_class; int largest_class_size; int *largest_class;
-    int num_total = 1000, SCL_num_X_err = 0, SCL_num_Z_err = 0;
-    int num_X_list_err = 0, SCL_num_X_err_deg = 0, SCL_num_X_err_deg_list = 0;
+    int num_total = 100, SCL_num_X_err = 0, SCL_num_Z_err = 0;
+    int SCL_num_X_list_0_err = 0, SCL_num_X_err_deg = 0, SCL_num_X_err_deg_list = 0;
     int num_Z_list_err = 0, SCL_num_Z_err_deg = 0, SCL_num_Z_err_deg_list = 0;
     for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
         chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
@@ -265,6 +265,7 @@ int simulation_RM_CSS() {
         }
         SCL_decoder_X->decode(llr_noisy_codeword_X.data(), SCL_denoised_codeword_X.data(), 0);
         SCL_decoder_X->copy_codeword_list(X_list, pm_X_list);
+        // for (double pm : pm_X_list) cerr << pm << " ";
         // SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
         // SCL_decoder_Z->copy_codeword_list(Z_list, pm_Z_list);
 // #ifdef VANILLA_LIST_DECODING
@@ -274,12 +275,14 @@ int simulation_RM_CSS() {
             for (int i = 0; i < list_size; i++) {
                 // if (!encoder->is_logical_X(X_list[i].data())) 
                 if (encoder->is_X_stabilizer(X_list[i].data())) {
-                    cerr << "wrong but idx=" << i << " differs by only a stabilizer" << endl;
+                    // cerr << "wrong but idx=" << i << " differs by only a stabilizer" << endl;
                 }
             }
         }
         if (!encoder->is_X_stabilizer(SCL_denoised_codeword_X.data()))
             SCL_num_X_err_deg++;
+        if (!encoder->is_X_stabilizer(X_list[0].data()))
+            SCL_num_X_list_0_err++;
 // #elif defined DEGENERACY_LIST_DECODING
         equiv_class.clear();
         equiv_class.push_back({0});
@@ -297,22 +300,26 @@ int simulation_RM_CSS() {
             if (!is_in_one_class)
                 equiv_class.push_back({i});
         }
-        cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
+        // cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
         largest_class_size = 0;
+        cerr << "classes sizes are ";
         for (auto& ec : equiv_class) {
+            cerr << ec.size() << " ";
             if (ec.size() > largest_class_size) {
                 largest_class_size = ec.size();
                 largest_class = X_list[ec[0]].data();
             }
         }
-        cerr << "larget equiv class size " << largest_class_size << endl;
+        cerr << endl;
+        // cerr << "larget equiv class size " << largest_class_size << endl;
         if (!encoder->is_X_stabilizer(largest_class))
             SCL_num_X_err_deg_list++;
-        else
-            cerr << "turn " << turn_idx << " 00....0 is correctly decoded considering degeneracy, largest equiv class size " << largest_class_size << endl;
-// #endif
+        // else
+            // cerr << "turn " << turn_idx << " 00....0 is correctly decoded considering degeneracy, largest equiv class size " << largest_class_size << endl;
+// endif
     }
     cerr << "SCL_num_err: " << SCL_num_X_err << endl;
+    cerr << "SCL_num_X_list_0_err: " << SCL_num_X_list_0_err << endl;
     cerr << "SCL_num_err_deg: " << SCL_num_X_err_deg << endl;
     cerr << "SCL_num_err_deg_list: " << SCL_num_X_err_deg_list << endl;
     cerr << "SCL Frame Error Rate: " << (double)SCL_num_X_err / num_total << endl;

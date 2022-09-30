@@ -1,6 +1,7 @@
 #include <iostream>
 #include <random>
 #include <cassert>
+#include <bits/stdc++.h>
 #include "Test/Test_RM.hpp"
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"
@@ -327,4 +328,71 @@ int simulation_RM_CSS(int m, int rx, int rz, int list_size) {
     // cerr << "average SCL Frame List Error Rate: " << (double)num_X_list_err / num_total << endl;
     // cerr << "ML decoding failed rate: " << (double)num_ml_failed / num_total << endl;
     return 0;
+}
+
+
+// check SCL decoder behaves symmetrically around every codeword under BSC
+void test_RM_SCL_symmetry() {
+    int m = 7, r = 3, list_size = 16;
+    Encoder* encoder = new Encoder_RM(m, r);
+    // Decoder_RM_SC* SC_decoder = new Decoder_RM_SC(m ,r, 1);
+    Decoder_RM_SCL* SCL_decoder = new Decoder_RM_SCL(m ,r, list_size);
+    int K = encoder->get_K(), N = encoder->get_N();
+    cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
+    cerr << "List size=" << list_size << endl;
+
+    double p = 0.05;
+    cerr << "p=" << p << endl;
+    Channel_BSC* chn_bsc = new Channel_BSC(N, p, 42);
+    vector<int> info_bits(K, 1);
+    vector<int> codeword(N, 0);
+    vector<int> all_zero(N, 0);
+    vector<int> noise(N, 0); // all-zero + noise
+    vector<int> noisy_codeword(N, 0);
+    vector<int> diff_to_noise(N, 0);
+    vector<double> llr_noisy_codeword_1(N, 0);
+    vector<double> llr_noisy_codeword_2(N, 0);
+    vector<int> SCL_denoised_codeword_1(N, 0);
+    vector<int> SCL_denoised_codeword_2(N, 0);
+    vector<vector<int>> X_list_1(list_size, vector<int>(N, 0));
+    vector<double> pm_X_list_1(list_size, 0.0);
+    vector<vector<int>> X_list_2(list_size, vector<int>(N, 0));
+    vector<double> pm_X_list_2(list_size, 0.0);
+    int num_total = 3, SCL_num_err = 0;
+    int SCL_num_flips_1 = 0, SCL_num_flips_2 = 0, bsc_flips = 0;
+    for (int i = 0; i < num_total; i++) {
+        generate_random(K, info_bits.data());
+        encoder->encode(info_bits.data(), codeword.data(), 1);
+        bsc_flips = chn_bsc->add_noise(all_zero.data(), noise.data(), 0);
+        cerr << "BSC #flips=" << bsc_flips << endl;
+        std::transform(noise.begin(), noise.end(), codeword.begin(), noisy_codeword.begin(), 
+        [](bool e1, bool e2) { return e1 ^ e2; });
+        for (int i = 0; i < N; i++) {
+            llr_noisy_codeword_1[i] = noise[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
+            llr_noisy_codeword_2[i] = noisy_codeword[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
+            // llr_noisy_codeword[i] = noisy_codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
+        }
+        SCL_decoder->decode(llr_noisy_codeword_1.data(), SCL_denoised_codeword_1.data(), 0);
+        SCL_decoder->copy_codeword_list(X_list_1, pm_X_list_1);
+        SCL_decoder->decode(llr_noisy_codeword_2.data(), SCL_denoised_codeword_2.data(), 0);
+        SCL_decoder->copy_codeword_list(X_list_2, pm_X_list_2);
+        for (int i = 0; i < list_size; i++) {
+            std::transform(noise.begin(), noise.end(), X_list_1[i].begin(), diff_to_noise.begin(),
+            [](bool e1, bool e2) { return e1 ^ e2; });
+            SCL_num_flips_1 = std::count(diff_to_noise.begin(), diff_to_noise.end(), 1);
+            cerr << "1: pm=" << pm_X_list_1[i] << "\t";
+            cerr << "1: #flips=" << SCL_num_flips_1 << "\t";
+            for (int j : X_list_1[i]) cerr << j;
+            cerr << endl;
+            std::transform(noisy_codeword.begin(), noisy_codeword.end(), X_list_2[i].begin(), diff_to_noise.begin(),
+            [](bool e1, bool e2) { return e1 ^ e2; });
+            SCL_num_flips_2 = std::count(diff_to_noise.begin(), diff_to_noise.end(), 1);
+            cerr << "2: pm=" << pm_X_list_2[i] << "\t";
+            cerr << "2: #flips=" << SCL_num_flips_2 << "\t";
+            std::transform(codeword.begin(), codeword.end(), X_list_2[i].begin(), X_list_2[i].begin(),
+            [](bool e1, bool e2) { return e1 ^ e2; });
+            for (int j : X_list_2[i]) cerr << j;
+            cerr << endl;
+        }
+    }
 }

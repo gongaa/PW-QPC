@@ -19,6 +19,8 @@ void verify_RM_is_codeword();
 
 void test_is_logical();
 
+void test_RM_SCL_symmetry();
+
 int simulation_RM_SCL();
 
 int simulation_RM_CSS(int m, int rx, int rz, int list_size);

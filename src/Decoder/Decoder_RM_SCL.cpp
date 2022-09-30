@@ -145,7 +145,7 @@ int Decoder_RM_SCL::decode(const double *Y_N, int* X_N, const size_t frame_id)
         if (partition_and_copy()) break; // update active_paths
         metrics_vec.clear();
     }
-    cerr << "active_path size " << active_paths.size() << endl;
+    // cerr << "active_path size " << active_paths.size() << endl;
 	int best_path = this->select_best_path(frame_id);
     auto s = this->rm_trees[best_path]->get_root()->get_c()->s;
     copy(s.begin(), s.end(), X_N);

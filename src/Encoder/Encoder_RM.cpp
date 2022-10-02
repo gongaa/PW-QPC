@@ -82,12 +82,19 @@ bool Encoder_RM::is_codeword(const int *X_N, int m, int r)
 {   // (u+v, u) where u\in RM(m-1, r), v\in RM(m-1, r-1)
     if (m == r) return true;
     int N = 1 << m;
-    if (r == 0) return std::equal(X_N + 1, X_N + N, X_N);
+    if (r == 0) {// return std::equal(X_N + 1, X_N + N, X_N);
+        for (int i = 1; i < N; i++) {
+            if (X_N[i] != X_N[0]) return false;
+        }
+        return true;
+    }
     int N_half = N >> 1;
     if (!is_codeword(X_N + N_half, m-1, r)) return false;
     vector<int> X_N_tmp(X_N, X_N + N_half);
-    std::transform(X_N, X_N + N_half, X_N + N_half,
-               X_N_tmp.begin(), std::bit_xor<bool>());
+    for (int i = 0; i < N_half; i++)
+        X_N_tmp[i] = X_N[i] ^ X_N[i + N_half];
+    // std::transform(X_N, X_N + N_half, X_N + N_half,
+    //            X_N_tmp.begin(), std::bit_xor<bool>());
     return is_codeword(X_N_tmp.data(), m-1, r-1);
 }
 
@@ -99,4 +106,22 @@ bool Encoder_RM::is_logical(const int *X_N, int m, int r1, int r2)
     if (!is_codeword(X_N_tmp.data(), m, r1)) return false;
     copy(X_N, X_N + N, X_N_tmp.data());
     return !is_codeword(X_N_tmp.data(), m, r2);
+}
+
+int Encoder_RM::parity_check(const int *X_N, int m, int r, int *S_K)
+{   // X_N: (u+v, u) a codeword of RM(m, m-r-1), u\in RM(m-1, m-r-1), v\in RM(m-1, m-r-2)
+    //                                           u\perp RM(m-1, r-1), v\perp RM(m-1, r)
+    // parity check matrix size: {m\choose <= r} * N 
+    // | G_{m-1, r}   | G_{m-1, r} | | X_L | = | G_{m-1, r} (X_L + X_R) |   | G_{m-1, r}   v |
+    // | G_{m-1, r-1} | 0          | | X_R | = | G_{m-1, r-1} X_R       | = | G_{m-1, r-1} u |
+    if (r == 0) {
+        S_K[0] = X_N[0];
+        for (int i = 0; i < (1 << m); i++)
+            S_K[0] ^= X_N[i];
+        return 1;
+    }
+    if (r == m) {
+
+    }
+
 }

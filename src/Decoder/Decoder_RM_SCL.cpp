@@ -123,7 +123,7 @@ void Decoder_RM_SCL::recursive_compute_llr(int path_idx, Node<Contents_RM_SCL>* 
 }
 
 
-int Decoder_RM_SCL::decode(const double *Y_N, int* X_N, const size_t frame_id)
+double Decoder_RM_SCL::decode(const double *Y_N, int* X_N, const size_t frame_id)
 {
     // initialization: only one active path, 
     // and it's active node is RM(m-r, 0), obtained by recursive_compute_llr
@@ -149,7 +149,7 @@ int Decoder_RM_SCL::decode(const double *Y_N, int* X_N, const size_t frame_id)
 	int best_path = this->select_best_path(frame_id);
     auto s = this->rm_trees[best_path]->get_root()->get_c()->s;
     copy(s.begin(), s.end(), X_N);
-    return 0;
+    return this->rm_trees[best_path]->get_path_metric();
 }
 
 bool Decoder_RM_SCL::partition_and_copy()

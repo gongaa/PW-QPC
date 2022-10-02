@@ -11,7 +11,7 @@ Decoder_RM_SC::Decoder_RM_SC(const int& m, const int& r, const int& L)
 {
 }
 
-int Decoder_RM_SC::decode(const double *Y_N, int *X_N, const size_t frame_id)
+double Decoder_RM_SC::decode(const double *Y_N, int *X_N, const size_t frame_id)
 {  // recursive decoding down to (1, m) and (m, m)
    int V_K_len = K;
    vector<double> Y_dec_N(N, 0); // TODO: move it to protected attribute
@@ -24,7 +24,7 @@ int Decoder_RM_SC::decode(const double *Y_N, int *X_N, const size_t frame_id)
 #else
    this->_decode_llr(Y_N, X_N, V_K.data(), m, r, N, V_K_len);
 #endif // USE_DUMER
-   return 0;
+   return 0.0;
 }
 
 int Decoder_RM_SC::_decode_dumer(const double *Y_N, double *Y_dec_N, int *V_K, const int& m, const int& r, const int& N, int& V_K_len, double *aux_buf)

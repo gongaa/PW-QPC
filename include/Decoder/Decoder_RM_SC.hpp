@@ -13,7 +13,7 @@ protected:
 public: 
     Decoder_RM_SC(const int& m, const int& r, const int& L);
     virtual ~Decoder_RM_SC() = default;
-    virtual int decode(const double *Y_N, int *V_K, const size_t frame_id);
+    virtual double decode(const double *Y_N, int *V_K, const size_t frame_id);
 
 private:
     // int FHT_decode(); // r = 1, ML decoder based on Fast Hadarmard Transform.

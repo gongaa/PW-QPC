@@ -44,7 +44,7 @@ public:
     virtual ~Decoder_RM_SCL();
     // input: an LLR array. output: a codeword (or a list of codewords)
     // NOTE: output codeword instead of information bits 
-    virtual int decode(const double *Y_N, int *V_K, const size_t frame_id);
+    virtual double decode(const double *Y_N, int *V_K, const size_t frame_id);
     void test_copy_until();
     void test_assign_path_idx();
     int is_codeword_in_list(const int* X_N);

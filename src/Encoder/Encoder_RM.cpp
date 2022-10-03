@@ -108,20 +108,33 @@ bool Encoder_RM::is_logical(const int *X_N, int m, int r1, int r2)
     return !is_codeword(X_N_tmp.data(), m, r2);
 }
 
-int Encoder_RM::parity_check(const int *X_N, int m, int r, int *S_K)
+void Encoder_RM::parity_check(const int *X_N, int *S_K)
+{
+    this->_parity_check(X_N, m, m-r-1, S_K);
+}
+
+int Encoder_RM::_parity_check(const int *X_N, int m, int r, int *S_K)
 {   // X_N: (u+v, u) a codeword of RM(m, m-r-1), u\in RM(m-1, m-r-1), v\in RM(m-1, m-r-2)
     //                                           u\perp RM(m-1, r-1), v\perp RM(m-1, r)
     // parity check matrix size: {m\choose <= r} * N 
-    // | G_{m-1, r}   | G_{m-1, r} | | X_L | = | G_{m-1, r} (X_L + X_R) |   | G_{m-1, r}   v |
-    // | G_{m-1, r-1} | 0          | | X_R | = | G_{m-1, r-1} X_R       | = | G_{m-1, r-1} u |
+    // | G_{m-1, r} | G_{m-1, r}   | | X_L | = | G_{m-1, r} (X_L + X_R) |   | G_{m-1, r}   v |
+    // | 0          | G_{m-1, r-1} | | X_R | = | G_{m-1, r-1} X_R       | = | G_{m-1, r-1} u |
+    // cerr << "in parity check m=" << m << ", r=" << r << endl;
+    int N = 1 << m;
     if (r == 0) {
         S_K[0] = X_N[0];
-        for (int i = 0; i < (1 << m); i++)
+        for (int i = 1; i < N; i++)
             S_K[0] ^= X_N[i];
         return 1;
     }
     if (r == m) {
-
+        return encode_mm_code(X_N, S_K, N);
     }
-
+    int N_half = N >> 1; 
+    vector<int> X_fst(N_half, 0);
+    for (int i = 0; i < N_half; i++)
+        X_fst[i] = X_N[i] ^ X_N[i + N_half]; // v
+    int K_v = _parity_check(X_fst.data(), m-1, r, S_K);
+    int K_u = _parity_check(X_N + N_half, m-1, r-1, S_K + K_v);
+    return K_v + K_u;
 }

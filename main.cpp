@@ -53,7 +53,9 @@ int main(int argc, char** argv)
       return 1;
     }
   }
-  simulation_RM_CSS(m, rx, rz, list_size);
+  // simulation_RM_CSS(m, rx, rz, list_size);
   // test_RM_SCL_symmetry();
+  // verify_parity_check();
+  test_RM_syndrome_SC();
   return 0;
 }

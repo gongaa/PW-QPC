@@ -17,7 +17,7 @@ public:
 
 public:
     explicit Decoder(const int K, const int N);
-    virtual double decode(const double *Y_N, int *V_K, const size_t frame_id) = 0;
+    // virtual double decode(const double *Y_N, int *V_K, const size_t frame_id) = 0;
     static double phi(const double& mu, const double& lambda, const int& u); // path metric update function
     static void f_plus(const double* LLR_fst, const double* LLR_snd, const int size, double* LLR_new);
     static void f_minus(const double* LLR_fst, const double* LLR_snd, const int* bits, const int size, double* LLR_new);

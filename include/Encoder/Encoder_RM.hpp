@@ -15,9 +15,11 @@ public:
     virtual ~Encoder_RM() = default;
     static int calculate_K(const int& m, const int& r);
     void encode(const int *U_K, int *X_N, const size_t frame_id);
+    void parity_check(const int *X_N, int *S_K);
     static int encode_mm_code(const int* U_K, int *X_N, int N);
     static void recursive_encode_mm_code(const int* U_K, int *X_N, int N);
     static int _encode(const int *U_K, int *X_N, int m, int r); // internal function called by encode()
+    static int _parity_check(const int *X_N, int m, int r, int *S_K);
 
     static bool is_codeword(const int *X_N, int m, int r);
     static bool is_logical(const int *X_N, int m, int r1, int r2);

@@ -55,7 +55,7 @@ int main(int argc, char** argv)
   }
   // simulation_RM_CSS(m, rx, rz, list_size);
   // test_RM_SCL_symmetry();
-  // verify_parity_check();
+  verify_parity_check();
   test_RM_syndrome_SC();
   return 0;
 }

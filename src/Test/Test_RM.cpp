@@ -161,7 +161,7 @@ void test_RM_syndrome_SC() {
         syndrome_decoder->decode(syndrome_llr.data(), syndrome.data(), syndrome_error.data(), 1);
         encoder->parity_check(syndrome_error.data(), syndrome_of_syndrome_error.data());
         assert (verify(dual_K, syndrome_of_syndrome_error.data(), syndrome.data()));
-        cerr << "syndrome error: ";
+        cerr << endl << "syndrome error: ";
         for (int k : syndrome_error) cerr << k;
         cerr << endl << "codeword error: ";
         for (int k : codeword_error) cerr << k;

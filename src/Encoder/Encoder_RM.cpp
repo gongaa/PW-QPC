@@ -113,6 +113,15 @@ void Encoder_RM::parity_check(const int *X_N, int *S_K)
     this->_parity_check(X_N, m, m-r-1, S_K);
 }
 
+inline void decimal2bianry(const int& n, vector<int>& b)
+{
+    int x = n;
+    for (int i = 0; x > 0; i++) {
+        b[i] = x % 2;
+        x >>= 1;
+    }
+}
+
 int Encoder_RM::_parity_check(const int *X_N, int m, int r, int *S_K)
 {   // X_N: (u+v, u) a codeword of RM(m, m-r-1), u\in RM(m-1, m-r-1), v\in RM(m-1, m-r-2)
     //                                           u\perp RM(m-1, r-1), v\perp RM(m-1, r)
@@ -121,15 +130,35 @@ int Encoder_RM::_parity_check(const int *X_N, int m, int r, int *S_K)
     // | 0          | G_{m-1, r-1} | | X_R | = | G_{m-1, r-1} X_R       | = | G_{m-1, r-1} u |
     // cerr << "in parity check m=" << m << ", r=" << r << endl;
     int N = 1 << m;
+#ifdef HAMMING
+    if (r == 1) { // Hamming parity check
+        for (int i = 0; i < m+1; i++) S_K[i] = 0;
+        vector<int> temp(m, 0);
+        for (int i = 0; i < N; i++) {
+            if (X_N[i] != 0) {
+                S_K[m] ^= 1;
+                decimal2bianry(i, temp);
+                for (int l = 0; l < m; l++)
+                    S_K[l] ^= temp[l];
+            }
+        }
+        return (m+1);
+    }
+    if (r == m) {
+        copy(X_N, X_N + N, S_K);
+        return N;
+    }
+#else
+    if (r == m) {
+        return encode_mm_code(X_N, S_K, N);
+    }
     if (r == 0) {
         S_K[0] = X_N[0];
         for (int i = 1; i < N; i++)
             S_K[0] ^= X_N[i];
         return 1;
     }
-    if (r == m) {
-        return encode_mm_code(X_N, S_K, N);
-    }
+#endif // HAMMING
     int N_half = N >> 1; 
     vector<int> X_fst(N_half, 0);
     for (int i = 0; i < N_half; i++)

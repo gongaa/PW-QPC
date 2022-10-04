@@ -3,7 +3,7 @@
 
 #include "Encoder.hpp"
 using namespace std;
-
+// #define HAMMING
 class Encoder_RM : public Encoder
 {
 protected:

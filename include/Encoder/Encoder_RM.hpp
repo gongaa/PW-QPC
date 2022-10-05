@@ -2,6 +2,8 @@
 #define ENCODER_RM_HPP_
 
 #include "Encoder.hpp"
+#include "Test/Test_RM.hpp"
+
 using namespace std;
 // #define HAMMING
 class Encoder_RM : public Encoder

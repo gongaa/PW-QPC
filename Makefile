@@ -15,6 +15,7 @@ SRC      :=                        \
    $(wildcard src/Decoder/*.cpp)   \
    $(wildcard src/Encoder/*.cpp)   \
    $(wildcard src/Test/*.cpp)      \
+   $(wildcard src/Simulation/*.cpp)\
    $(wildcard src/*.cpp)           \
    main.cpp
 SRC 	 := $(filter-out $(IGNORE), $(SRC)) 

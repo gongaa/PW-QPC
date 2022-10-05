@@ -16,16 +16,6 @@ double Decoder_RM_syndrome_SC::decode(const double *Y_N, const int *S_K, int *E_
     return 0.0;
 }
 
-inline int binary2decimal(const int *b, int size)
-{
-    int n = 0;
-    for (int i = 0; i < size; i++) {
-        if (b[i] == 1)
-            n += (1 << i);
-    }
-    return n;
-}
-
 int Decoder_RM_syndrome_SC::_decode_llr(const double *Y_N, const int *S_K, int *X_dec_N, const int& m, const int& r, const int& N, int& S_K_len)
 {   // return 0 if succeed, return 1 if fail (e.g. in FHT decoder)
     // | G_{m-1, r} | G_{m-1, r}   | | E_L | = | G_{m-1, r} (E_L + E_R) |   | S_L | 

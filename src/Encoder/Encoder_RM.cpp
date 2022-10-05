@@ -113,15 +113,6 @@ void Encoder_RM::parity_check(const int *X_N, int *S_K)
     this->_parity_check(X_N, m, m-r-1, S_K);
 }
 
-inline void decimal2bianry(const int& n, vector<int>& b)
-{
-    int x = n;
-    for (int i = 0; x > 0; i++) {
-        b[i] = x % 2;
-        x >>= 1;
-    }
-}
-
 int Encoder_RM::_parity_check(const int *X_N, int m, int r, int *S_K)
 {   // X_N: (u+v, u) a codeword of RM(m, m-r-1), u\in RM(m-1, m-r-1), v\in RM(m-1, m-r-2)
     //                                           u\perp RM(m-1, r-1), v\perp RM(m-1, r)

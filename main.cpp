@@ -6,6 +6,7 @@
 #include "Decoder/Decoder_RM_SC.hpp"
 #include "Decoder/Decoder_RM_SCL.hpp"
 #include "Test/Test_RM.hpp"
+#include "Simulation/Simulation.hpp"
 #include "Channel/Channel.hpp"
 
 // #define _OPENMP
@@ -33,6 +34,7 @@ int main(int argc, char** argv)
   // which code to use
   // which channel to use and what's their parameters.
   int m, rx, rz, list_size;
+  double p;
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
     if ((arg == "-h") || (arg == "--help")) {
@@ -46,6 +48,8 @@ int main(int argc, char** argv)
       iss >> rx;
     } else if (arg == "-rz") {
       iss >> rz;
+    } else if (arg == "-p") {
+      iss >> p;  
     } else if ((arg == "-l") || (arg == "--list_size")) {
       iss >> list_size;
     } else {
@@ -55,7 +59,9 @@ int main(int argc, char** argv)
   }
   // simulation_RM_CSS(m, rx, rz, list_size);
   // test_RM_SCL_symmetry();
-  verify_parity_check();
-  test_RM_syndrome_SC();
+  // verify_parity_check();
+  // test_RM_syndrome_SC();
+  vector<vector<int>> equiv_class;
+  generate_all_equiv_classes(m, rx, rz, equiv_class);
   return 0;
 }

@@ -4,6 +4,8 @@
 #include <random>
 #include <cassert>
 #include <bits/stdc++.h>
+#include <cmath>
+#include <limits>
 #include "Test/Test_RM.hpp"
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"
@@ -15,6 +17,6 @@ int simulation_RM_SCL();
 
 int simulation_RM_CSS(int m, int rx, int rz, int list_size);
 
-int simulation_RM_degeneracy(int m, int rx, int rz, double p);
+int simulation_RM_degeneracy(int m, int rx, int rz, double px, double pz);
 
 #endif

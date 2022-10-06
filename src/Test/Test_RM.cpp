@@ -35,7 +35,7 @@ void generate_all_codewords(int m, int r, vector<vector<int>>& codewords) {
     }
 }
 
-void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& equiv_class) {
+void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& codewords, vector<vector<int>>& equiv_class) {
     assert (m-rx-1 < rz);
     Encoder_RM_CSS* encoder = new Encoder_RM_CSS(m, rx, rz);
     Encoder_RM* encoder_Z = new Encoder_RM(m, rz);
@@ -44,7 +44,6 @@ void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& equi
     << ", K=" << K << ", N=" << N << endl;
     int num_equiv_class = 1 << K;
     cerr << "number of equiv classes: " << num_equiv_class << endl;
-    vector<vector<int>> codewords;
     generate_all_codewords(m, rz, codewords);
     int num_codewords = codewords.size();
     cerr << "have generated all " << num_codewords << " codewords of RM(m,rz)" << endl;

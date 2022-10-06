@@ -16,7 +16,7 @@ using namespace std;
 void generate_random(int N, int *Y_N);
 
 void generate_all_codewords(int m, int r, vector<vector<int>>& codewords);
-void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& equiv_classes);
+void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& codewords, vector<vector<int>>& equiv_classes);
 
 // verify the encoded and decoded info bits are the same
 bool verify(int K, int *U_K_1, int *U_K_2);

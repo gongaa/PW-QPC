@@ -134,63 +134,108 @@ int simulation_RM_CSS(int m, int rx, int rz, int list_size) {
     return 0;
 }
 
-
-// check SCL decoder behaves symmetrically around every codeword under BSC
-void test_RM_SCL_symmetry() {
-    int m = 7, r = 3, list_size = 128;
-    Encoder* encoder = new Encoder_RM(m, r);
-    // Decoder_RM_SC* SC_decoder = new Decoder_RM_SC(m ,r, 1);
-    Decoder_RM_SCL* SCL_decoder = new Decoder_RM_SCL(m ,r, list_size);
+int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
+{
+    Encoder_RM_CSS* encoder = new Encoder_RM_CSS(m, rx, rz);
+    // if two X-type errors differ by a codeword of RM(m, rz)
+    // they will have the same syndrome
     int K = encoder->get_K(), N = encoder->get_N();
-    cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
-    cerr << "List size=" << list_size << endl;
+    cerr << "For m=" << m << ", rx="<< rx << ", rz=" << rz
+         << ", K=" << K << ", N=" << N << endl;
+    // ideally, the noise_X should be decoded to the all-zero codeword
+    // but it also can be any codeword of RM(m, rz)
+    vector<int> noise_X(N, 0), noise_Z(N, 0);
+    vector<int> noise_X_diff(N, 0);
+    vector<int> desired_X(N, 0);
+    // vector<int> noise_Z(N, 0);
+    vector<vector<int>> equiv_class; // equiv_class[0] is the stabilizers
+    vector<vector<int>> codewords;
+    generate_all_equiv_classes(m, rx, rz, codewords, equiv_class);
+    int num_codewords = codewords.size(), num_equiv_class = equiv_class.size(), ec_size = equiv_class[0].size();
+    // assert (encoder->is_X_stabilizer(codewords[equiv_class[0][0]].data())); 
+    int num_total = 2000, ML_err = 0, ML_deg_err = 0;
+    int num_flips = N, min_num_flips = N;
+    vector<int> min_flip_indices;
+    vector<int> min_err_prob_classes;
+    double ec_err_prob, max_ec_err_prob;
+    vector<int> flips(N + 1, 0);
+    // flips[i] stores how many codewords in this equiv class differ
+    // by exactly i positions to the noise_X.
+    vector<double> flips_err_prob(N + 1, 0);
 
-    double p = 0.01;
-    cerr << "p=" << p << endl;
-    Channel_BSC* chn_bsc = new Channel_BSC(N, p, 42);
-    vector<int> info_bits(K, 1);
-    vector<int> codeword(N, 0);
-    vector<int> all_zero(N, 0);
-    vector<int> noise(N, 0); // all-zero + noise
-    vector<int> noisy_codeword(N, 0);
-    vector<int> diff_to_noise(N, 0);
-    vector<double> llr_noisy_codeword_1(N, 0);
-    vector<double> llr_noisy_codeword_2(N, 0);
-    vector<int> SCL_denoised_codeword_1(N, 0);
-    vector<int> SCL_denoised_codeword_2(N, 0);
-    vector<vector<int>> X_list_1(list_size, vector<int>(N, 0));
-    vector<double> pm_X_list_1(list_size, 0.0);
-    vector<vector<int>> X_list_2(list_size, vector<int>(N, 0));
-    vector<double> pm_X_list_2(list_size, 0.0);
-    int num_total = 3, SCL_num_err = 0;
-    int SCL_num_flips_1 = 0, SCL_num_flips_2 = 0, bsc_flips = 0;
-    for (int i = 0; i < num_total; i++) {
-        generate_random(K, info_bits.data());
-        encoder->encode(info_bits.data(), codeword.data(), 1);
-        bsc_flips = chn_bsc->add_noise(all_zero.data(), noise.data(), 0);
-        cerr << "BSC #flips=" << bsc_flips << endl;
-        xor_vec(N, noise.data(), codeword.data(), noisy_codeword.data());
-        for (int i = 0; i < N; i++) {
-            llr_noisy_codeword_1[i] = noise[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
-            llr_noisy_codeword_2[i] = noisy_codeword[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
-            // llr_noisy_codeword[i] = noisy_codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
+    bool exists_stab = false;
+    vector<double> pxs;
+    for (int i = 0; i < 20; i++) pxs.push_back((double)(i + 1) / 100.0);
+    for (double px : pxs) {
+        cerr << "px = " << px << endl;
+        double log_err = N * log(1-px), log_err_diff = log(px) - log(1-px);
+        flips_err_prob[0] = exp(log_err);
+        for (int i = 1; i < N + 1; i++) {
+            log_err += log_err_diff;
+            flips_err_prob[i] = exp(log_err);
+            // c++ double exponent min is -1022, may underflow
         }
-        SCL_decoder->decode(llr_noisy_codeword_1.data(), SCL_denoised_codeword_1.data(), 0);
-        SCL_decoder->copy_codeword_list(X_list_1, pm_X_list_1);
-        SCL_decoder->decode(llr_noisy_codeword_2.data(), SCL_denoised_codeword_2.data(), 0);
-        SCL_decoder->copy_codeword_list(X_list_2, pm_X_list_2);
-        for (int i = 0; i < list_size; i++) {
-            SCL_num_flips_1 = count_flip(N, noise.data(), X_list_1[i].data());
-            cerr << "1: pm=" << pm_X_list_1[i] << "\t";
-            cerr << "#flips=" << SCL_num_flips_1 << "\t";
-            for (int j : X_list_1[i]) cerr << j;
-            cerr << endl;
-            SCL_num_flips_2 = count_flip(N, noisy_codeword.data(), X_list_2[i].data());
-            cerr << "2: pm=" << pm_X_list_2[i] << "\t";
-            cerr << "#flips=" << SCL_num_flips_2 << "\t";
-            for (int j = 0; j < N; j++) X_list_2[i][j] ^= codeword[j];
-            for (int j : X_list_2[i]) cerr << j;
-            cerr << endl;
+        Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, px, pz, 41);
+        ML_err = 0; ML_deg_err = 0;
+        for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
+            chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0); // only use noise_X for now
+            // ML_err is just take the codeword with smallest flip, 
+            // see whether it is in the all-zero's equiv class (stabilizers)
+            min_num_flips = N; min_flip_indices.clear();
+            for (int i = 0; i < num_codewords; i++) {
+                num_flips = count_flip(N, noise_X.data(), codewords[i].data());
+                if (num_flips < min_num_flips) {
+                    min_flip_indices.clear();
+                    min_flip_indices.push_back(i);
+                    min_num_flips = num_flips;
+                } else if (num_flips == min_num_flips) {
+                    min_flip_indices.push_back(i);
+                }
+            }
+            // cerr << "there are " << min_flip_indices.size() << " codewords that have min flips" << endl;
+            // when px=0.1, a lot of times min_flip_indices.size() > 1
+            exists_stab = false;
+            for (int i : min_flip_indices) {
+                if (encoder->is_X_stabilizer(codewords[i].data())) {
+                    exists_stab = true;
+                    break;
+                }
+            }
+            if (!exists_stab) ML_err++;
+
+            // ML_deg_err is to add up the error-probability for each equiv class
+            // and choose the largest one
+            max_ec_err_prob = 0;
+            for (int i = 0; i < num_equiv_class; i++) {
+                for (int k = 0; k < N + 1; k++) flips[k] = 0;
+                for (int idx : equiv_class[i]) {
+                    num_flips = count_flip(N, noise_X.data(), codewords[idx].data());
+                    flips[num_flips]++;
+                }
+                ec_err_prob = 0.0; 
+                for (int k = 0; k < N + 1; k++)
+                    ec_err_prob += flips[k] * flips_err_prob[k];
+                // cerr << "ec " << i << " has error prob " << ec_err_prob << endl;
+                // for (int k = 0; k < N + 1; k++)
+                //     cerr << flips[k] << " ";
+                // cerr << endl;
+                if (ec_err_prob > max_ec_err_prob) {
+                    min_err_prob_classes.clear();
+                    min_err_prob_classes.push_back(i);
+                    max_ec_err_prob = ec_err_prob;
+                } else if (ec_err_prob > max_ec_err_prob - std::numeric_limits<double>::epsilon()) {
+                    min_err_prob_classes.push_back(i);
+                }
+            }
+            // cerr << "ec " << min_err_prob_classes[0] << " is the class that has the min error prob" << endl;
+            // cerr << "there are " << min_err_prob_classes.size() << " equiv classes that have the same min error prob" << endl;
+            if (min_err_prob_classes.size() > 1) cerr << "equiv class not unique" << endl;
+            if (std::none_of(min_err_prob_classes.begin(), min_err_prob_classes.end(), [](int i) { return i == 0; }))
+                ML_deg_err++;
         }
+        cerr << "ML_err: " << ML_err << ". ML_deg_err: " << ML_deg_err << endl;
+        cerr << "ML FER: " << (double)ML_err / num_total << endl;
+        cerr << "ML degeneracy FER: " << (double)ML_deg_err / num_total << endl;
     }
+    return 0;
 }

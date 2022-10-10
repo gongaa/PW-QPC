@@ -42,7 +42,7 @@ int Encoder_RM::encode_mm_code(const int *U_K, int *X_N, int N) // U_K: informat
 }
 
 void Encoder_RM::recursive_encode_mm_code(const int* U_K, int *X_N, int N)
-{   // the generator matrix of RM(m, m) code is {{1,1,},{0,1}}^{\otimes m}
+{   // the generator matrix of RM(m, m) code is {{1,1},{0,1}}^{\otimes m}
     if (N == 1) { // m = 0
         X_N[0] = U_K[0];
         return;

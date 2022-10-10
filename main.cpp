@@ -59,10 +59,11 @@ int main(int argc, char** argv)
       return 1;
     }
   }
+  // verify_RM_is_codeword();
   // simulation_RM_CSS(m, rx, rz, list_size);
   // test_RM_SCL_symmetry();
   // verify_parity_check();
-  // test_RM_syndrome_SC();
+  // test_RM_syndrome_SC(m, rx);
   simulation_RM_degeneracy(m, rx, rz, px, pz);
   return 0;
 }

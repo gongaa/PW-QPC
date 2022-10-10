@@ -30,7 +30,7 @@ void test_is_logical();
 
 void test_RM_SCL_symmetry();
 
-void test_RM_syndrome_SC();
+void test_RM_syndrome_SC(int m, int r);
 
 inline void xor_vec(int N, const int* a, const int* b, int* c) {
     for (int i = 0; i < N; i++)

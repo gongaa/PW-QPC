@@ -1,5 +1,5 @@
 #include "Simulation/Simulation.hpp"
-
+#define PRINT_FLIPS
 int simulation_RM_CSS(int m, int rx, int rz, int list_size) {
     // int m = 5, rx = 3, rz = 2, list_size = 16384;
     Encoder_RM_CSS* encoder = new Encoder_RM_CSS(m, rx, rz);
@@ -154,9 +154,12 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
     int num_codewords = codewords.size(), num_equiv_class = equiv_class.size(), ec_size = equiv_class[0].size();
     // assert (encoder->is_X_stabilizer(codewords[equiv_class[0][0]].data())); 
     int num_total = 2000, ML_err = 0, ML_deg_err = 0;
+    int ML_err_no_rep = 0, ML_deg_err_no_rep = 0;
+    int degeneracy_better = 0;
     int num_flips = N, min_num_flips = N;
     vector<int> min_flip_indices;
     vector<int> min_err_prob_classes;
+    vector<vector<int>> min_flip_array;
     double ec_err_prob, max_ec_err_prob;
     vector<int> flips(N + 1, 0);
     // flips[i] stores how many codewords in this equiv class differ
@@ -165,7 +168,7 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
 
     bool exists_stab = false;
     vector<double> pxs;
-    for (int i = 0; i < 20; i++) pxs.push_back((double)(i + 1) / 100.0);
+    for (int i = 9; i < 40; i++) pxs.push_back((double)(i + 1) / 100.0);
     for (double px : pxs) {
         cerr << "px = " << px << endl;
         double log_err = N * log(1-px), log_err_diff = log(px) - log(1-px);
@@ -176,7 +179,8 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
             // c++ double exponent min is -1022, may underflow
         }
         Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, px, pz, 41);
-        ML_err = 0; ML_deg_err = 0;
+        ML_err = 0; ML_deg_err = 0; ML_err_no_rep = 0; ML_deg_err_no_rep = 0;
+        degeneracy_better = 0;
         for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
             chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0); // only use noise_X for now
             // ML_err is just take the codeword with smallest flip, 
@@ -202,6 +206,7 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
                 }
             }
             if (!exists_stab) ML_err++;
+            if (!exists_stab || min_flip_indices.size() > 1) ML_err_no_rep++; 
 
             // ML_deg_err is to add up the error-probability for each equiv class
             // and choose the largest one
@@ -223,19 +228,72 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
                     min_err_prob_classes.clear();
                     min_err_prob_classes.push_back(i);
                     max_ec_err_prob = ec_err_prob;
+                    #ifdef PRINT_FLIPS
+                    min_flip_array.clear();
+                    min_flip_array.push_back(flips);
+                    #endif // PRINT_FLIPS
                 } else if (ec_err_prob > max_ec_err_prob - std::numeric_limits<double>::epsilon()) {
                     min_err_prob_classes.push_back(i);
+                    #ifdef PRINT_FLIPS
+                    min_flip_array.push_back(flips);
+                    #endif
                 }
             }
             // cerr << "ec " << min_err_prob_classes[0] << " is the class that has the min error prob" << endl;
             // cerr << "there are " << min_err_prob_classes.size() << " equiv classes that have the same min error prob" << endl;
-            if (min_err_prob_classes.size() > 1) cerr << "equiv class not unique" << endl;
-            if (std::none_of(min_err_prob_classes.begin(), min_err_prob_classes.end(), [](int i) { return i == 0; }))
-                ML_deg_err++;
+            if (std::none_of(min_err_prob_classes.begin(), min_err_prob_classes.end(), [](int i) { return i == 0; })) {
+                ML_deg_err++; ML_deg_err_no_rep++;
+            } else if (min_err_prob_classes.size() > 1) {
+                ML_deg_err_no_rep++;
+                if (min_err_prob_classes.size() < min_flip_indices.size()) degeneracy_better++;
+                if (min_err_prob_classes.size() != min_flip_indices.size()) cerr << "two sizes disagree" << endl;
+                #ifdef PRINT_FLIPS
+                if (min_num_flips == 4 && min_flip_indices.size() > 2) {
+                    cerr << "min_num_flips=" << min_num_flips <<
+                    ", min_flip_indices size=" << min_flip_indices.size() << endl;
+                    cerr << "noise is: " << endl;;
+                    for (int n : noise_X) cerr << n;
+                    // vector<int> one_indices;
+                    // for (int i = 0; i < N; i++) {
+                    //     if (noise_X[i] == 1) one_indices.push_back(i);
+                    // }
+                    cerr << " , neighboring codewords are: " << endl;
+                    for (int i : min_flip_indices) {
+                        // for (int n : one_indices) cerr << codewords[i][n];
+                        for (int n : codewords[i]) cerr << n;
+                        cerr << endl;
+                    }
+                    cerr << "finish";
+            
+                    cerr << endl;
+                }
+                /*
+                cerr <<"***********************" << endl;
+                cerr << "min_flip_indices size=" << min_flip_indices.size() <<
+                ",\t min_err_prob_classes size=" << min_err_prob_classes.size() << endl;
+                cerr << "min_num_flips=" << min_num_flips << endl;
+                for (auto a : min_flip_array) {
+                    for (int f : a) cerr << f << " ";
+                    cerr << endl;
+                }
+                cerr <<"***********************" << endl;
+                */
+                #endif
+            }
+            #ifdef PRINT_FLIPS
+              else {
+                if (min_num_flips >= 4)
+                    cerr << "can correctly decode when #flips >= 4, this shouldn't happen???" << endl;
+            }
+            #endif
         }
         cerr << "ML_err: " << ML_err << ". ML_deg_err: " << ML_deg_err << endl;
+        cerr << "ML_err_no_rep: " << ML_err_no_rep << ". ML_deg_err_no_rep: " << ML_deg_err_no_rep << endl;
+        cerr << "degeneracy_better: " << degeneracy_better << endl;;
         cerr << "ML FER: " << (double)ML_err / num_total << endl;
         cerr << "ML degeneracy FER: " << (double)ML_deg_err / num_total << endl;
+        cerr << "ML no repetition FER: " << (double)ML_err_no_rep / num_total << endl;
+        cerr << "ML degeneracy no repetition FER: " << (double)ML_deg_err_no_rep / num_total << endl;
     }
     return 0;
 }

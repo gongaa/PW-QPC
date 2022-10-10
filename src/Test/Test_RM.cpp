@@ -81,10 +81,15 @@ bool verify(int K, int *U_K_1, int *U_K_2) {
 
 // check RM is_codeword
 void verify_RM_is_codeword() {
-  int m = 13, r = 7;
+  int m = 5, r = 2;
   Encoder* encoder = new Encoder_RM(m, r);
   int K = encoder->get_K(), N = encoder->get_N();
   cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
+  vector<int> codeword(N, 0);
+  cerr << Encoder_RM::is_codeword(codeword.data(), m, r) << endl;
+  for (int i = 1; i < 9; i++) codeword[i] = 1;
+  cerr << Encoder_RM::is_codeword(codeword.data(), m, r) << endl;
+  /*
   Channel_BSC* chn_bsc = new Channel_BSC(N, 1e-1, 42);
   vector<int> info_bits(K, 1);
   vector<int> codeword(N, 0);
@@ -95,6 +100,7 @@ void verify_RM_is_codeword() {
   assert (Encoder_RM::is_codeword(codeword.data(), m, r+1));
   chn_bsc->add_noise(codeword.data(), noisy_codeword.data(), 0);
   assert (!Encoder_RM::is_codeword(noisy_codeword.data(), m, r));
+  */
 }
 
 // check with no added noise, decoder can correctly decode
@@ -155,8 +161,8 @@ void test_dumer_llr() {
         cerr << "decoding failed" << endl;
 }
 
-void test_RM_syndrome_SC() {
-    int m = 7, r = 3;
+void test_RM_syndrome_SC(int m, int r) {
+    // int m = 7, r = 3;
     Encoder_RM* encoder = new Encoder_RM(m, r);
     Decoder_RM_SC* decoder = new Decoder_RM_SC(m ,r, 1);
     Decoder_RM_syndrome_SC* syndrome_decoder = new Decoder_RM_syndrome_SC(m, m-r-1, 1);

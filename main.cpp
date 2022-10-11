@@ -64,6 +64,7 @@ int main(int argc, char** argv)
   // test_RM_SCL_symmetry();
   // verify_parity_check();
   // test_RM_syndrome_SC(m, rx);
-  simulation_RM_degeneracy(m, rx, rz, px, pz);
+  // simulation_RM_degeneracy(m, rx, rz, px, pz);
+  simulation_RM_closest_codewords(m, rx, rz);
   return 0;
 }

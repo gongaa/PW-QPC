@@ -8,12 +8,15 @@ int simulation_RM_closest_codewords(int m, int rx, int rz) {
     vector<int> noise_X_diff(N, 0);
     vector<int> desired_X(N, 0);
     vector<vector<int>> codewords;
+    vector<vector<int>> stabilizers;
     generate_all_codewords(m, rz, codewords);
-    int num_codewords = codewords.size();
-    cerr << "have generated all " << num_codewords << " codewords" << endl;
+    generate_all_codewords(m, m-rx-1, stabilizers);
+    int num_codewords = codewords.size(), num_stab = stabilizers.size();
+    cerr << "have generated all " << num_codewords << " codewords and " << num_stab << " stabilizers." << endl;
     int num_total = 2000;
     vector<int> min_flip_indices;
     int min_num_flips, num_flips;
+    vector<int> flips(N + 1, 0);
  
     vector<double> pxs;
     for (int i = 9; i < 40; i++) pxs.push_back((double)(i + 1) / 100.0);
@@ -49,9 +52,18 @@ int simulation_RM_closest_codewords(int m, int rx, int rz) {
                 for (int i : min_flip_indices) {
                     // for (int n : one_indices) cerr << codewords[i][n];
                     for (int n : codewords[i]) cerr << n;
+                    cerr << endl;                
+                    for (int k = 0; k < N + 1; k++) flips[k] = 0;
+                    for (auto& s : stabilizers) {
+                        xor_vec(N, codewords[i].data(), s.data(), noise_X_diff.data());
+                        num_flips = count_flip(N, noise_X.data(), noise_X_diff.data());
+                        flips[num_flips]++;
+                    }
+                    for (int n : flips) cerr << n << " ";
                     cerr << endl;
                 }
                 cerr << "finish";
+
         
                 cerr << endl;
             }

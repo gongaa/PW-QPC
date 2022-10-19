@@ -3,7 +3,6 @@
 #include <iostream>
 #include <random>
 #include <cassert>
-#include <bits/stdc++.h>
 #include <cmath>
 #include <limits>
 #include "Test/Test_RM.hpp"

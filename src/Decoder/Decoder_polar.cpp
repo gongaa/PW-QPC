@@ -84,7 +84,7 @@ void Decoder_polar_SCL::recursive_compute_llr(Node<Contents_SCL>* node_cur, int 
 			for (auto l = 0; l < kern_size; l++) LLRs[l] = node_father->get_c()->l[l * n_kernels + k];
 			for (auto c = 0; c < child;     c++) bits[c] = node_father->get_children()[c]->get_c()->s[k];
             //******************** update the LLR array **************************
-			node_cur->get_c()->l[k] = lambdas[child](LLRs, bits);
+			node_cur->get_c()->l[k] = this->my_lambdas[child](LLRs, bits);
 		}
 	}
 }
@@ -273,7 +273,7 @@ void Decoder_polar_SCL::recursive_propagate_sums(const Node<Contents_SCL>* node_
 	}
 
 	if (!node_cur->is_root() &&
-	    ((size_t)node_cur->get_child_id() == node_cur->get_father()->get_children().size() -1))
+	    ((size_t)node_cur->get_child_id() == node_cur->get_father()->get_children().size() - 1))
 		this->recursive_propagate_sums(node_cur->get_father());
 }
 

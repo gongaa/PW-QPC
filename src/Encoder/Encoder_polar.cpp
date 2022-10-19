@@ -7,8 +7,9 @@
 using namespace std;
 
 Encoder_polar::Encoder_polar(const int& K, const int& N, const vector<bool>& frozen_bits)
-: Encoder(K, N), m((int)log2(N)), frozen_bits(frozen_bits), X_N_tmp(this->N), info_bits_pos(K) 
+: Encoder(K, N), m((int)log2(N)), X_N_tmp(this->N), info_bits_pos(K) 
 {
+    set_frozen_bits(frozen_bits);
 }
 
 void Encoder_polar::encode(const int *U_K, int *X_N, const size_t frame_id)
@@ -29,7 +30,7 @@ void Encoder_polar::convert(const int *U_K, int *U_N)
     } else {
         auto j = 0;
         for (unsigned i = 0; i < frozen_bits.size(); i++)
-            U_N[i] = (frozen_bits[i]) ? 0 : U_K[j++];
+            U_N[i] = (frozen_bits[i]) ? 0 : U_K[j++]; // frozen bit is set to zero
     }
 
 }

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <random>
 #include <cassert>
-#include <bits/stdc++.h>
+// #include <bits/stdc++.h>
 #include "Test/Test_RM.hpp"
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"
@@ -23,15 +23,47 @@ void generate_random(int N, int *Y_N) {
     }
 }
 
+void test_linearity_xor(int m, int r) {
+    Encoder_RM* encoder = new Encoder_RM(m, r);
+    int K = encoder->get_K(), N = encoder->get_N();
+    vector<int> info_bits1(K, 0);
+    vector<int> info_bits2(K, 0);
+    vector<int> info_bits_dest(K, 0);
+    vector<int> codeword1(N, 0);
+    vector<int> codeword2(N, 0);
+    vector<int> codeword_dest(N, 0);
+    vector<int> codeword_dest_xor(N, 0);
+    int x1, x2, x_dest;
+    int max = 1 << K;
+    for (int i = 0; i < 100; i++) {
+        x1 = rand() % max;
+        x2 = rand() % max;
+        decimal2bianry(x1, info_bits1);
+        decimal2bianry(x2, info_bits2);
+        for (int l = 0; l < K; l++) info_bits_dest[l] = info_bits1[l] ^ info_bits2[l];
+        encoder->encode(info_bits1.data(), codeword1.data(), 1);
+        encoder->encode(info_bits2.data(), codeword2.data(), 1);
+        encoder->encode(info_bits_dest.data(), codeword_dest.data(), 1);
+        for (int l = 0; l < K; l++) codeword_dest_xor[l] = codeword1[l] ^ codeword2[l];
+        assert (verify(N, codeword_dest.data(), codeword_dest_xor.data()));
+    }
+    cerr << "all tests completed, RM is linear under xor of info bits" << endl;
+}
+
 void generate_all_codewords(int m, int r, vector<vector<int>>& codewords) {
     Encoder_RM* encoder = new Encoder_RM(m, r);
     int K = encoder->get_K(), N = encoder->get_N();
+    codewords.reserve(1<<K);
     vector<int> info_bits(K, 0);
     vector<int> codeword(N, 0);
     for (int i = 0; i < (1 << K); i++) {
         decimal2bianry(i, info_bits);
         encoder->encode(info_bits.data(), codeword.data(), 1);
         codewords.push_back(codeword);
+        if (Encoder_RM::is_codeword(codeword.data(), m, r-1)) {
+            for (int k : info_bits) cerr << k;
+            cerr << endl;
+        }
     }
 }
 

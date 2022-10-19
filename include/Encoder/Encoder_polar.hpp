@@ -9,7 +9,7 @@ class Encoder_polar : public Encoder
 {
 protected:
   const int    m;
-  vector<bool> frozen_bits;
+  vector<bool> frozen_bits; // a mask of size N, true if current position is frozen
   vector<int>  X_N_tmp;
   vector<uint32_t> info_bits_pos; /*!< Positions of the information bits in the codeword */
 

@@ -13,7 +13,7 @@ public:
     // vector<double> Y_N;
     // static: let different decoders share the lambdas
     // lambdas are LLR update rules
-    // static vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> lambdas;
+    vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> my_lambdas;
 
 public:
     explicit Decoder(const int K, const int N);

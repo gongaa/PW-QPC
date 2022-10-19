@@ -72,3 +72,7 @@ int simulation_RM_closest_codewords(int m, int rx, int rz) {
     }
     return 0;
 }
+
+// want to perform RM(6,4)/RM(6,3), need a clever way
+// use list decoder to obtain the codewords that are within distance 1.5d to the noise
+// only add the minimum weight stabilizers to them (need a generator for this)

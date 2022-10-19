@@ -65,6 +65,9 @@ int main(int argc, char** argv)
   // verify_parity_check();
   // test_RM_syndrome_SC(m, rx);
   // simulation_RM_degeneracy(m, rx, rz, px, pz);
-  simulation_RM_closest_codewords(m, rx, rz);
+  // simulation_RM_closest_codewords(m, rx, rz);
+  // test_linearity_xor(6, 3);
+  vector<vector<int>> a;
+  generate_all_codewords(5, 3, a);
   return 0;
 }

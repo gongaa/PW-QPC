@@ -20,4 +20,10 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px, double pz);
 
 int simulation_RM_closest_codewords(int m, int rx, int rz); 
 
+int simulation_RM_d_star(int m, int r);
+
+int simulation_symmetric_noise(int m, int r);
+
+int test_RM_d_star();
+
 #endif

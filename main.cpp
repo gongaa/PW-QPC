@@ -67,7 +67,8 @@ int main(int argc, char** argv)
   // simulation_RM_degeneracy(m, rx, rz, px, pz);
   // simulation_RM_closest_codewords(m, rx, rz);
   // test_linearity_xor(6, 3);
-  vector<vector<int>> a;
-  generate_all_codewords(5, 3, a);
+  // simulation_RM_d_star(m, rx);
+  test_RM_d_star();
+  // simulation_symmetric_noise(m, rx);
   return 0;
 }

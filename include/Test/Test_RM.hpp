@@ -15,6 +15,7 @@ using namespace std;
 // generate codeword or information bits
 void generate_random(int N, int *Y_N);
 
+void generate_symmetric_noise(int m, vector<int>& noise, int level);
 void generate_all_codewords(int m, int r, vector<vector<int>>& codewords);
 void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& codewords, vector<vector<int>>& equiv_classes);
 
@@ -43,6 +44,13 @@ inline int count_flip(int N, const int* a, const int* b) {
     int cnt = 0;
     for (int i = 0; i < N; i++) 
         if (a[i] != b[i]) cnt++;
+    return cnt;
+}
+
+inline int count_weight(const vector<int>& a) {
+    int cnt = 0;
+    for (int i : a)
+        if (i) cnt++;
     return cnt;
 }
 

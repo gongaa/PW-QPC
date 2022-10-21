@@ -50,20 +50,27 @@ void test_linearity_xor(int m, int r) {
     cerr << "all tests completed, RM is linear under xor of info bits" << endl;
 }
 
+void generate_symmetric_noise(int m, vector<int>& noise, int level) {
+    vector<int> binary_repr(m, 0);
+    for (int i = 0; i < (1 << m); i++) {
+        decimal2bianry(i, binary_repr);
+        if (count_weight(binary_repr) <= level) noise[i] = 1;
+    }
+}
+
 void generate_all_codewords(int m, int r, vector<vector<int>>& codewords) {
     Encoder_RM* encoder = new Encoder_RM(m, r);
     int K = encoder->get_K(), N = encoder->get_N();
-    codewords.reserve(1<<K);
     vector<int> info_bits(K, 0);
     vector<int> codeword(N, 0);
     for (int i = 0; i < (1 << K); i++) {
         decimal2bianry(i, info_bits);
         encoder->encode(info_bits.data(), codeword.data(), 1);
-        codewords.push_back(codeword);
-        if (Encoder_RM::is_codeword(codeword.data(), m, r-1)) {
-            for (int k : info_bits) cerr << k;
-            cerr << endl;
-        }
+        codewords[i] = codeword;
+        // if (Encoder_RM::is_codeword(codeword.data(), m, r-1)) {
+        //     for (int k : info_bits) cerr << k;
+        //     cerr << endl;
+        // }
     }
 }
 

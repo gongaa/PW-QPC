@@ -26,4 +26,6 @@ int simulation_symmetric_noise(int m, int r);
 
 int test_RM_d_star();
 
+int compare_equiv_classes();
+
 #endif

@@ -16,6 +16,10 @@ using namespace std;
 void generate_random(int N, int *Y_N);
 
 void generate_symmetric_noise(int m, vector<int>& noise, int level);
+void generate_bent(int m, vector<int>& noise);
+void generate_bent_guess(int m, vector<int>& noise);
+void generate_bent_third_order(int m, vector<int>& noise);
+void generate_bent_m6_r2_order(vector<int>& noise);
 void generate_all_codewords(int m, int r, vector<vector<int>>& codewords);
 void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& codewords, vector<vector<int>>& equiv_classes);
 

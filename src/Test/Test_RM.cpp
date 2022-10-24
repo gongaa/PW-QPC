@@ -58,6 +58,61 @@ void generate_symmetric_noise(int m, vector<int>& noise, int level) {
     }
 }
 
+void generate_bent(int m, vector<int>& noise) {
+    vector<int> binary_repr(m, 0);
+    int temp;
+    for (int i = 0; i < (1 << m); i++) {
+        decimal2bianry(i, binary_repr);
+        temp = 0;
+        for (int k = 0; k < m; k += 2) {
+            temp ^= binary_repr[k] * binary_repr[k+1];
+        }
+        if (temp) noise[i] = 1;
+    }
+}
+
+void generate_bent_guess(int m, vector<int>& noise) {
+    vector<int> binary_repr(m, 0);
+    int temp;
+    for (int i = 0; i < (1 << m); i++) {
+        decimal2bianry(i, binary_repr);
+        temp = 0;
+        // for (int k = 0; k < m; k += 1) {
+        //     temp ^= binary_repr[k] * binary_repr[(k+1) % m];
+        // }
+        for (int k = 0; k < (m-2); k += 2) {
+            temp ^= binary_repr[k] * binary_repr[k+1];
+        }
+        if (m % 2 == 1) temp ^= binary_repr[m-1];
+        else temp ^= binary_repr[m-2] * binary_repr[m-1];
+        if (temp) noise[i] = 1;
+    }
+}
+
+void generate_bent_third_order(int m, vector<int>& noise) {
+    vector<int> binary_repr(m, 0);
+    int temp;
+    for (int i = 0; i < (1 << m); i++) {
+        decimal2bianry(i, binary_repr);
+        temp = 0;
+        for (int k = 0; k < m; k += 3) {
+            temp ^= binary_repr[k] * binary_repr[k+1] * binary_repr[k+2];
+        }
+        if (temp) noise[i] = 1;
+    }
+}
+
+void generate_bent_m6_r2_order(vector<int>& noise) {
+    vector<int> b(6, 0);
+    int temp;
+    for (int i = 0; i < (1 << 6); i++) {
+        decimal2bianry(i, b);
+        temp = 0;
+        temp = b[0]*b[1]*b[2] ^ b[0]*b[3]*b[4] ^ b[1]*b[3]*b[5] ^ b[2]*b[4]*b[5] ^ b[3]*b[4]*b[5];
+        if (temp) noise[i] = 1;
+    }
+}
+
 void generate_all_codewords(int m, int r, vector<vector<int>>& codewords) {
     Encoder_RM* encoder = new Encoder_RM(m, r);
     int K = encoder->get_K(), N = encoder->get_N();

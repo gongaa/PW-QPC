@@ -143,6 +143,7 @@ int test_RM_d_star() {
     int K = encoder->get_K(), N = encoder->get_N(), N_half = N >> 1;
     cerr << "For m=" << m << ", r=" << r << ", K=" << K << ", N=" << N << ", d=" << (1 << (m-r)) << endl;
     vector<int> all_zero(N, 0);
+    vector<int> bent(N, 0);
     vector<int> noise(N, 0);
     vector<vector<int>> codewords(1<<K, vector<int>(N));
     generate_all_codewords(m, r, codewords);
@@ -151,11 +152,23 @@ int test_RM_d_star() {
     vector<int> min_flip_indices;
     int min_num_flips, num_flips;
 
-    string noise_str = "0000000010001000000000000000000100110010000111111000001000101000";
-    assert (noise_str.length() == N);
-    for (int i = 0; i < N; i++) {
-        noise[i] = int(noise_str[i]) - int('0');
-    }
+    // generate_bent(m, noise);
+    // generate_bent_guess(m, noise);
+    // generate_bent_third_order(m, noise);
+    generate_bent_m6_r2_order(bent);
+    noise = bent;
+    for (int i = 0  ; i < N; i++) {
+    for (int j = i+1; j < N; j++) {
+    for (int k = j+1; k < N; k++) {
+        noise = bent;
+        noise[i] = !noise[i];
+        noise[j] = !noise[j];
+        noise[k] = !noise[k];
+    // string noise_str = "0000000010001000000000000000000100110010000111111000001000101000";
+    // assert (noise_str.length() == N);
+    // for (int i = 0; i < N; i++) {
+    //     noise[i] = int(noise_str[i]) - int('0');
+    // }
 
     // string u_str = "10000000001000110100000000001000";
     // string v_str = "00110010000111111000001000101000";
@@ -182,10 +195,10 @@ int test_RM_d_star() {
     cerr << "min_flip_indices size " << min_flip_indices.size() << endl;
     if (min_flip_indices.size() > 1) {
         cerr << "d_star_star=" << min_num_flips << endl;
-        for (int idx : min_flip_indices) {
-            for (int l : codewords[idx]) cerr << l;
-            cerr << endl;
-        }
+        // for (int idx : min_flip_indices) {
+        //     for (int l : codewords[idx]) cerr << l;
+        //     cerr << endl;
+        // }
     } else {
         cerr << "d_star=" << min_num_flips << endl;
         for (int l : codewords[min_flip_indices[0]]) cerr << l;
@@ -194,17 +207,17 @@ int test_RM_d_star() {
         vector<int> noise_diff(N, 0);
         xor_vec(N, codewords[min_flip_indices[0]].data(), noise.data(), noise_diff.data());
         for (int l : noise_diff) cerr << l;
-        cerr << endl << "binary representation of the one's" << endl;
-        vector<int> binary_repr(m, 0);
-        for (int i = 0; i < N; i++) 
-            if (noise_diff[i]) {
-                decimal2bianry(i, binary_repr);
-                for (int l : binary_repr) cerr << l;
-                cerr << endl;
-            }
+        // cerr << endl << "binary representation of the one's" << endl;
+        // vector<int> binary_repr(m, 0);
+        // for (int i = 0; i < N; i++) 
+        //     if (noise_diff[i]) {
+        //         decimal2bianry(i, binary_repr);
+        //         for (int l : binary_repr) cerr << l;
+        //         cerr << endl;
+        //     }
 
     }
-    
+    }}}
     return 0;
 }
 

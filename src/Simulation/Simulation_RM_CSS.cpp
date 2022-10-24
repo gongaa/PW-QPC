@@ -139,7 +139,7 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
     Encoder_RM_CSS* encoder = new Encoder_RM_CSS(m, rx, rz);
     // if two X-type errors differ by a codeword of RM(m, rz)
     // they will have the same syndrome
-    int K = encoder->get_K(), N = encoder->get_N();
+    int K = encoder->get_K(), N = encoder->get_N(), N_half = N >> 1;
     cerr << "For m=" << m << ", rx="<< rx << ", rz=" << rz
          << ", K=" << K << ", N=" << N << endl;
     // ideally, the noise_X should be decoded to the all-zero codeword
@@ -165,12 +165,16 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
     // flips[i] stores how many codewords in this equiv class differ
     // by exactly i positions to the noise_X.
     vector<double> flips_err_prob(N + 1, 0);
-
+    for (int i = N_half+1; i >= 0; i--)
+        flips_err_prob[i] = 1 << i;
+    for (int i = 1; i < N_half; i++)
+        flips_err_prob[N_half+1+i] = 1.0 / (1 << i);
     bool exists_stab = false;
     vector<double> pxs;
     for (int i = 9; i < 40; i++) pxs.push_back((double)(i + 1) / 100.0);
     for (double px : pxs) {
         cerr << "px = " << px << endl;
+        /*
         double log_err = N * log(1-px), log_err_diff = log(px) - log(1-px);
         flips_err_prob[0] = exp(log_err);
         for (int i = 1; i < N + 1; i++) {
@@ -178,6 +182,7 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
             flips_err_prob[i] = exp(log_err);
             // c++ double exponent min is -1022, may underflow
         }
+        */
         Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, px, pz, 41);
         ML_err = 0; ML_deg_err = 0; ML_err_no_rep = 0; ML_deg_err_no_rep = 0;
         degeneracy_better = 0;

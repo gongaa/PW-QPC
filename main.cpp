@@ -34,7 +34,8 @@ int main(int argc, char** argv)
   // which code to use
   // which channel to use and what's their parameters.
   int m, rx, rz, list_size;
-  double px, pz;
+  double px, pz; 
+  int p_min, p_max; // in percentage
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
     if ((arg == "-h") || (arg == "--help")) {
@@ -52,6 +53,10 @@ int main(int argc, char** argv)
       iss >> px;  
     } else if (arg == "-pz") {
       iss >> pz;  
+    } else if (arg == "-pmin") {
+      iss >> p_min;
+    } else if (arg == "-pmax") {
+      iss >> p_max;
     } else if ((arg == "-l") || (arg == "--list_size")) {
       iss >> list_size;
     } else {
@@ -68,8 +73,9 @@ int main(int argc, char** argv)
   // simulation_RM_closest_codewords(m, rx, rz);
   // test_linearity_xor(6, 3);
   // simulation_RM_d_star(m, rx);
-  test_RM_d_star();
+  // test_RM_d_star();
   // compare_equiv_classes();
   // simulation_symmetric_noise(m, rx);
+  simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, p_min, p_max);
   return 0;
 }

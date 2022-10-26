@@ -161,18 +161,6 @@ void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& code
     // for (auto ec : equiv_class) cerr << ec.size() << " ";
 }
 
-// verify the encoded and decoded info bits are the same
-bool verify(int K, int *U_K_1, int *U_K_2) {
-    bool is_same = true;
-    for (int i = 0; i < K; i++) {
-        if (U_K_1[i] != U_K_2[i]) {
-            is_same = false;
-            break;
-        }
-    }
-    return is_same;
-}
-
 // check RM is_codeword
 void verify_RM_is_codeword() {
   int m = 5, r = 2;

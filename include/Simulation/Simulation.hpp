@@ -16,6 +16,8 @@ int simulation_RM_SCL();
 
 int simulation_RM_CSS(int m, int rx, int rz, int list_size);
 
+int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, int p_min, int p_max);
+
 int simulation_RM_degeneracy(int m, int rx, int rz, double px, double pz);
 
 int simulation_RM_closest_codewords(int m, int rx, int rz); 

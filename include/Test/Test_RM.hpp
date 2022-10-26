@@ -24,7 +24,16 @@ void generate_all_codewords(int m, int r, vector<vector<int>>& codewords);
 void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& codewords, vector<vector<int>>& equiv_classes);
 
 // verify the encoded and decoded info bits are the same
-bool verify(int K, int *U_K_1, int *U_K_2);
+inline bool verify(int K, int *U_K_1, int *U_K_2) {
+    bool is_same = true;
+    for (int i = 0; i < K; i++) {
+        if (U_K_1[i] != U_K_2[i]) {
+            is_same = false;
+            break;
+        }
+    }
+    return is_same;
+}
 
 // check RM is_codeword
 void verify_RM_is_codeword();

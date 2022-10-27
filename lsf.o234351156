@@ -1,0 +1,35 @@
+Sender: LSF System <lsfadmin@eu-c7-120-11>
+Subject: Job 234351156: <./build/apps/program -m 7 -rx 3 -rz 4 -l 64 -pmin 1 -pmax 10 &> logs/m7_rx3_rz4_l64_pmin1_pmax10.log> in cluster <euler> Done
+
+Job <./build/apps/program -m 7 -rx 3 -rz 4 -l 64 -pmin 1 -pmax 10 &> logs/m7_rx3_rz4_l64_pmin1_pmax10.log> was submitted from host <eu-login-22> by user <gonga> in cluster <euler> at Wed Oct 26 22:57:01 2022
+Job was executed on host(s) <eu-c7-120-11>, in queue <normal.4h>, as user <gonga> in cluster <euler> at Wed Oct 26 22:57:14 2022
+</cluster/home/gonga> was used as the home directory.
+</cluster/home/gonga/QRM-List-Decoder> was used as the working directory.
+Started at Wed Oct 26 22:57:14 2022
+Terminated at Thu Oct 27 00:28:09 2022
+Results reported at Thu Oct 27 00:28:09 2022
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+./build/apps/program -m 7 -rx 3 -rz 4 -l 64 -pmin 1 -pmax 10 &> logs/m7_rx3_rz4_l64_pmin1_pmax10.log
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :                                   5441.57 sec.
+    Max Memory :                                 9 MB
+    Average Memory :                             9.00 MB
+    Total Requested Memory :                     1024.00 MB
+    Delta Memory :                               1015.00 MB
+    Max Swap :                                   -
+    Max Processes :                              3
+    Max Threads :                                4
+    Run time :                                   5482 sec.
+    Turnaround time :                            5468 sec.
+
+The output (if any) follows:
+

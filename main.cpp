@@ -33,7 +33,7 @@ int main(int argc, char** argv)
   // write a simple parser for selecting number of threads
   // which code to use
   // which channel to use and what's their parameters.
-  int m, rx, rz, list_size;
+  int m, rx, rz, list_size, n;
   double px, pz; 
   int p_min, p_max; // in percentage
   for (int i = 1; i < argc; ++i) {
@@ -57,6 +57,8 @@ int main(int argc, char** argv)
       iss >> p_min;
     } else if (arg == "-pmax") {
       iss >> p_max;
+    } else if (arg == "-n") {
+      iss >> n;
     } else if ((arg == "-l") || (arg == "--list_size")) {
       iss >> list_size;
     } else {
@@ -76,6 +78,6 @@ int main(int argc, char** argv)
   // test_RM_d_star();
   // compare_equiv_classes();
   // simulation_symmetric_noise(m, rx);
-  simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, p_min, p_max);
+  simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, p_min, p_max, n);
   return 0;
 }

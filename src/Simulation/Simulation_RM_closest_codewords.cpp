@@ -263,13 +263,6 @@ int compare_equiv_classes() {
 
     vector<double> flips_err_prob(N + 1, 0);
     double px = 0.5;
-    // double log_err = N * log(1-px), log_err_diff = log(px) - log(1-px);
-    // flips_err_prob[0] = exp(log_err);
-    // for (int i = 1; i < N + 1; i++) {
-    //     log_err += log_err_diff;
-    //     flips_err_prob[i] = exp(log_err);
-    //     // c++ double exponent min is -1022, may underflow
-    // }
     for (int i = 0; i < N + 1; i++) {
         flips_err_prob[i] = 1 << (32-i);
     }

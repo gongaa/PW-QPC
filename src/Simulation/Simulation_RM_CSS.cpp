@@ -297,7 +297,7 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
     return 0;
 }
 
-int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, int p_min, int p_max) {
+int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, int p_min, int p_max, int num_total = 100) {
     // int m = 5, rx = 3, rz = 2, list_size = 16384;
     Encoder_RM_CSS* encoder = new Encoder_RM_CSS(m, rx, rz);
     Encoder_RM* encoder_X = new Encoder_RM(m, rz);
@@ -328,10 +328,9 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
     // vector<double> pm_Z_list(list_size, 0.0);
     vector<vector<int>> equiv_class;
     bool is_in_one_class; int largest_class_size; int *largest_class;
-    int num_total = 10000, SCL_num_X_err = 0, SCL_num_Z_err = 0;
+    int SCL_num_X_err = 0, SCL_num_Z_err = 0;
     int SCL_num_X_err_deg = 0, SCL_num_X_err_equal_weight = 0;
     int SCL_equal_weight_guess_correct = 0;
-    bool is_SCL_equal_weight_guess_correct = false;
     int degeneracy_helps = 0;
     int num_Z_list_err = 0, SCL_num_Z_err_deg = 0, SCL_num_Z_err_deg_list = 0;
     double pm_best;
@@ -393,21 +392,24 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
             }
             xor_vec(N, SCL_denoised_codeword_X.data(), desired_X.data(), SCL_denoised_codeword_X.data());
             SCL_num_flips = count_flip(N, SCL_denoised_codeword_X.data(), noise_X.data());
-            if (is_SCL_wrong && (SCL_num_flips != num_flips)) {
+            if (is_SCL_wrong && (num_flips == SCL_num_flips)) 
+                for (int i = 0; i < X_list.size(); i++) {
+                    if (count_weight(X_list[i]) == 0 && abs(pm_X_list[i] - pm_best) < std::numeric_limits<double>::epsilon()) 
+                        cerr << "Found a case where num_flips=SCL_num_flips=" << num_flips <<  " but path metrics are different" 
+                        << ", desired pm=" << pm_X_list[i] << ", SCL best pm=" << pm_best << endl;
+
+                    break;
+                }
+            if (is_SCL_wrong && (SCL_num_flips != num_flips)) 
                 // not fail due to equal weight (even ML cannot decide)
                 SCL_num_X_err_equal_weight++;
-            }
-            if (SCL_num_flips == num_flips) {
-                if (is_SCL_wrong) is_SCL_equal_weight_guess_correct = false;
-                else {
-                    is_SCL_equal_weight_guess_correct = true;
+            if (!is_SCL_wrong && (SCL_num_flips == num_flips)) 
                     SCL_equal_weight_guess_correct++;
-                }
-            }
             // cerr << "plain SCL is " << (is_SCL_wrong ? "wrong" : "correct") << endl;
             is_SCL_deg_wrong = false;
             if (!encoder->is_X_stabilizer(SCL_denoised_codeword_X.data())) {
                 SCL_num_X_err_deg++;
+                is_SCL_deg_wrong = true;
             }
             equiv_class.clear();
             equiv_class.push_back({0});
@@ -454,34 +456,38 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
             for (int i = 0; i < weight.size(); i++) {
                 is_SCL_weighted_deg_wrong = true;
                 // random guessing
-                if (encoder->is_X_stabilizer(X_list[equiv_class[max_class_idx[i][0]][0]].data())) {
+                if ((max_class_idx[i].size() > 1) && 
+                    (std::find(max_class_idx[i].begin(), max_class_idx[i].end(), SCL_class_idx) != max_class_idx[i].end())) {
+                    // the same guess as SCL best
+                    is_SCL_weighted_deg_wrong = is_SCL_deg_wrong;
+                } else if (encoder->is_X_stabilizer(X_list[equiv_class[max_class_idx[i][0]][0]].data())) {
                     is_SCL_weighted_deg_wrong = false;
                 }
                 if (is_SCL_weighted_deg_wrong) SCL_num_X_err_deg_list[i]++;
-                if ((i == 0) && (num_flips == SCL_num_flips) && 
-                    (!is_SCL_equal_weight_guess_correct ^ is_SCL_weighted_deg_wrong) && 
-                    (abs(class_prob[desired_class_idx] - class_prob[SCL_class_idx]) > std::numeric_limits<double>::epsilon())) {
+                //     (abs(class_prob[desired_class_idx] - class_prob[SCL_class_idx]) > std::numeric_limits<double>::epsilon())) {
+                if ((i == 0) && (is_SCL_wrong ^ is_SCL_weighted_deg_wrong)) {
                     cerr << "num_flips: " << num_flips << ", SCL_num_flips: " << SCL_num_flips << endl;
                     cerr << "there are " << max_class_idx[0].size() << " classes: ";
                     for (int k : max_class_idx[0]) cerr << k << " ";
                     cerr << ", prob " << max_class_prob[0] << endl;
-                    cerr << "desired equiv class " << desired_class_idx << ", size " << equiv_class[desired_class_idx].size() << ", prob " << class_prob[desired_class_idx] << endl;
+                    if (desired_class_idx >= 0) cerr << "desired equiv class " << desired_class_idx << ", size " << equiv_class[desired_class_idx].size() << ", prob " << class_prob[desired_class_idx] << endl;
                     cerr << "SCL best equiv class " << SCL_class_idx << ", size " << equiv_class[SCL_class_idx].size() << ", prob " << class_prob[SCL_class_idx] << endl;
-                    if (!is_SCL_weighted_deg_wrong && !is_SCL_equal_weight_guess_correct) 
-                        cerr << "weighted degeneracy guess correctly but SCL guess wrongly" << endl;
-                    if (is_SCL_equal_weight_guess_correct && is_SCL_weighted_deg_wrong)
-                        cerr << "SCL guess correctly but weighted degeneracy guess wrongly" << endl;
+                    if (!is_SCL_weighted_deg_wrong && is_SCL_wrong) {
+                        if (num_flips == SCL_num_flips)
+                            cerr << "weighted degeneracy guess correctly but SCL guess wrongly" << endl;
+                        else {
+                            cerr << "degeneracy helps" << endl;
+                            degeneracy_helps++;
+                        }
+                    }
+                    if (!is_SCL_wrong && is_SCL_weighted_deg_wrong) {
+                        if (num_flips == SCL_num_flips)
+                            cerr << "SCL guess correctly but weighted degeneracy guess wrongly" << endl;
+                        else 
+                            cerr << "degeneracy makes it worse" << endl;
+                    }
                 }
                 if (!is_SCL_weighted_deg_wrong && (SCL_num_flips == num_flips)) SCL_equal_weight_deg_guess_correct[i]++;
-                if ((i == 0) && is_SCL_wrong && !is_SCL_weighted_deg_wrong && (SCL_num_flips != num_flips)) {
-                    degeneracy_helps++;
-                    cerr << "degeneracy really helps in a case where num_flips=" << num_flips << ", SCL_num_flips=" << SCL_num_flips << endl;
-                    cerr << "there are " << max_class_idx[0].size() << " classes: ";
-                    for (int k : max_class_idx[0]) cerr << k << " ";
-                    cerr << ", prob " << max_class_prob[0] << endl;
-                    if (desired_class_idx >= 0) cerr << "desired equiv class " << desired_class_idx << ", size " << equiv_class[desired_class_idx].size() << ", prob " << class_prob[desired_class_idx] << endl;
-                    if (SCL_class_idx >= 0) cerr << "SCL best equiv class " << SCL_class_idx << ", size " << equiv_class[SCL_class_idx].size() << ", prob " << class_prob[SCL_class_idx] << endl;
-                }
             }
         }
         cerr << "average #flips: " << (double)total_flips / num_total << endl;

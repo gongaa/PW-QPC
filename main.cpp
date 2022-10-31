@@ -6,6 +6,7 @@
 #include "Decoder/Decoder_RM_SC.hpp"
 #include "Decoder/Decoder_RM_SCL.hpp"
 #include "Test/Test_RM.hpp"
+#include "Test/Test_polar.hpp"
 #include "Simulation/Simulation.hpp"
 #include "Channel/Channel.hpp"
 
@@ -78,6 +79,7 @@ int main(int argc, char** argv)
   // test_RM_d_star();
   // compare_equiv_classes();
   // simulation_symmetric_noise(m, rx);
-  simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, p_min, p_max, n);
+  // simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, p_min, p_max, n);
+  test_polar();
   return 0;
 }

@@ -1,7 +1,8 @@
 #include "Decoder/Decoder.hpp"
+#include <iostream>
 #include <cassert>
 using namespace std;
-// #define USE_APPROXIMATION
+#define USE_APPROXIMATION
 
 vector<function<double(const vector<double> &LLRs, const vector<int> &bits)>> my_lambdas =  {
     [](const vector<double> &LLRs, const vector<int> &bits) -> double

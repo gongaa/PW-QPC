@@ -2,12 +2,12 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
-
+#include <iostream>
 #include "Encoder/Encoder_polar.hpp"
 using namespace std;
 
 Encoder_polar::Encoder_polar(const int& K, const int& N, const vector<bool>& frozen_bits)
-: Encoder(K, N), m((int)log2(N)), X_N_tmp(this->N), info_bits_pos(K) 
+: Encoder(K, N), m((int)log2(N)), X_N_tmp(this->N), info_bits_pos(K), frozen_bits(N) 
 {
     set_frozen_bits(frozen_bits);
 }

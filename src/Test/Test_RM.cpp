@@ -1,7 +1,6 @@
 #include <iostream>
 #include <random>
 #include <cassert>
-// #include <bits/stdc++.h>
 #include "Test/Test_RM.hpp"
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"

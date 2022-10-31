@@ -39,14 +39,12 @@ template <typename T>
 class Tree_metric
 {
 public:
-    const vector<uint32_t> sequence;
     int depth;
     Node<T>* root;
     vector<Node<T>*> leaves;
     double path_metric;
 
-    explicit Tree_metric(const int depth, const int base, double path_metric);
-    explicit Tree_metric(vector<uint32_t> &sequence, double path_metric);
+    explicit Tree_metric(const int depth, double path_metric);
     virtual ~Tree_metric();
     double get_path_metric() const { return path_metric; }
     void set_path_metric(double path_metric) { this->path_metric = path_metric; }
@@ -57,7 +55,7 @@ public:
 protected:
     void init();
     void recursive_get_leaves(Node<T>* cur_node);
-    void create_nodes(Node<T>* cur_node, int cur_depth, vector<int>& lanes, const vector<uint32_t> &sequence);
+    void create_nodes(Node<T>* cur_node, int cur_depth, vector<int>& lanes);
     void delete_nodes(Node<T>* cur_node);
 };
 

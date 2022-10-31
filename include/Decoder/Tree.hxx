@@ -5,15 +5,8 @@
 using namespace std;
 
 template <typename T>
-Tree_metric<T>::Tree_metric(const int depth, const int base, double path_metric)
-: sequence(vector<uint32_t>(depth, base)), depth(depth), root(nullptr), path_metric(path_metric)
-{
-    this->init();
-}
-
-template <typename T>
-Tree_metric<T>::Tree_metric(vector<uint32_t> &sequence, double path_metric)
-: sequence(sequence), depth(sequence.size() + 1), root(nullptr), path_metric(path_metric)
+Tree_metric<T>::Tree_metric(const int depth, double path_metric)
+: depth(depth), root(nullptr), path_metric(path_metric)
 {
     this->init();
 }
@@ -24,19 +17,19 @@ void Tree_metric<T>::init()
     vector<int> lanes(depth + 1, 0);
 
     auto cur_depth = 0;
-    this->root = new Node<T>(nullptr, vector<Node<T>*>(), nullptr, cur_depth, lanes[cur_depth]);
-    this->create_nodes(this->root, cur_depth + 1, lanes, sequence);
+    this->root = new Node<T>(nullptr, vector<Node<T>*>(), nullptr, cur_depth, lanes[cur_depth]++);
+    this->create_nodes(this->root, cur_depth + 1, lanes);
     recursive_get_leaves(this->get_root());
 }
 
 template <typename T>
-void Tree_metric<T>::create_nodes(Node<T>* cur_node, int cur_depth, vector<int> &lanes, const vector<uint32_t> &sequence)
+void Tree_metric<T>::create_nodes(Node<T>* cur_node, int cur_depth, vector<int> &lanes)
 {
-    if (cur_depth < this->depth) {
-        for (auto c = 0; c < (int)sequence[cur_depth - 1]; c++) {
-            auto child = new Node<T>(cur_node, vector<Node<T>*>(), nullptr, cur_depth, lanes[cur_depth]++, c);
+    if (cur_depth <= this->depth) {
+        for (int i = 0; i < 2; i++) {
+            auto child = new Node<T>(cur_node, vector<Node<T>*>(), nullptr, cur_depth, lanes[cur_depth]++, i);
             cur_node->children.push_back(child);
-            this->create_nodes(child, cur_depth + 1, lanes, sequence);
+            this->create_nodes(child, cur_depth + 1, lanes);
         }
     }
 }
@@ -81,7 +74,7 @@ void RM_Tree_metric<T>::RM_init()
     vector<int> lanes(this->m + 1, 0);
 
     auto cur_depth = 0;
-    this->root = new Node<T>(nullptr, vector<Node<T>*>(), nullptr, cur_depth, lanes[cur_depth]);
+    this->root = new Node<T>(nullptr, vector<Node<T>*>(), nullptr, cur_depth, lanes[cur_depth]++);
     this->create_RM_nodes(this->root, cur_depth + 1, this->m, this->r, lanes);
 }
 

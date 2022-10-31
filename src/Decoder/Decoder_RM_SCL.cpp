@@ -115,7 +115,7 @@ void Decoder_RM_SCL::recursive_compute_llr(int path_idx, Node<Contents_RM_SCL>* 
     }
     Contents_RM_SCL* c = node_curr->get_c();
     int m = c->m, N = 1 << m, N_half = N / 2;
-    vector<double> llr = c->l;
+    vector<double>& llr = c->l;
     vector<Node<Contents_RM_SCL>*> children = node_curr->get_children();
     auto left_child = children[0];
     Decoder::f_plus(llr.data(), llr.data() + N_half, N_half, left_child->get_c()->l.data());
@@ -156,7 +156,7 @@ bool Decoder_RM_SCL::partition_and_copy()
 {
     // sort path metric in increasing order
     std::sort(metrics_vec.begin(), metrics_vec.end(),
-        [](std::tuple<Node<Contents_RM_SCL>*, int, vector<int>, double> x, std::tuple<Node<Contents_RM_SCL>*, int, vector<int>, double> y){
+        [](std::tuple<Node<Contents_RM_SCL>*, int, vector<int>, double> x, std::tuple<Node<Contents_RM_SCL>*, int, vector<int>, double> y) {
             return std::get<3>(x) < std::get<3>(y);
         });
     // remove worst metrics from list

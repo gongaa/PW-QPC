@@ -4,6 +4,7 @@
 #include "Encoder/Encoder_polar.hpp"
 #include "Decoder/Decoder.hpp"
 #include "Decoder/Decoder_polar.hpp"
+#include "Util/Util.hpp"
 using namespace std;
 
 void test_polar();

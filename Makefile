@@ -7,8 +7,7 @@ OBJ_DIR  := $(BUILD)/objects
 APP_DIR  := $(BUILD)/apps
 TARGET   := program
 INCLUDE  := -Iinclude/
-# IGNORE   := src/Algo/PRNG_MT19937_simd.cpp src/Algo/Event_generator_fast.cpp src/Code/Polar_code.cpp src/Decoder/Decoder_polar.cpp
-IGNORE   := src/Algo/PRNG_MT19937_simd.cpp src/Algo/Event_generator_fast.cpp 
+IGNORE   := src/Algo/PRNG_MT19937_simd.cpp src/Algo/Event_generator_fast.cpp src/Util/CRC_polynomial_fast.cpp 
 SRC      :=                        \
    $(wildcard src/Algo/*.cpp) 	   \
    $(wildcard src/Channel/*.cpp)   \
@@ -17,6 +16,7 @@ SRC      :=                        \
    $(wildcard src/Encoder/*.cpp)   \
    $(wildcard src/Test/*.cpp)      \
    $(wildcard src/Simulation/*.cpp)\
+   $(wildcard src/Util/*.cpp)\
    $(wildcard src/*.cpp)           \
    main.cpp
 SRC 	 := $(filter-out $(IGNORE), $(SRC)) 

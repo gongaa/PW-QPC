@@ -10,18 +10,6 @@
 
 using namespace std;
 
-// generate codeword of information bits
-// or int K, int *U_K
-void generate_random(int N, int *Y_N) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::bernoulli_distribution d(0.5);
- 
-    for(int i = 0; i < N; i++) {
-        Y_N[i] = d(gen);
-    }
-}
-
 void test_linearity_xor(int m, int r) {
     Encoder_RM* encoder = new Encoder_RM(m, r);
     int K = encoder->get_K(), N = encoder->get_N();

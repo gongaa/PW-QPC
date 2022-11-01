@@ -4,9 +4,9 @@ int simulation_RM_SCL() {
     // each time a decoding failure occurred, 
     // we checked whether the decoded codeword was more likely than the transmitted codeword.
     // If so, then the optimal ML decoder would surely misdecode y as well.
-    int m = 7, r = 3, list_size = 16;
-    Encoder* encoder = new Encoder_RM(m, r);
-    // Decoder_RM_SC* SC_decoder = new Decoder_RM_SC(m ,r, 1);
+    int m = 8, r = 3, list_size = 64;
+    Encoder_RM* encoder = new Encoder_RM(m, r);
+    Decoder_RM_SC* SC_decoder = new Decoder_RM_SC(m ,r, 1);
     Decoder_RM_SCL* SCL_decoder = new Decoder_RM_SCL(m ,r, list_size);
     int K = encoder->get_K(), N = encoder->get_N();
     cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
@@ -18,7 +18,7 @@ int simulation_RM_SCL() {
     cerr << "sigma=" << sigma << ", db=" << db << endl;
     Channel_AWGN* chn_awgn = new Channel_AWGN(N, sigma, 42);
 #else
-    double p = 0.07;
+    double p = 0.1;
     cerr << "p=" << p << endl;
     Channel_BSC* chn_bsc = new Channel_BSC(N, p, 42);
 #endif // USE_AWGN
@@ -30,7 +30,7 @@ int simulation_RM_SCL() {
     vector<int> SC_denoised_codeword(N, 0);
     vector<int> SCL_denoised_codeword(N, 0);
     vector<int> decoded(K, 0);
-    int num_total = 10000, SC_num_err = 0, SCL_num_err = 0, num_ml_failed = 0;
+    int num_total = 1000, SC_num_err = 0, SCL_num_err = 0, num_ml_failed = 0;
     int SC_num_flips = 0, SCL_num_flips = 0, ml_flips=0;
     for (int i = 0; i < num_total; i++) {
         generate_random(K, info_bits.data());
@@ -44,7 +44,7 @@ int simulation_RM_SCL() {
             // llr_noisy_codeword[i] = noisy_codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
         }
 #endif // USE_AWGN
-        // SC_decoder->decode(llr_noisy_codeword.data(), SC_denoised_codeword.data(), 0);
+        SC_decoder->decode(llr_noisy_codeword.data(), SC_denoised_codeword.data(), 0);
         SCL_decoder->decode(llr_noisy_codeword.data(), SCL_denoised_codeword.data(), 0);
 #ifdef IS_VERBOSE
         if (!verify(N, codeword.data(), SC_denoised_codeword.data())) {
@@ -60,6 +60,7 @@ int simulation_RM_SCL() {
             }
         }
 #endif // IS_VERBOSE
+        if (!verify(N, codeword.data(), SC_denoised_codeword.data())) SC_num_err++;
         if (!verify(N, codeword.data(), SCL_denoised_codeword.data())) {
             SCL_num_err++;
 #ifdef IS_VERBOSE

@@ -7,6 +7,7 @@
 #include "Decoder/Decoder_RM_SCL.hpp"
 #include "Decoder/Decoder_RM_syndrome_SC.hpp"
 #include "Channel/Channel.hpp"
+#include "Util/CRC_polynomial.hpp"
 
 using namespace std;
 

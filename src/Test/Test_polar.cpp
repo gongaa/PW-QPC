@@ -6,6 +6,7 @@
 #include "Encoder/Encoder_polar.hpp"
 #include "Decoder/Decoder_polar.hpp"
 #include "Channel/Channel.hpp"
+#include "Util/CRC_polynomial.hpp"
 #define CHN_AWGN
 
 using namespace std;
@@ -52,7 +53,8 @@ void calculate_frozen_bits_positions(int N, int K, double p, vector<bool>& froze
 void test_polar() {
     // int K = 92, N = 256, L = 64;
     // int K = 16, N = 32, L = 1;
-    int K = 1024, N = 2048, L = 4;
+    // int K = 1024, N = 2048, L = 4;
+    int K = 1723, N = 2048, L = 4;
     vector<int> info_bits(K);
     vector<int> codeword(N);
     vector<int> noisy_codeword(N);
@@ -60,7 +62,7 @@ void test_polar() {
     vector<int> denoised_codeword(N);
     vector<bool> frozen_bits(N, 0);
 #ifdef CHN_AWGN
-    double db = 2;
+    double db = 3;
     double code_rate = (double)K / N;
     double sigma = 1 / sqrt(2 * code_rate * db2val(db));
     cerr << "sigma=" << sigma << ", db=" << db << endl;
@@ -113,4 +115,19 @@ void test_polar() {
         // else cerr << k << " decode successfully, ml_flips: " << ml_flips << endl;
     }
     cerr << "FER: " << (double)SCL_num_err / num_total << endl;
+}
+
+void test_crc() {
+    int K = 34, crc_size = 8;
+    // vector<int> info_bits(K);
+    vector<int> info_bits_crc(K + crc_size);
+    CRC_polynomial<int>* crc = new CRC_polynomial<int>(K, "8-WCDMA", crc_size);
+    for (int idx = 0; idx < 100; idx++) {
+        generate_random(K, info_bits_crc.data());
+        crc->build(info_bits_crc.data(), info_bits_crc.data(), 0);
+        cerr << "CRC remainder: ";
+        for (int i = 0; i < crc_size; i++) cerr << info_bits_crc[K+i];
+        cerr << endl;
+        assert (crc->check(info_bits_crc.data(), 0));
+    }
 }

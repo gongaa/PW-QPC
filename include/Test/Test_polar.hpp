@@ -9,4 +9,6 @@ using namespace std;
 
 void test_polar();
 
+void test_crc();
+
 #endif // TEST_POLAR_HPP_

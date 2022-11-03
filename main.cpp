@@ -80,7 +80,8 @@ int main(int argc, char** argv)
   // compare_equiv_classes();
   // simulation_symmetric_noise(m, rx);
   // simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, p_min, p_max, n);
-  test_polar();
+  // test_polar();
+  test_crc();
   // simulation_RM_SCL();
   return 0;
 }

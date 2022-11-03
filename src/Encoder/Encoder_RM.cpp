@@ -9,7 +9,7 @@
 using namespace std;
 
 Encoder_RM::Encoder_RM(const int& m, const int& r)
-: Encoder(calculate_K(m, r), 1 << m), m(m), r(r)
+: Encoder(calculate_K(m, r), 1 << m), m(m), r(r), X_dec_N(1 << m, 0)
 {
 }
 
@@ -76,6 +76,31 @@ int Encoder_RM::_encode(const int *U_K, int *X_N, int m, int r)
     for (int i = 0; i < N_half; i++)
         X_N[i] ^= X_N[i + N_half]; // (u+v, u)
     return K_v + K_u;
+}
+
+void Encoder_RM::decode(const int *X_N, int *V_K)
+{
+   copy(X_N, X_N + N, X_dec_N.data());
+   _decode(X_dec_N.data(), V_K, this->m, this->r);
+}
+
+int Encoder_RM::_decode(int *X_N, int *V_K, const int& m, const int& r)
+{
+   if (r == 0) {
+      V_K[0] = X_N[0];
+      return 1;
+   }
+   if (r == m) {
+      int N = 1 << m;
+      encode_mm_code(X_N, V_K, N);
+      return N;
+   }
+   // (u+v, u)
+   int N_half = 1 << (m-1);
+   for (int i = 0; i < N_half; i++) X_N[i] ^= X_N[N_half + i];
+   int K_v = _decode(X_N, V_K, m-1, r-1);
+   int K_u = _decode(X_N + N_half, V_K + K_v, m-1, r);
+   return K_v + K_u;
 }
 
 bool Encoder_RM::is_codeword(const int *X_N, int m, int r)

@@ -22,6 +22,7 @@ void generate_bent_m6_r2_order(vector<int>& noise);
 void generate_all_codewords(int m, int r, vector<vector<int>>& codewords);
 void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& codewords, vector<vector<int>>& equiv_classes);
 
+void test_encoder_decode();
 // check RM is_codeword
 void verify_RM_is_codeword();
 

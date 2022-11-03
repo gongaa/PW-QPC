@@ -8,7 +8,7 @@ class Decoder_RM_SC : public Decoder
 protected:
     const int m, r;
     const int L;
-
+    vector<double> Y_dec_N; 
     
 public: 
     Decoder_RM_SC(const int& m, const int& r, const int& L);

@@ -174,7 +174,19 @@ void verify_RM_is_codeword() {
 }
 
 // check with no added noise, decoder can correctly decode
-
+void test_encoder_decode() {
+    int m = 20, r = 10;
+    Encoder_RM* encoder = new Encoder_RM(m, r);
+    int K = encoder->get_K(), N = encoder->get_N();
+    vector<int> info_bits(K), decoded_info_bits(K);
+    vector<int> codeword(N);
+    for (int idx = 0; idx < 100; idx++) {
+        generate_random(K, info_bits.data());
+        encoder->encode(info_bits.data(), codeword.data(), 1);
+        encoder->decode(codeword.data(), decoded_info_bits.data());
+        assert (verify(K, info_bits.data(), decoded_info_bits.data()));
+    } 
+}
 
 // check RM(m, 1) is working, both dumer and the LLR version
 

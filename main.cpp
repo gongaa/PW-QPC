@@ -34,9 +34,10 @@ int main(int argc, char** argv)
   // write a simple parser for selecting number of threads
   // which code to use
   // which channel to use and what's their parameters.
-  int m, rx, rz, list_size, n;
+  int m, rx, rz, list_size, n = 100;
   double px, pz; 
   int p_min, p_max; // in percentage
+  bool use_crc = false;
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
     if ((arg == "-h") || (arg == "--help")) {
@@ -58,10 +59,12 @@ int main(int argc, char** argv)
       iss >> p_min;
     } else if (arg == "-pmax") {
       iss >> p_max;
-    } else if (arg == "-n") {
+    } else if ((arg == "-n") || (arg == "--num_samples")) {
       iss >> n;
     } else if ((arg == "-l") || (arg == "--list_size")) {
       iss >> list_size;
+    } else if (arg == "--crc") {
+      iss >> use_crc;
     } else {
       cerr << "argument not supported" << endl;
       return 1;
@@ -79,9 +82,11 @@ int main(int argc, char** argv)
   // test_RM_d_star();
   // compare_equiv_classes();
   // simulation_symmetric_noise(m, rx);
-  // simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, p_min, p_max, n);
+  cerr << "Use CRC: " << (use_crc ? "True" : "False") << endl;
+  simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, p_min, p_max, n, use_crc);
   // test_polar();
-  test_crc();
+  // test_crc();
+  // test_encoder_decode();
   // simulation_RM_SCL();
   return 0;
 }

@@ -11,12 +11,14 @@
 #include "Decoder/Decoder_RM_SCL.hpp"
 #include "Decoder/Decoder_RM_syndrome_SC.hpp"
 #include "Channel/Channel.hpp"
+#include "Util/CRC_polynomial.hpp"
+#include "Util/Util.hpp"
 
 int simulation_RM_SCL();
 
 int simulation_RM_CSS(int m, int rx, int rz, int list_size);
 
-int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, int p_min, int p_max, int num_total);
+int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, int p_min, int p_max, int num_total, bool use_crc);
 
 int simulation_RM_degeneracy(int m, int rx, int rz, double px, double pz);
 

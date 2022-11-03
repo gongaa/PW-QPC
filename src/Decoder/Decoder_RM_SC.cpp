@@ -7,17 +7,17 @@
 using namespace std;
 
 Decoder_RM_SC::Decoder_RM_SC(const int& m, const int& r, const int& L)
-: Decoder(Encoder_RM::calculate_K(m, r), 1 << m), m(m), r(r), L(L)
+: Decoder(Encoder_RM::calculate_K(m, r), 1 << m), m(m), r(r), L(L), Y_dec_N(N, 0)
 {
 }
 
 double Decoder_RM_SC::decode(const double *Y_N, int *X_N, const size_t frame_id)
 {  // recursive decoding down to (1, m) and (m, m)
    int V_K_len = K;
-   vector<double> Y_dec_N(N, 0); // TODO: move it to protected attribute
    vector<int> V_K(K, 0);
 #ifdef USE_DUMER
    vector<double> buf(N, 0);
+   std::fill(Y_dec_N.begin(), Y_dec_N.end(), 0.0);
    this->_decode_dumer(Y_N, Y_dec_N.data(), V_K.data(), m, r, N, V_K_len, buf.data());
    for (int i = 0; i < N; i++)
       X_N[i] = (Y_dec_N[i] > 0) ? 0 : 1;

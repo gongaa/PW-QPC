@@ -6,14 +6,12 @@
 using namespace std;
 
 Decoder_polar_SCL::Decoder_polar_SCL(const int& K, const int& N, const int& L, const vector<bool>& frozen_bits) 
-                //   vector<function<double(const vector<double> &LLRS, const vector<int> &bits)>> lambdas)
 : Decoder(K, N), L(L), frozen_bits(frozen_bits)
 {
     this->active_paths.insert(0);
 	int n = log2(N);
 	int max_depth_llrs = n - 1;
     for (auto i = 0; i < L; i++) {
-		// auto new_tree = new Tree_metric<Contents_SCL>(n, numeric_limits<double>::min());
 		auto new_tree = new Tree_metric<Contents_SCL>(n, 0);
 		this->polar_trees.push_back(new_tree);
 		this->recursive_allocate_nodes_contents(new_tree->get_root(), this->N, max_depth_llrs);
@@ -33,6 +31,9 @@ void Decoder_polar_SCL::recursive_allocate_nodes_contents(Node<Contents_SCL>* no
 			this->recursive_allocate_nodes_contents(c, new_vector_size, max_depth_llrs);
 	} else node_curr->get_c()->max_depth_llrs = max_depth_llrs;
 	max_depth_llrs = this->polar_trees[0]->get_depth() - node_curr->get_depth();
+	// the max_depth_llrs is the (path length -1) from the current leaf
+	// to the common ancestor of itself and the previous immediate leaf.
+	// max_depth_llrs for even leaf is always 0
 }
 
 void Decoder_polar_SCL::recursive_initialize_frozen_bits(const Node<Contents_SCL>* node_curr, const std::vector<bool>& frozen_bits)
@@ -63,7 +64,6 @@ void Decoder_polar_SCL::recursive_deallocate_nodes_contents(Node<Contents_SCL>* 
 
 void Decoder_polar_SCL::recursive_compute_llr(Node<Contents_SCL>* node_cur, int depth)
 {
-	// cerr << "depth " << depth << " ";
 	auto node_father = node_cur->get_father();
 
 	if (depth != 0)
@@ -135,21 +135,20 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 	// tuples to be sorted. <Path,estimated bit,metric>
 	std::vector<std::tuple<int,int,double>> metrics_vec;
 
-	// for (auto leaf_index = 0; leaf_index < this->N; leaf_index++)
-	// 	cerr << leaves_array[0][leaf_index]->get_c()->max_depth_llrs << " ";
-	// cerr << endl;
 	// run through each leaf
-	// cerr << "pm initially " << polar_trees[0]->get_path_metric() << endl;
 	for (auto leaf_index = 0; leaf_index < this->N; leaf_index++)
 	{
 		// compute LLR for current leaf
-		// cerr << "caller leaf index " << leaf_index << " , is frozen " << leaves_array[0][leaf_index]->get_c()->is_frozen_bit << endl;
 		for (auto path : active_paths) 
 			this->recursive_compute_llr(leaves_array[path][leaf_index], 
 										leaves_array[path][leaf_index]->get_c()->max_depth_llrs);
+		// only need to compute llr starting from the common ancestor of itself and the previous leaf
+
 		// if current leaf is a frozen bit
 		if (leaves_array[0][leaf_index]->get_c()->is_frozen_bit) {
-		    // penalize if the prediction for frozen bit is wrong, default frozen value is 0
+		    // penalize if the prediction for frozen bit is wrong, frozen value is 0
+			// frozen bit should not be set it to CRC of info bits
+			// the CRC checksums should be placed at the best channels
 			auto min_phi = std::numeric_limits<double>::max();
 			for (auto path : active_paths) {
 				auto cur_leaf = leaves_array[path][leaf_index];
@@ -160,8 +159,8 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 			}
 
 			// normalization
-			// for (auto path : active_paths)
-			// 	this->polar_trees[path]->set_path_metric(this->polar_trees[path]->get_path_metric() - min_phi);
+			for (auto path : active_paths)
+				this->polar_trees[path]->set_path_metric(this->polar_trees[path]->get_path_metric() - min_phi);
 
 		} else {
 			// metrics vec used to store values of hypothetic path metrics
@@ -179,8 +178,8 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 			}
 
 			
-			// for (auto& vec : metrics_vec) // normalization
-			// 	std::get<2>(vec) -= min_phi;
+			for (auto& vec : metrics_vec) // normalization
+				std::get<2>(vec) -= min_phi;
 
 			if (active_paths.size() <= (unsigned)(L / 2)) {
 				last_active_paths = active_paths;
@@ -223,8 +222,7 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 				}
 			}
 		}
-		// cerr << "number of active paths after duplication " << active_paths.size() << endl;
-		// propagate sums
+		// right node keeps propagating sums, until itself becomes a left node
 		for (auto path : active_paths)
 			this->recursive_propagate_sums(leaves_array[path][leaf_index]);
 	}

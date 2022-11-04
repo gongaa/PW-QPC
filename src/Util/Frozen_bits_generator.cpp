@@ -32,16 +32,15 @@ void frozen_bits_generator_BEC(int N, int K, double p, vector<bool>& frozen_bits
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
 }
 
-static constexpr double alpha = -0.4527;
-static constexpr double beta  =  0.0218;
-static constexpr double gamma =  0.8600;
+double my_alpha = -0.4527;
+double my_beta  =  0.0218;
+double my_gamma =  0.8600;
 
-static constexpr double a =  1.0  / alpha;
-static constexpr double b = -beta / alpha;
-static constexpr double c =  1.0  / gamma;
-static constexpr double phi_pivot     = 0.867861;
-static constexpr double phi_inv_pivot = 0.6845772418;
-
+double a =  1.0  / my_alpha;
+double b = -my_beta / my_alpha;
+double c =  1.0  / my_gamma;
+double phi_pivot     = 0.867861;
+double phi_inv_pivot = 0.6845772418;
 
 double phi_inv(double t)
 {
@@ -56,13 +55,13 @@ double phi(double t)
 	if (t < phi_pivot)
 		return std::exp(0.0564 * t * t - 0.48560 * t);
 	else // if(t >= phi_pivot)
-		return std::exp(alpha * std::pow(t, gamma) + beta);
+		return std::exp(my_alpha * std::pow(t, my_gamma) + my_beta);
 }
 
 double square_plus_DE(const double& zl, const double& zr)
 {
 	auto z = phi_inv(1.0 - ((1.0 - phi(zl)) * (1.0 - phi(zr))));
-	return (z == HUGE_VAL) ? zl + M_LN2 / (alpha * gamma) : z;
+	return (z == HUGE_VAL) ? zl + M_LN2 / (my_alpha * my_gamma) : z;
 	// return z;
 }
 
@@ -88,7 +87,7 @@ void frozen_bits_generator_AWGN(int N, int K, double db, vector<bool>& frozen_bi
 
 			z[t * o1] = phi_inv(1.0 - std::pow(1.0 - phi(T), 2.0));
 			if (z[t * o1] == HUGE_VAL)
-				z[t * o1] = T + M_LN2 / (alpha * gamma);
+				z[t * o1] = T + M_LN2 / (my_alpha * my_gamma);
 
 			z[t * o1 + o2] = 2.0 * T;
 		}

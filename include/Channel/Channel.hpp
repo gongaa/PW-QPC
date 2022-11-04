@@ -25,15 +25,15 @@ public:
 class Channel_BSC : Channel_c
 {
 protected:
-    float p;
+    double p;
 
 public:
-    Channel_BSC(const int N, float p, const int seed = 0);
+    Channel_BSC(const int N, double p, const int seed = 0);
     virtual ~Channel_BSC() = default;
     // virtual Channel_BSC* clone() const;
 
     // TODO: support a probability vector, this should go hand in hand with SIMD
-    // void _add_noise(const float *CP, const int *X_N, const int *Y_N, const size_t frame_id);
+    // void _add_noise(const double *CP, const int *X_N, const int *Y_N, const size_t frame_id);
     int add_noise(const int *X_N, int *Y_N, const size_t frame_id);
 
 };
@@ -70,26 +70,28 @@ public:
 class Channel_depolarize_q : public Channel_q
 {
 protected:
-    float p;
+    double p;
     string type = "Depolarize_q";
 
 public:
-    Channel_depolarize_q(const int N, float p, const int seed = 0) 
+    Channel_depolarize_q(const int N, double p, const int seed = 0) 
     : Channel_q(N, new Event_generator_unitary(seed, 2*p, p , 2*p), seed), p(p) {
         if (3*p > 1)
             cerr << "Depolarizing channel 3*p>1" << endl;
     }
+    virtual void set_prob(double p) { this->event_generator->set_prob(2*p, p, 2*p); }
 };
 
 class Channel_BSC_q : public Channel_q
 {
 protected:
-    float px, pz;
+    double px, pz;
     string type = "BSC_q";
 
 public:
-    Channel_BSC_q(const int N, float px, float pz, const int seed = 0) 
+    Channel_BSC_q(const int N, double px, double pz, const int seed = 0) 
     : Channel_q(N, new Event_generator_unitary(seed, px, px*pz, pz)), px(px), pz(pz) {}
+    virtual void set_prob(double px, double pz) { this->event_generator->set_prob(px, px*pz, pz); }
 };
 
 #endif /* CHANNEL_HPP */

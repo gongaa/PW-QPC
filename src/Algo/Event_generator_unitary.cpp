@@ -3,7 +3,7 @@
 using namespace std;
 enum ERROR_TYPE { NO_ERR = 0, ERR_X = 1, ERR_Y = 2, ERR_Z = 3};
 
-Event_generator_unitary::Event_generator_unitary(const int seed, float px, float py, float pz)
+Event_generator_unitary::Event_generator_unitary(const int seed, double px, double py, double pz)
 :px(px), py(py), pz(pz), tx(px - py), ty(px), tz(px + pz - py)
 {
 	if(py > px || py > pz)
@@ -30,7 +30,7 @@ void Event_generator_unitary::generate(int *draw_x, int *draw_z, const unsigned 
 	// px < p < px + pz - py:  Z
 	// px + pz - py < p < 1:   I
 	for (unsigned i = 0; i < length; i++) {
-		float temp = mt19937.randf_cc();
+		double temp = mt19937.randd_cc();
 		if (temp > tz)
 			draw_x[i] = draw_z[i] = 0;
 		else if (temp > ty) {
@@ -46,4 +46,8 @@ void Event_generator_unitary::generate(int *draw_x, int *draw_z, const unsigned 
 	}
 }
 
-
+void Event_generator_unitary::set_prob(double px, double py, double pz)
+{
+	this->px = px; this->py = py; this->pz = pz;
+	this->tx = px-py; this->ty = px; this->tz = px+pz-py;
+}

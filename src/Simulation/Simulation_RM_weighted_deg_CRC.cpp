@@ -61,16 +61,17 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
     vector<vector<int>> max_class_idx(weight.size());
     vector<double> pxs;
     int desired_class_idx, SCL_class_idx;
-    vector<double> class_prob(N+1, 0.0);
+    // vector<double> class_prob(list_size+1, 0.0);
     int temp_flips;
     double temp_prob;
     int total_flips;
     double pm_best;
     int best_path;
     for (int i = p_min; i <= p_max; i++) pxs.push_back((double)i/100.0);
+    Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0.0, 0.0, 41);
     for (double px : pxs) {
         cerr << "px = " << px << endl;
-        Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, px, 0.0, 41);
+        chn_bsc_q->set_prob(px, 0.0);
         weight[0] = px / (1.0-px);
         for (int j = 1; j < N+1; j++) pow[0][j] = pow[0][j-1] * weight[0];
         SCL_num_X_err = 0; SCL_num_X_err_deg = 0; SCL_num_X_err_equal_weight = 0;
@@ -78,8 +79,8 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
         SCL_equal_weight_guess_correct = 0; all_wrong_crc = 0;
         std::fill(degeneracy_helps.begin(), degeneracy_helps.end(), 0);
         std::fill(degeneracy_worse.begin(), degeneracy_worse.end(), 0);
-        for (int i = 0; i < SCL_num_X_err_deg_list.size(); i++) SCL_num_X_err_deg_list[i] = 0;
-        for (int i = 0; i < SCL_equal_weight_deg_guess_correct.size(); i++) SCL_equal_weight_deg_guess_correct[i] = 0;
+        std::fill(SCL_num_X_err_deg_list.begin(), SCL_num_X_err_deg_list.end(), 0);
+        std::fill(SCL_equal_weight_deg_guess_correct.begin(), SCL_equal_weight_deg_guess_correct.end(), 0);
         total_flips = 0;
 
         for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
@@ -90,7 +91,6 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
                 crc_X->build(info_bits_X_crc.data(), info_bits_X_crc.data(), 0);
             }
             encoder_X->encode(info_bits_X.data(), desired_X.data(), 1);
-
             chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
             num_flips = count_weight(noise_X);
             total_flips += num_flips;
@@ -98,8 +98,6 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
             // cerr << "noise adds " << num_flips << " flips" << endl;
             for (int i = 0; i < N; i++) {
                 llr_noisy_codeword_X[i] = noisy_codeword_X[i] ? -log((1-px)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
-                // llr_noisy_codeword_X[i] = noise_X[i] ? -log((1-px)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
-                // llr_noisy_codeword_Z[i] = noise_Z[i] ? -log((1-pz)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
             }
             pm_best = SCL_decoder_X->decode(llr_noisy_codeword_X.data(), SCL_denoised_codeword_X.data(), 0);
             SCL_decoder_X->copy_codeword_list(X_list, pm_X_list);
@@ -116,13 +114,14 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
                     // for (auto& x : X_list) assert(!verify(N, x.data(), desired_X.data()));
                     continue;
                 }
-                pm_best = 1e10; best_path = -1;
+                pm_best = std::numeric_limits<double>::max(); best_path = -1;
                 for (int i = 0; i < list_size; i++) {
-                    if (pm_X_list[i] < pm_best && crc_match_X[i]) {
+                    if (crc_match_X[i] && (pm_X_list[i] < pm_best)) {
                         best_path = i;
                         pm_best = pm_X_list[i];
                     }
                 }
+                assert (best_path >= 0);
                 std::copy(X_list[best_path].begin(), X_list[best_path].end(), SCL_denoised_codeword_X.begin());
             }
             for (auto& dx : X_list) xor_vec(N, dx.data(), desired_X.data(), dx.data());
@@ -168,21 +167,24 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
                     equiv_class.push_back({i});
             }
             // cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
-            for (int i = 0; i < max_class_prob.size(); i++) max_class_prob[i] = 0.0;
+            std::fill(max_class_prob.begin(), max_class_prob.end(), 0.0);
             for (int i = 0; i < max_class_idx.size(); i++) max_class_idx[i].clear();
             desired_class_idx = -1; // desired class may not be in the list
             SCL_class_idx = -1;     // this is guaranteed in the list
             for (int k = 0; k < equiv_class.size(); k++) {
                 auto& ec = equiv_class[k];
                 // kick out this class from the competition if no member passed CRC
-                if (use_crc && std::none_of(ec.begin(), ec.end(), [crc_match_X](int i) { return crc_match_X[i]; })) continue;
+                // if (use_crc && std::none_of(ec.begin(), ec.end(), [crc_match_X](int i) { return crc_match_X[i]; })) continue;
                 for (int i = 0; i < weight.size(); i++) {
                     temp_prob = 0.0;
                     for (int ec_idx : ec) {
+                        if (!crc_match_X[ec_idx]) continue;
                         temp_flips = count_flip(N, X_list[ec_idx].data(), noise_X.data());
                         temp_prob += pow[i][temp_flips];
                     }
-                    if(i == 0) class_prob[k] = temp_prob;
+                    // ******************* This line is causing trouble
+                    // if(i == 0) class_prob[k] = temp_prob;
+                    // **************************************************
                     if (temp_prob > max_class_prob[i]) {
                         max_class_prob[i] = temp_prob;
                         max_class_idx[i].clear();
@@ -192,9 +194,9 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
                     }
                 }
 
-                if (encoder->is_X_stabilizer(X_list[ec[0]].data())) desired_class_idx = k;
-                xor_vec(N, X_list[ec[0]].data(), SCL_denoised_codeword_X.data(), noise_X_diff.data());
-                if (encoder->is_X_stabilizer(noise_X_diff.data())) SCL_class_idx = k;
+                // if (encoder->is_X_stabilizer(X_list[ec[0]].data())) desired_class_idx = k;
+                // xor_vec(N, X_list[ec[0]].data(), SCL_denoised_codeword_X.data(), noise_X_diff.data());
+                // if (encoder->is_X_stabilizer(noise_X_diff.data())) SCL_class_idx = k;
             }
             for (int i = 0; i < weight.size(); i++) {
                 is_SCL_weighted_deg_wrong = true;

@@ -2,6 +2,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <chrono>
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"
 #include "Decoder/Decoder_RM_SCL.hpp"
@@ -82,11 +83,27 @@ int main(int argc, char** argv)
   // test_RM_d_star();
   // compare_equiv_classes();
   // simulation_symmetric_noise(m, rx);
-  cerr << "Use CRC: " << (use_crc ? "True" : "False") << endl;
-  simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, p_min, p_max, n, use_crc);
-  // test_polar();
+  // cerr << "Use CRC: " << (use_crc ? "True" : "False") << endl;
+  // simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, px, n, use_crc);
   // test_crc();
   // test_encoder_decode();
-  // simulation_RM_SCL();
+  test_polar_stabilizer();
+  /*
+  int N = 2048, K = 1024, L = 4;
+  m = 11; rx = 5;
+  double p = 0.1, db = 3, design_snr = 3;
+  auto start = std::chrono::high_resolution_clock::now();
+  test_polar(N, K, L, p, db, design_snr);
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  cerr << "polar takes " << duration.count() << " ms" << endl;
+  start = std::chrono::high_resolution_clock::now();
+  simulation_RM_SCL(m, rx, L, p, db, design_snr);
+  stop = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  cerr << "RM takes " << duration.count() << " ms" << endl;
+  */
+  // Now RM takes twice the time of Polar to decode
+  // TODO: optimize the copy in RM SCL decoder
   return 0;
 }

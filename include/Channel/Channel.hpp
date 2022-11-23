@@ -42,9 +42,10 @@ class Channel_AWGN : Channel_c
 {
 protected:
     double sigma;
+    double design_sigma;
 
 public: 
-    Channel_AWGN(const int N, double sigma, const int seed = 0);
+    Channel_AWGN(const int N, double sigma, double design_sigma, const int seed = 0);
     virtual ~Channel_AWGN() = default;
     int add_noise(const int *X_N, double* Y_N, const size_t frame_id);
 };

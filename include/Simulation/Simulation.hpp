@@ -14,11 +14,11 @@
 #include "Util/CRC_polynomial.hpp"
 #include "Util/Util.hpp"
 
-int simulation_RM_SCL();
+int simulation_RM_SCL(int m, int r, int list_size, double p, double db, double design_snr); 
 
 int simulation_RM_CSS(int m, int rx, int rz, int list_size);
 
-int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, int p_min, int p_max, int num_total, bool use_crc);
+int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, double px, int num_total, bool use_crc);
 
 int simulation_RM_degeneracy(int m, int rx, int rz, double px, double pz);
 

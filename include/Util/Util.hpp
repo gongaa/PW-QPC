@@ -3,6 +3,8 @@
 #include <random>
 #include <cmath>
 #include <vector>
+#include <iostream>
+#include <algorithm>
 using namespace std;
 inline bool verify(int K, int *U_K_1, int *U_K_2) {
     bool is_same = true;
@@ -38,7 +40,7 @@ inline double db2val(double x) {
   return exp(log(10.0) * x / 10.0);
 }
 
-inline void decimal2bianry(const int& n, vector<int>& b)
+inline void decimal2binary(const int& n, vector<int>& b)
 {
     int x = n;
     for (int i = 0; x > 0; i++) {
@@ -62,9 +64,36 @@ inline void generate_random(int N, int *Y_N) {
     std::mt19937 gen(rd());
     std::bernoulli_distribution d(0.5);
  
-    for(int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
         Y_N[i] = d(gen);
     }
+}
+
+inline void print_wt_dist(vector<int>& wt) {
+    sort(wt.begin(), wt.end());
+    int i = wt[0];
+    int cnt = 1;
+    for (int k = 1; k < wt.size(); k++) {
+        if (wt[k] == i) cnt++;
+        else {
+            cerr << i << ":" << cnt << "  ";
+            i = wt[k]; cnt = 1;
+        }
+    }
+    cerr << i << ":" << cnt << endl;
+}
+
+inline void cal_wt_dist_prob(vector<int>& wt, double& p, const int& offset, const double& weight) {
+    int i = wt[0];
+    int cnt = 1;
+    for (int k = 1; k < wt.size(); k++) {
+        if (wt[k] == i) cnt++;
+        else {
+            p += pow(weight, i-offset) * cnt;
+            i = wt[k]; cnt = 1;
+        }
+    }
+    p += pow(weight, i-offset) * cnt;
 }
 
 void frozen_bits_generator_BEC(int N, int K, double p, vector<bool>& frozen_bits); 
@@ -72,6 +101,10 @@ void frozen_bits_generator_BEC(int N, int K, double p, vector<bool>& frozen_bits
 void frozen_bits_generator_AWGN(int N, int K, double db, vector<bool>& frozen_bits);
 
 void frozen_bits_generator_AWGN_SC(int N, int K, double db, vector<bool>& frozen_bits);
+
+void frozen_bits_generator_BSC_SC(int N, int K, double p, vector<bool>& frozen_bits);
+
+void frozen_bits_generator_PW(int N, int K, vector<bool>& frozen_bits);
 
 double phi_inv(double t);
 

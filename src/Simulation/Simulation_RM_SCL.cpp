@@ -1,10 +1,10 @@
 #include "Simulation/Simulation.hpp"
 
-int simulation_RM_SCL() {
+int simulation_RM_SCL(int m, int r, int list_size, double p, double db, double design_snr) {
     // each time a decoding failure occurred, 
     // we checked whether the decoded codeword was more likely than the transmitted codeword.
     // If so, then the optimal ML decoder would surely misdecode y as well.
-    int m = 8, r = 3, list_size = 64;
+    // int m = 11, r = 5, list_size = 4;
     Encoder_RM* encoder = new Encoder_RM(m, r);
     Decoder_RM_SC* SC_decoder = new Decoder_RM_SC(m ,r, 1);
     Decoder_RM_SCL* SCL_decoder = new Decoder_RM_SCL(m ,r, list_size);
@@ -12,13 +12,13 @@ int simulation_RM_SCL() {
     cerr << "For m=" << m << ", r="<< r << ", K=" << K << ", N=" << N << endl;
     cerr << "List size=" << list_size << endl;
 #ifdef CHN_AWGN
-    double db = 4;
+    // double db = 4;
     double code_rate = (double)K / N;
     double sigma = 1 / sqrt(2 * code_rate * db2val(db));
     cerr << "sigma=" << sigma << ", db=" << db << endl;
     Channel_AWGN* chn_awgn = new Channel_AWGN(N, sigma, 42);
 #else
-    double p = 0.1;
+    // double p = 0.1;
     cerr << "p=" << p << endl;
     Channel_BSC* chn_bsc = new Channel_BSC(N, p, 42);
 #endif // USE_AWGN

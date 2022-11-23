@@ -26,8 +26,8 @@ void test_linearity_xor(int m, int r) {
     for (int i = 0; i < 100; i++) {
         x1 = rand() % max;
         x2 = rand() % max;
-        decimal2bianry(x1, info_bits1);
-        decimal2bianry(x2, info_bits2);
+        decimal2binary(x1, info_bits1);
+        decimal2binary(x2, info_bits2);
         for (int l = 0; l < K; l++) info_bits_dest[l] = info_bits1[l] ^ info_bits2[l];
         encoder->encode(info_bits1.data(), codeword1.data(), 1);
         encoder->encode(info_bits2.data(), codeword2.data(), 1);
@@ -41,7 +41,7 @@ void test_linearity_xor(int m, int r) {
 void generate_symmetric_noise(int m, vector<int>& noise, int level) {
     vector<int> binary_repr(m, 0);
     for (int i = 0; i < (1 << m); i++) {
-        decimal2bianry(i, binary_repr);
+        decimal2binary(i, binary_repr);
         if (count_weight(binary_repr) <= level) noise[i] = 1;
     }
 }
@@ -50,7 +50,7 @@ void generate_bent(int m, vector<int>& noise) {
     vector<int> binary_repr(m, 0);
     int temp;
     for (int i = 0; i < (1 << m); i++) {
-        decimal2bianry(i, binary_repr);
+        decimal2binary(i, binary_repr);
         temp = 0;
         for (int k = 0; k < m; k += 2) {
             temp ^= binary_repr[k] * binary_repr[k+1];
@@ -63,7 +63,7 @@ void generate_bent_guess(int m, vector<int>& noise) {
     vector<int> binary_repr(m, 0);
     int temp;
     for (int i = 0; i < (1 << m); i++) {
-        decimal2bianry(i, binary_repr);
+        decimal2binary(i, binary_repr);
         temp = 0;
         // for (int k = 0; k < m; k += 1) {
         //     temp ^= binary_repr[k] * binary_repr[(k+1) % m];
@@ -81,7 +81,7 @@ void generate_bent_third_order(int m, vector<int>& noise) {
     vector<int> binary_repr(m, 0);
     int temp;
     for (int i = 0; i < (1 << m); i++) {
-        decimal2bianry(i, binary_repr);
+        decimal2binary(i, binary_repr);
         temp = 0;
         for (int k = 0; k < m; k += 3) {
             temp ^= binary_repr[k] * binary_repr[k+1] * binary_repr[k+2];
@@ -94,7 +94,7 @@ void generate_bent_m6_r2_order(vector<int>& noise) {
     vector<int> b(6, 0);
     int temp;
     for (int i = 0; i < (1 << 6); i++) {
-        decimal2bianry(i, b);
+        decimal2binary(i, b);
         temp = 0;
         temp = b[0]*b[1]*b[2] ^ b[0]*b[3]*b[4] ^ b[1]*b[3]*b[5] ^ b[2]*b[4]*b[5] ^ b[3]*b[4]*b[5];
         if (temp) noise[i] = 1;
@@ -107,7 +107,7 @@ void generate_all_codewords(int m, int r, vector<vector<int>>& codewords) {
     vector<int> info_bits(K, 0);
     vector<int> codeword(N, 0);
     for (int i = 0; i < (1 << K); i++) {
-        decimal2bianry(i, info_bits);
+        decimal2binary(i, info_bits);
         encoder->encode(info_bits.data(), codeword.data(), 1);
         codewords[i] = codeword;
         // if (Encoder_RM::is_codeword(codeword.data(), m, r-1)) {

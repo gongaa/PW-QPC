@@ -206,6 +206,9 @@ bool Decoder_RM_SCL::partition_and_copy()
 Node<Contents_RM_SCL>* Decoder_RM_SCL::copy_until(Node<Contents_RM_SCL>* node_stop, Node<Contents_RM_SCL>* node_a, Node<Contents_RM_SCL>* node_b)
 {   // copy tree 1 (to which node_a and node_stop belong) into copy tree 2 (to which node_b belongs) until node_stop
     // return: whether reached or not
+    // instead of copying the whole tree until a node
+    // only need to copy the s array for all the leaves before this node
+    // and copy the l array along the path that was used to compute the llr for the current code
     auto c_a = node_a->get_contents();
     auto c_b = node_b->get_contents();
     if (!node_a->is_root())

@@ -31,8 +31,8 @@ void Channel_q::add_noise(int *Y1_N, int *Y2_N, const size_t frame_id)
 {
     this->event_generator->generate(Y1_N, Y2_N, this->N);
 }
-Channel_AWGN::Channel_AWGN(const int N, double sigma, const int seed)
-: Channel_c(N, seed), sigma(sigma)
+Channel_AWGN::Channel_AWGN(const int N, double sigma, double design_sigma, const int seed)
+: Channel_c(N, seed), sigma(sigma), design_sigma(design_sigma)
 {
 
 }
@@ -55,7 +55,7 @@ int Channel_AWGN::add_noise(const int *X_N, double *Y_N, const size_t frame_id)
         i++;
     }
     // dec_input <-- 2 * c_out / sg^2.
-    for (int i = 0; i < N; i++) Y_N[i] = -Y_N[i] * 2 / (sigma * sigma);
+    for (int i = 0; i < N; i++) Y_N[i] = -Y_N[i] * 2 / (design_sigma * design_sigma);
     return 0;
 }
 

@@ -1,6 +1,6 @@
 #include "Simulation/Simulation.hpp"
 using namespace std;
-int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, int p_min, int p_max, int num_total = 100, bool use_crc = true) {
+int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, double px, int num_total = 100, bool use_crc = true) {
     // int m = 5, rx = 3, rz = 2, list_size = 16384;
     Encoder_RM_CSS* encoder = new Encoder_RM_CSS(m, rx, rz);
     Encoder_RM* encoder_X = new Encoder_RM(m, rz);
@@ -43,7 +43,7 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
     int SCL_equal_weight_guess_correct = 0;
     int all_wrong_crc;
     int num_Z_list_err = 0, SCL_num_Z_err_deg = 0, SCL_num_Z_err_deg_list = 0;
-    int num_flips, SCL_num_flips;
+    int num_flips, SCL_num_flips, max_num_flips, min_num_flips;
     bool is_SCL_wrong = false, is_SCL_deg_wrong = false, is_SCL_weighted_deg_wrong = false;
     // vector<double> weight = {1.0, 0.1, 0.2, 0.3, 0.4, 0.5}; // weight[0] will be set to the real p 
     vector<double> weight = {1.0, 0.1, 0.3, 0.5, 0.7, 1.0}; // weight[0] will be set to the real p 
@@ -59,7 +59,6 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
     }
     vector<double> max_class_prob(weight.size());
     vector<vector<int>> max_class_idx(weight.size());
-    vector<double> pxs;
     int desired_class_idx, SCL_class_idx;
     // vector<double> class_prob(list_size+1, 0.0);
     int temp_flips;
@@ -67,196 +66,247 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
     int total_flips;
     double pm_best;
     int best_path;
-    for (int i = p_min; i <= p_max; i++) pxs.push_back((double)i/100.0);
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0.0, 0.0, 41);
-    for (double px : pxs) {
-        cerr << "px = " << px << endl;
-        chn_bsc_q->set_prob(px, 0.0);
-        weight[0] = px / (1.0-px);
-        for (int j = 1; j < N+1; j++) pow[0][j] = pow[0][j-1] * weight[0];
-        SCL_num_X_err = 0; SCL_num_X_err_deg = 0; SCL_num_X_err_equal_weight = 0;
-        SCL_num_X_crc_err = 0;
-        SCL_equal_weight_guess_correct = 0; all_wrong_crc = 0;
-        std::fill(degeneracy_helps.begin(), degeneracy_helps.end(), 0);
-        std::fill(degeneracy_worse.begin(), degeneracy_worse.end(), 0);
-        std::fill(SCL_num_X_err_deg_list.begin(), SCL_num_X_err_deg_list.end(), 0);
-        std::fill(SCL_equal_weight_deg_guess_correct.begin(), SCL_equal_weight_deg_guess_correct.end(), 0);
-        total_flips = 0;
+    cerr << "px = " << px << endl;
+    chn_bsc_q->set_prob(px, 0.0);
+    weight[0] = px / (1.0-px);
+    for (int j = 1; j < N+1; j++) pow[0][j] = pow[0][j-1] * weight[0];
+    SCL_num_X_err = 0; SCL_num_X_err_deg = 0; SCL_num_X_err_equal_weight = 0;
+    SCL_num_X_crc_err = 0;
+    SCL_equal_weight_guess_correct = 0; all_wrong_crc = 0;
+    std::fill(degeneracy_helps.begin(), degeneracy_helps.end(), 0);
+    std::fill(degeneracy_worse.begin(), degeneracy_worse.end(), 0);
+    std::fill(SCL_num_X_err_deg_list.begin(), SCL_num_X_err_deg_list.end(), 0);
+    std::fill(SCL_equal_weight_deg_guess_correct.begin(), SCL_equal_weight_deg_guess_correct.end(), 0);
+    total_flips = 0;
 
-        for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
-            // cerr << "******* turn " << turn_idx << endl;
-            generate_random(K_X, info_bits_X.data());
-            if (use_crc) {
-                copy(info_bits_X.begin(), info_bits_X.end(), info_bits_X_crc.begin());
-                crc_X->build(info_bits_X_crc.data(), info_bits_X_crc.data(), 0);
+    for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
+        // cerr << "******* turn " << turn_idx << endl;
+        generate_random(K_X, info_bits_X.data());
+        if (use_crc) {
+            copy(info_bits_X.begin(), info_bits_X.end(), info_bits_X_crc.begin());
+            crc_X->build(info_bits_X_crc.data(), info_bits_X_crc.data(), 0);
+        }
+        encoder_X->encode(info_bits_X.data(), desired_X.data(), 1);
+        chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
+        num_flips = count_weight(noise_X);
+        total_flips += num_flips;
+        xor_vec(N, desired_X.data(), noise_X.data(), noisy_codeword_X.data());
+        // cerr << "noise adds " << num_flips << " flips" << endl;
+        for (int i = 0; i < N; i++) {
+            llr_noisy_codeword_X[i] = noisy_codeword_X[i] ? -log((1-px)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
+        }
+        pm_best = SCL_decoder_X->decode(llr_noisy_codeword_X.data(), SCL_denoised_codeword_X.data(), 0);
+        SCL_decoder_X->copy_codeword_list(X_list, pm_X_list);
+        if (!verify(N, SCL_denoised_codeword_X.data(), desired_X.data())) SCL_num_X_err++;
+        if (use_crc) {
+            for (int i = 0; i < list_size; i++) {
+                encoder_X->decode(X_list[i].data(), info_bits_X_crc.data());
+                crc_match_X[i] = crc_X->check(info_bits_X_crc.data(), 0);
             }
-            encoder_X->encode(info_bits_X.data(), desired_X.data(), 1);
-            chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
-            num_flips = count_weight(noise_X);
-            total_flips += num_flips;
-            xor_vec(N, desired_X.data(), noise_X.data(), noisy_codeword_X.data());
-            // cerr << "noise adds " << num_flips << " flips" << endl;
-            for (int i = 0; i < N; i++) {
-                llr_noisy_codeword_X[i] = noisy_codeword_X[i] ? -log((1-px)/px) : log((1-px)/px); // 0 -> 1.0; 1 -> -1.0
-            }
-            pm_best = SCL_decoder_X->decode(llr_noisy_codeword_X.data(), SCL_denoised_codeword_X.data(), 0);
-            SCL_decoder_X->copy_codeword_list(X_list, pm_X_list);
-            if (!verify(N, SCL_denoised_codeword_X.data(), desired_X.data())) SCL_num_X_err++;
-            if (use_crc) {
-                for (int i = 0; i < list_size; i++) {
-                    encoder_X->decode(X_list[i].data(), info_bits_X_crc.data());
-                    crc_match_X[i] = crc_X->check(info_bits_X_crc.data(), 0);
-                }
-                // cerr << "There are " << std::count(crc_match_X.begin(), crc_match_X.end(), true) << " cases that survived CRC" << endl;
-                if (std::none_of(crc_match_X.begin(), crc_match_X.end(), [](bool v) { return v; })) {
-                    all_wrong_crc++;
-                    SCL_num_X_crc_err++;
-                    // for (auto& x : X_list) assert(!verify(N, x.data(), desired_X.data()));
-                    continue;
-                }
-                pm_best = std::numeric_limits<double>::max(); best_path = -1;
-                for (int i = 0; i < list_size; i++) {
-                    if (crc_match_X[i] && (pm_X_list[i] < pm_best)) {
-                        best_path = i;
-                        pm_best = pm_X_list[i];
-                    }
-                }
-                assert (best_path >= 0);
-                std::copy(X_list[best_path].begin(), X_list[best_path].end(), SCL_denoised_codeword_X.begin());
-            }
-            for (auto& dx : X_list) xor_vec(N, dx.data(), desired_X.data(), dx.data());
-            is_SCL_wrong = false;
-            if (!verify(N, SCL_denoised_codeword_X.data(), desired_X.data())) {
+            // cerr << "There are " << std::count(crc_match_X.begin(), crc_match_X.end(), true) << " cases that survived CRC" << endl;
+            if (std::none_of(crc_match_X.begin(), crc_match_X.end(), [](bool v) { return v; })) {
+                all_wrong_crc++;
                 SCL_num_X_crc_err++;
-                is_SCL_wrong = true;
+                // for (auto& x : X_list) assert(!verify(N, x.data(), desired_X.data()));
+                continue;
             }
-            xor_vec(N, SCL_denoised_codeword_X.data(), desired_X.data(), SCL_denoised_codeword_X.data());
-            SCL_num_flips = count_flip(N, SCL_denoised_codeword_X.data(), noise_X.data());
-            if (is_SCL_wrong && (num_flips == SCL_num_flips)) 
-                for (int i = 0; i < X_list.size(); i++) {
-                    if (count_weight(X_list[i]) == 0 && abs(pm_X_list[i] - pm_best) < std::numeric_limits<double>::epsilon()) 
-                        cerr << "Found a case where num_flips=SCL_num_flips=" << num_flips <<  " but path metrics are different" 
-                        << ", desired pm=" << pm_X_list[i] << ", SCL best pm=" << pm_best << endl;
+            pm_best = std::numeric_limits<double>::max(); best_path = -1;
+            for (int i = 0; i < list_size; i++) {
+                if (crc_match_X[i] && (pm_X_list[i] < pm_best)) {
+                    best_path = i;
+                    pm_best = pm_X_list[i];
+                }
+            }
+            assert (best_path >= 0);
+            std::copy(X_list[best_path].begin(), X_list[best_path].end(), SCL_denoised_codeword_X.begin());
+        }
+        for (auto& dx : X_list) xor_vec(N, dx.data(), desired_X.data(), dx.data());
+        is_SCL_wrong = false;
+        if (!verify(N, SCL_denoised_codeword_X.data(), desired_X.data())) {
+            SCL_num_X_crc_err++;
+            is_SCL_wrong = true;
+        }
+        xor_vec(N, SCL_denoised_codeword_X.data(), desired_X.data(), SCL_denoised_codeword_X.data());
+        SCL_num_flips = count_flip(N, SCL_denoised_codeword_X.data(), noise_X.data());
+        // if (is_SCL_wrong && (num_flips == SCL_num_flips)) 
+        //     for (int i = 0; i < X_list.size(); i++) {
+        //         if (count_weight(X_list[i]) == 0 && abs(pm_X_list[i] - pm_best) < std::numeric_limits<double>::epsilon()) 
+        //             cerr << "Found a case where num_flips=SCL_num_flips=" << num_flips <<  " but path metrics are different" 
+        //             << ", desired pm=" << pm_X_list[i] << ", SCL best pm=" << pm_best << endl;
 
+        //         break;
+        //     }
+        max_num_flips = count_flip(N, X_list[0].data(), noise_X.data());
+        min_num_flips = max_num_flips;
+        for (auto& dx : X_list) {
+            int wt = count_flip(N, dx.data(), noise_X.data());
+            if (wt > max_num_flips) max_num_flips = wt;
+            if (wt < min_num_flips) min_num_flips = wt;
+        }
+        cerr << "turn " << turn_idx << ", #flips=" << num_flips << ", SCL #flips=" << SCL_num_flips
+                << ", min #flips=" << min_num_flips << ", max #flips=" << max_num_flips << endl;
+        if (is_SCL_wrong && (SCL_num_flips != num_flips)) 
+            // not fail due to equal weight (even ML cannot decide)
+            SCL_num_X_err_equal_weight++;
+        if (!is_SCL_wrong && (SCL_num_flips == num_flips)) 
+                SCL_equal_weight_guess_correct++;
+        cerr << "plain SCL is " << (is_SCL_wrong ? "wrong" : "correct") << endl;
+        is_SCL_deg_wrong = false;
+        if (!encoder->is_X_stabilizer(SCL_denoised_codeword_X.data())) {
+            SCL_num_X_err_deg++;
+            is_SCL_deg_wrong = true;
+        }
+        equiv_class.clear();
+        equiv_class.push_back({0});
+        for (int i = 1; i < list_size; i++) {
+            is_in_one_class = false;
+            for (auto& ec : equiv_class) {
+                xor_vec(N, X_list[ec[0]].data(), X_list[i].data(), noise_X_diff.data());
+                if (encoder->is_X_stabilizer(noise_X_diff.data())) {
+                    ec.push_back(i);
+                    is_in_one_class = true;
                     break;
                 }
-            if (is_SCL_wrong && (SCL_num_flips != num_flips)) 
-                // not fail due to equal weight (even ML cannot decide)
-                SCL_num_X_err_equal_weight++;
-            if (!is_SCL_wrong && (SCL_num_flips == num_flips)) 
-                    SCL_equal_weight_guess_correct++;
-            // cerr << "plain SCL is " << (is_SCL_wrong ? "wrong" : "correct") << endl;
-            is_SCL_deg_wrong = false;
-            if (!encoder->is_X_stabilizer(SCL_denoised_codeword_X.data())) {
-                SCL_num_X_err_deg++;
-                is_SCL_deg_wrong = true;
             }
-            equiv_class.clear();
-            equiv_class.push_back({0});
-            for (int i = 1; i < list_size; i++) {
-                is_in_one_class = false;
-                for (auto& ec : equiv_class) {
-                    xor_vec(N, X_list[ec[0]].data(), X_list[i].data(), noise_X_diff.data());
-                    if (encoder->is_X_stabilizer(noise_X_diff.data())) {
-                        ec.push_back(i);
-                        is_in_one_class = true;
-                        break;
-                    }
-                }
-                if (!is_in_one_class)
-                    equiv_class.push_back({i});
+            if (!is_in_one_class)
+                equiv_class.push_back({i});
+        }
+        // cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
+        std::fill(max_class_prob.begin(), max_class_prob.end(), 0.0);
+        for (int i = 0; i < max_class_idx.size(); i++) max_class_idx[i].clear();
+        desired_class_idx = -1; // desired class may not be in the list
+        SCL_class_idx = -1;     // this is guaranteed in the list
+        for (int k = 0; k < equiv_class.size(); k++) {
+            auto& ec = equiv_class[k];
+            vector<int> wt(ec.size());
+            for (int l = 0; l < wt.size(); l++) {
+                wt[l] = count_flip(N, X_list[ec[l]].data(), noise_X.data()); 
             }
-            // cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
-            std::fill(max_class_prob.begin(), max_class_prob.end(), 0.0);
-            for (int i = 0; i < max_class_idx.size(); i++) max_class_idx[i].clear();
-            desired_class_idx = -1; // desired class may not be in the list
-            SCL_class_idx = -1;     // this is guaranteed in the list
-            for (int k = 0; k < equiv_class.size(); k++) {
-                auto& ec = equiv_class[k];
-                // kick out this class from the competition if no member passed CRC
-                // if (use_crc && std::none_of(ec.begin(), ec.end(), [crc_match_X](int i) { return crc_match_X[i]; })) continue;
-                for (int i = 0; i < weight.size(); i++) {
-                    temp_prob = 0.0;
-                    for (int ec_idx : ec) {
-                        if (!crc_match_X[ec_idx]) continue;
-                        temp_flips = count_flip(N, X_list[ec_idx].data(), noise_X.data());
-                        temp_prob += pow[i][temp_flips];
-                    }
-                    // ******************* This line is causing trouble
-                    // if(i == 0) class_prob[k] = temp_prob;
-                    // **************************************************
-                    if (temp_prob > max_class_prob[i]) {
-                        max_class_prob[i] = temp_prob;
-                        max_class_idx[i].clear();
-                        max_class_idx[i].push_back(k);
-                    } else if (temp_prob > (max_class_prob[i] - std::numeric_limits<double>::epsilon())) {
-                        max_class_idx[i].push_back(k);
-                    }
-                }
-
-                // if (encoder->is_X_stabilizer(X_list[ec[0]].data())) desired_class_idx = k;
-                // xor_vec(N, X_list[ec[0]].data(), SCL_denoised_codeword_X.data(), noise_X_diff.data());
-                // if (encoder->is_X_stabilizer(noise_X_diff.data())) SCL_class_idx = k;
-            }
+            sort(wt.begin(), wt.end());
+            // kick out this class from the competition if no member passed CRC
+            // if (use_crc && std::none_of(ec.begin(), ec.end(), [crc_match_X](int i) { return crc_match_X[i]; })) continue;
             for (int i = 0; i < weight.size(); i++) {
-                is_SCL_weighted_deg_wrong = true;
-                // random guessing
-                if ((max_class_idx[i].size() > 1) && 
-                    (std::find(max_class_idx[i].begin(), max_class_idx[i].end(), SCL_class_idx) != max_class_idx[i].end())) {
-                    // the same guess as SCL best
-                    is_SCL_weighted_deg_wrong = is_SCL_deg_wrong;
-                } else if (encoder->is_X_stabilizer(X_list[equiv_class[max_class_idx[i][0]][0]].data())) {
-                    is_SCL_weighted_deg_wrong = false;
+                temp_prob = 0.0;
+                cal_wt_dist_prob(wt, temp_prob, min_num_flips, weight[i]);
+                // for (int ec_idx : ec) {
+                //     if (!crc_match_X[ec_idx]) continue;
+                //     temp_flips = count_flip(N, X_list[ec_idx].data(), noise_X.data());
+                //     temp_prob += pow[i][temp_flips];
+                // }
+                // ******************* This line is causing trouble
+                // if(i == 0) class_prob[k] = temp_prob;
+                // **************************************************
+                // cerr << "temp prob " << temp_prob << " , max " << max_class_prob[i] << endl;
+                if (temp_prob > max_class_prob[i]) {
+                    max_class_prob[i] = temp_prob;
+                    max_class_idx[i].clear();
+                    max_class_idx[i].push_back(k);
+                } else if (temp_prob > (max_class_prob[i] - std::numeric_limits<double>::epsilon())) {
+                    max_class_idx[i].push_back(k);
                 }
-                if (is_SCL_weighted_deg_wrong) SCL_num_X_err_deg_list[i]++;
-                if (num_flips != SCL_num_flips) {
-                    if (!is_SCL_weighted_deg_wrong && is_SCL_wrong) degeneracy_helps[i]++;
-                    if (!is_SCL_wrong && is_SCL_weighted_deg_wrong) degeneracy_worse[i]++;
-                }
-                /*
-                if ((i == 0) && (is_SCL_wrong ^ is_SCL_weighted_deg_wrong)) {
-                    cerr << "num_flips: " << num_flips << ", SCL_num_flips: " << SCL_num_flips << endl;
-                    cerr << "there are " << max_class_idx[0].size() << " classes: ";
-                    for (int k : max_class_idx[0]) cerr << k << " ";
-                    cerr << ", prob " << max_class_prob[0] << endl;
-                    if (desired_class_idx >= 0) cerr << "desired equiv class " << desired_class_idx << ", size " << equiv_class[desired_class_idx].size() << ", prob " << class_prob[desired_class_idx] << endl;
-                    cerr << "SCL best equiv class " << SCL_class_idx << ", size " << equiv_class[SCL_class_idx].size() << ", prob " << class_prob[SCL_class_idx] << endl;
-                    if (!is_SCL_weighted_deg_wrong && is_SCL_wrong) {
-                        if (num_flips == SCL_num_flips)
-                            cerr << "weighted degeneracy guess correctly but SCL guess wrongly" << endl;
-                        else {
-                            cerr << "degeneracy helps" << endl;
-                        }
-                    }
-                    if (!is_SCL_wrong && is_SCL_weighted_deg_wrong) {
-                        if (num_flips == SCL_num_flips)
-                            cerr << "SCL guess correctly but weighted degeneracy guess wrongly" << endl;
-                        else 
-                            cerr << "degeneracy makes it worse" << endl;
-                    }
-                }
-                */
-                if (!is_SCL_weighted_deg_wrong && (SCL_num_flips == num_flips)) SCL_equal_weight_deg_guess_correct[i]++;
+            }
+
+            if (encoder->is_X_stabilizer(X_list[ec[0]].data())) desired_class_idx = k;
+            xor_vec(N, X_list[ec[0]].data(), SCL_denoised_codeword_X.data(), noise_X_diff.data());
+            if (encoder->is_X_stabilizer(noise_X_diff.data())) SCL_class_idx = k;
+        }
+
+        if (desired_class_idx >= 0) {
+            auto& ec = equiv_class[desired_class_idx];
+            vector<int> wt(ec.size());
+            cerr << "stabilizer class (idx=" << desired_class_idx << ") wt dist ";
+            for (int k = 0; k < wt.size(); k++) {
+                wt[k] = count_flip(N, X_list[ec[k]].data(), noise_X.data()); 
+            }
+            print_wt_dist(wt);
+        } else cerr << "stabilizer class is not within the list" << endl;
+
+        if (SCL_class_idx >= 0) {
+            auto& ec = equiv_class[SCL_class_idx];
+            vector<int> wt(ec.size());
+            cerr << "SCL predicted class (idx=" << SCL_class_idx << ") wt dist ";
+            for (int k = 0; k < wt.size(); k++) {
+                wt[k] = count_flip(N, X_list[ec[k]].data(), noise_X.data()); 
+            }
+            print_wt_dist(wt);
+        }
+
+        for (int idx : max_class_idx[0]) {
+            auto& ec = equiv_class[idx];
+            cerr << "class " << idx << " has " << ec.size() << " elements, wt dist ";
+            vector<int> wt(ec.size());
+            for (int k = 0; k < wt.size(); k++) {
+                wt[k] = count_flip(N, X_list[ec[k]].data(), noise_X.data()); 
+            }
+            print_wt_dist(wt);
+            if (max_class_idx[0].size() > 5) {
+                cerr << max_class_idx[0].size() << " classes have such a weight distribution" << endl;
+                break;
             }
         }
-        cerr << "average #flips: " << (double)total_flips / num_total << endl;
-        cerr << "In " << num_total << " samples, there are " << all_wrong_crc << " cases where no denoised codeword passes CRC." << endl;
-        cerr << "SCL fail not due to equal weight: " << SCL_num_X_err_equal_weight << endl;
-        cerr << "SCL #err    : " << SCL_num_X_err << ", SCL Frame Error Rate: " << (double)SCL_num_X_err / num_total << endl;
-        cerr << "SCL-CRC #err: " << SCL_num_X_crc_err << ", exists one passes CRC: " << (SCL_num_X_crc_err - all_wrong_crc) << endl;
-        cerr << "SCL #err considering degeneracy: " << SCL_num_X_err_deg << endl;
-        cerr << "SCL #err weighted degeneracy: ";
-        for (int i : SCL_num_X_err_deg_list) cerr << i << " ";
-        cerr << ", with weights: ";
-        for (double i : weight) cerr << i << " ";
-        cerr << endl << "SCL guess correct under equal weight: " << SCL_equal_weight_guess_correct;
-        cerr << endl << "SCL with degeneracy guess correct under equal weight: ";
-        for (int i : SCL_equal_weight_deg_guess_correct) cerr << i << " ";
-        cerr << endl << "degeneracy_helps: ";
-        for (int i : degeneracy_helps) cerr << i << " ";
-        cerr << endl << "degeneracy worse: ";
-        for (int i : degeneracy_worse) cerr << i << " ";
-        cerr << endl;
+
+        for (int i = 0; i < weight.size(); i++) {
+            is_SCL_weighted_deg_wrong = true;
+            // random guessing
+            // cerr << "max class contains " << max_class_idx[i].size() << " elements" << endl;
+            if ((max_class_idx[i].size() > 1) && 
+                (std::find(max_class_idx[i].begin(), max_class_idx[i].end(), SCL_class_idx) != max_class_idx[i].end())) {
+                // the same guess as SCL best
+                is_SCL_weighted_deg_wrong = is_SCL_deg_wrong;
+            } else if (encoder->is_X_stabilizer(X_list[equiv_class[max_class_idx[i][0]][0]].data())) {
+                is_SCL_weighted_deg_wrong = false;
+            }
+            if (is_SCL_weighted_deg_wrong) SCL_num_X_err_deg_list[i]++;
+            if (num_flips != SCL_num_flips) {
+                if (!is_SCL_weighted_deg_wrong && is_SCL_wrong) degeneracy_helps[i]++;
+                if (!is_SCL_wrong && is_SCL_weighted_deg_wrong) degeneracy_worse[i]++;
+            }
+            /*
+            if ((i == 0) && (is_SCL_wrong ^ is_SCL_weighted_deg_wrong)) {
+                cerr << "num_flips: " << num_flips << ", SCL_num_flips: " << SCL_num_flips << endl;
+                cerr << "there are " << max_class_idx[0].size() << " classes: ";
+                for (int k : max_class_idx[0]) cerr << k << " ";
+                cerr << ", prob " << max_class_prob[0] << endl;
+                if (desired_class_idx >= 0) cerr << "desired equiv class " << desired_class_idx << ", size " << equiv_class[desired_class_idx].size() << ", prob " << class_prob[desired_class_idx] << endl;
+                cerr << "SCL best equiv class " << SCL_class_idx << ", size " << equiv_class[SCL_class_idx].size() << ", prob " << class_prob[SCL_class_idx] << endl;
+                if (!is_SCL_weighted_deg_wrong && is_SCL_wrong) {
+                    if (num_flips == SCL_num_flips)
+                        cerr << "weighted degeneracy guess correctly but SCL guess wrongly" << endl;
+                    else {
+                        cerr << "degeneracy helps" << endl;
+                    }
+                }
+                if (!is_SCL_wrong && is_SCL_weighted_deg_wrong) {
+                    if (num_flips == SCL_num_flips)
+                        cerr << "SCL guess correctly but weighted degeneracy guess wrongly" << endl;
+                    else 
+                        cerr << "degeneracy makes it worse" << endl;
+                }
+            }
+            */
+            if (!is_SCL_weighted_deg_wrong && (SCL_num_flips == num_flips)) SCL_equal_weight_deg_guess_correct[i]++;
+        }
+        // if (turn_idx % 10 == 0) cerr << "turn " << turn_idx << ", deneracy helps/worse " 
+        //                              << degeneracy_helps[0] << " / " << degeneracy_worse[0] << endl;
     }
+    cerr << "average #flips: " << (double)total_flips / num_total << endl;
+    cerr << "In " << num_total << " samples, there are " << all_wrong_crc << " cases where no denoised codeword passes CRC." << endl;
+    cerr << "SCL fail not due to equal weight: " << SCL_num_X_err_equal_weight << endl;
+    cerr << "SCL #err    : " << SCL_num_X_err << ", SCL Frame Error Rate: " << (double)SCL_num_X_err / num_total << endl;
+    cerr << "SCL-CRC #err: " << SCL_num_X_crc_err << ", exists one passes CRC: " << (SCL_num_X_crc_err - all_wrong_crc) << endl;
+    cerr << "SCL #err considering degeneracy: " << SCL_num_X_err_deg << endl;
+    cerr << "SCL #err weighted degeneracy: ";
+    for (int i : SCL_num_X_err_deg_list) cerr << i << " ";
+    cerr << ", with weights: ";
+    for (double i : weight) cerr << i << " ";
+    cerr << endl << "SCL guess correct under equal weight: " << SCL_equal_weight_guess_correct;
+    cerr << endl << "SCL with degeneracy guess correct under equal weight: ";
+    for (int i : SCL_equal_weight_deg_guess_correct) cerr << i << " ";
+    cerr << endl << "degeneracy_helps: ";
+    for (int i : degeneracy_helps) cerr << i << " ";
+    cerr << endl << "degeneracy worse: ";
+    for (int i : degeneracy_worse) cerr << i << " ";
+    cerr << endl;
     return 0;
 }

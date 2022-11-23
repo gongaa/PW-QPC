@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <numeric>
+#include <cassert>
 using namespace std;
 
 void frozen_bits_generator_BEC(int N, int K, double p, vector<bool>& frozen_bits) 
@@ -110,6 +111,47 @@ void frozen_bits_generator_AWGN_SC(int N, int K, double db, vector<bool>& frozen
     decoder->get_llr_for_frozen_bits(z.data());
     for (int i = 0; i < N; i++) frozen_bits[i] = 1;
     vector<uint32_t> best_channels(N);
+    std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
+}
+
+void frozen_bits_generator_BSC_SC(int N, int K, double p, vector<bool>& frozen_bits) 
+{
+    vector<double> z(N, 0);
+	std::fill(z.begin(), z.end(), log((1-p)/p));
+    vector<bool> fake_frozen_bits(N);
+	std::fill(fake_frozen_bits.begin(),     fake_frozen_bits.begin() + K, 0);
+	std::fill(fake_frozen_bits.begin() + K, fake_frozen_bits.end(),       1);
+    Decoder_polar_SCL* decoder = new Decoder_polar_SCL(K, N, 1, fake_frozen_bits);
+    vector<int> denoised_codeword(N);
+    decoder->decode_SC(z.data(), denoised_codeword.data(), 0);
+    decoder->get_llr_for_frozen_bits(z.data());
+    for (int i = 0; i < N; i++) frozen_bits[i] = 1;
+    vector<uint32_t> best_channels(N);
+    std::iota(best_channels.begin(), best_channels.end(), 0);
+	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
+    for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
+}
+
+void frozen_bits_generator_PW(int N, int K, vector<bool>& frozen_bits)
+{
+	vector<double> z(N, 0);
+	int n = log2(N);
+	vector<int> bin(n, 0);
+	double temp = 0.0;
+	double base = pow(2, 0.25);
+	for (int i = 0; i < N; i++) {
+		decimal2binary(i, bin);
+		temp = 0.0;
+		for (int k = 0; k < n; k++) 
+			if (bin[k]) temp += pow(base, k);
+		z[i] = temp;
+	}
+	std::fill(frozen_bits.begin(), frozen_bits.end(), 1);
+    vector<uint32_t> best_channels(N);
+    std::iota(best_channels.begin(), best_channels.end(), 0);
+	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
+    for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
+	// for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
 }

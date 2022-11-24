@@ -62,6 +62,17 @@ void Decoder_polar_SCL::recursive_deallocate_nodes_contents(Node<Contents_SCL>* 
 	node_curr->set_contents(nullptr);
 }
 
+void Decoder_polar_SCL::copy_codeword_list(vector<vector<int>>& c_list, vector<double>& pm_list)
+{
+	int i = 0;
+	for (int path : this->active_paths) {
+		const int* X = polar_trees[i]->get_root()->get_c()->s.data();
+		copy(X, X+N, c_list[i].data());
+		pm_list[i] = polar_trees[path]->get_path_metric();
+		++i;
+	}
+}
+
 void Decoder_polar_SCL::recursive_compute_llr(Node<Contents_SCL>* node_cur, int depth)
 {
 	auto node_father = node_cur->get_father();
@@ -108,9 +119,7 @@ void Decoder_polar_SCL::select_best_path(const size_t frame_id)
 		cerr << endl;
 	}
 	*/
-
-	active_paths.clear();
-	active_paths.insert(best_path);
+	this->best_path = best_path;
 }
 
 void Decoder_polar_SCL::_load(const double *Y_N)
@@ -310,7 +319,7 @@ void Decoder_polar_SCL::recursive_duplicate_tree_sums(Node<Contents_SCL>* node_a
 
 void Decoder_polar_SCL::_store(int *V) const
 {
-    auto *root = this->polar_trees[*active_paths.begin()]->get_root();
+    auto *root = this->polar_trees[this->best_path]->get_root();
     std::copy(root->get_c()->s.begin(), root->get_c()->s.begin() + this->N, V);
 }
 

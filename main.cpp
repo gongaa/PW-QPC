@@ -71,29 +71,25 @@ int main(int argc, char** argv)
       return 1;
     }
   }
-  // verify_RM_is_codeword();
   // simulation_RM_CSS(m, rx, rz, list_size);
-  // test_RM_SCL_symmetry();
   // verify_parity_check();
-  // test_RM_syndrome_SC(m, rx);
   // simulation_RM_degeneracy(m, rx, rz, px, pz);
   // simulation_RM_closest_codewords(m, rx, rz);
   // test_linearity_xor(6, 3);
   // simulation_RM_d_star(m, rx);
-  // test_RM_d_star();
-  // compare_equiv_classes();
   // simulation_symmetric_noise(m, rx);
   // cerr << "Use CRC: " << (use_crc ? "True" : "False") << endl;
   // simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, px, n, use_crc);
-  // test_crc();
-  // test_encoder_decode();
-  test_polar_stabilizer();
-  /*
-  int N = 2048, K = 1024, L = 4;
-  m = 11; rx = 5;
+  // int N = 1024, K = 768, L = 64;
+  // int N = 256, K = 128, L = 1024;
+  int N = 32, K = 24, L = 1024;
+  // m = 11; rx = 5;
   double p = 0.1, db = 3, design_snr = 3;
+  // simulation_polar_CSS(N, K, L, p);
+  simulation_stab_MW_codewords(N, K);
+  /*
   auto start = std::chrono::high_resolution_clock::now();
-  test_polar(N, K, L, p, db, design_snr);
+  simulation_polar_SCL(N, K, L, p, db, design_snr);
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
   cerr << "polar takes " << duration.count() << " ms" << endl;

@@ -27,6 +27,7 @@ protected:
     // const double metric_init; // init value of the metrics in the trees
     const int L;             // maximum path number
     std::set<int> active_paths;
+    int best_path;
 
     vector<bool> frozen_bits;
     vector<Tree_metric<Contents_SCL>*> polar_trees;
@@ -40,6 +41,7 @@ public:
     virtual int decode(const double *Y_N, int *V_K, const size_t frame_id);
     void decode_SC(const double *Y_N, int *V_K, const size_t frame_id);
     void get_llr_for_frozen_bits(double *Y_N);
+    void copy_codeword_list(vector<vector<int>>& c_list, vector<double>& pm_list);
 
 protected:
     void _load(const double *Y_N);

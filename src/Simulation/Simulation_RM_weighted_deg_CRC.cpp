@@ -74,10 +74,6 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
     SCL_num_X_err = 0; SCL_num_X_err_deg = 0; SCL_num_X_err_equal_weight = 0;
     SCL_num_X_crc_err = 0;
     SCL_equal_weight_guess_correct = 0; all_wrong_crc = 0;
-    std::fill(degeneracy_helps.begin(), degeneracy_helps.end(), 0);
-    std::fill(degeneracy_worse.begin(), degeneracy_worse.end(), 0);
-    std::fill(SCL_num_X_err_deg_list.begin(), SCL_num_X_err_deg_list.end(), 0);
-    std::fill(SCL_equal_weight_deg_guess_correct.begin(), SCL_equal_weight_deg_guess_correct.end(), 0);
     total_flips = 0;
 
     for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {

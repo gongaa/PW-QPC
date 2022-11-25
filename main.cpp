@@ -36,6 +36,7 @@ int main(int argc, char** argv)
   // which code to use
   // which channel to use and what's their parameters.
   int m, rx, rz, list_size, n = 100;
+  int N = 1024, K = 513;
   double px, pz; 
   int p_min, p_max; // in percentage
   bool use_crc = false;
@@ -52,6 +53,10 @@ int main(int argc, char** argv)
       iss >> rx;
     } else if (arg == "-rz") {
       iss >> rz;
+    } else if (arg == "-N")  {
+      iss >> N;
+    } else if (arg == "-K")  {
+      iss >> K;
     } else if (arg == "-px") {
       iss >> px;  
     } else if (arg == "-pz") {
@@ -72,21 +77,14 @@ int main(int argc, char** argv)
     }
   }
   // simulation_RM_CSS(m, rx, rz, list_size);
-  // verify_parity_check();
-  // simulation_RM_degeneracy(m, rx, rz, px, pz);
-  // simulation_RM_closest_codewords(m, rx, rz);
-  // test_linearity_xor(6, 3);
-  // simulation_RM_d_star(m, rx);
-  // simulation_symmetric_noise(m, rx);
   // cerr << "Use CRC: " << (use_crc ? "True" : "False") << endl;
   // simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, px, n, use_crc);
-  // int N = 1024, K = 768, L = 64;
   // int N = 256, K = 128, L = 1024;
-  int N = 32, K = 24, L = 1024;
+  // int N = 32, K = 24, L = 1024;
   // m = 11; rx = 5;
-  double p = 0.1, db = 3, design_snr = 3;
-  // simulation_polar_CSS(N, K, L, p);
-  simulation_stab_MW_codewords(N, K);
+  // double db = 3, design_snr = 3;
+  simulation_polar_CSS(N, K, list_size, pz, n);
+  // simulation_stab_MW_codewords(N, K);
   /*
   auto start = std::chrono::high_resolution_clock::now();
   simulation_polar_SCL(N, K, L, p, db, design_snr);

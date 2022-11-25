@@ -1,5 +1,5 @@
 #include "Simulation/Simulation.hpp"
-void simulation_polar_CSS(int N, int K, int list_size, double pz)
+void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=100)
 {
     vector<int> info_bits_Z(K);
     vector<int> desired_Z(N);
@@ -27,19 +27,27 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz)
     vector<vector<int>> Z_list(list_size, vector<int>(N, 0));
     vector<double> pm_Z_list(list_size, 0.0);
 
-    int total_flips = 0, num_flips = 0, SCL_num_flips = 0;
+    int total_flips = 0, num_flips = 0, SCL_num_flips = 0, min_num_flips = 0;
     double pm_best;
 
     vector<vector<int>> equiv_class;
     bool is_in_one_class; int largest_class_size; int* largest_class;
-    int desired_class_idx;
 
     int SCL_num_X_err = 0, SCL_num_Z_err = 0;
+    int equal_flips_err = 0, SCL_smaller = 0;
     int SCL_num_Z_err_deg = 0, SCL_num_Z_err_equal_weight = 0;
     int SCL_equal_weight_guess_correct = 0;
+    int largest_class_err = 0;
+    vector<int> SCL_equal_weight_deg_guess_correct(weight.size(), 0);
+    vector<int> SCL_num_Z_err_deg_list(weight.size(), 0);
+    vector<int> degeneracy_helps(weight.size(), 0);
+    vector<int> degeneracy_worse(weight.size(), 0);
+    vector<double> max_class_prob(weight.size());
+    vector<vector<int>> max_class_idx(weight.size());
+    int desired_class_idx, SCL_class_idx, largest_class_idx;
+    double temp_prob;
     bool is_SCL_wrong = false, is_SCL_deg_wrong = false, is_SCL_weighted_deg_wrong = false;
 
-    int num_total = 100;
     for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
         is_SCL_wrong = false; is_SCL_deg_wrong = false; is_SCL_weighted_deg_wrong = false;
         generate_random(K, info_bits_Z.data());
@@ -51,23 +59,17 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz)
         for (int i = 0; i < N; i++) llr_noisy_codeword_Z[i] = noisy_codeword_Z[i] ? -log((1-pz)/pz) : log((1-pz)/pz); // 0 -> 1.0; 1 -> -1.0
         pm_best = SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
         SCL_decoder_Z->copy_codeword_list(Z_list, pm_Z_list);
-        // cerr << "begin of copied list" << endl;
-        // for (auto& c : Z_list) {
-        //     for (int k : c) cerr << k;
-        //     cerr << endl;
-        // }
-        // cerr << "end of copied list" << endl;
+
         if (!verify(N, SCL_denoised_codeword_Z.data(), desired_Z.data())) { is_SCL_wrong = true; SCL_num_Z_err++; }
         xor_vec(N, SCL_denoised_codeword_Z.data(), desired_Z.data(), SCL_denoised_codeword_Z.data());
         SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z.data(), noise_Z.data());
         if (!X_stab->is_codeword(SCL_denoised_codeword_Z.data())) { is_SCL_deg_wrong = true; SCL_num_Z_err_deg++; }
         if (is_SCL_wrong) cerr << "num_flips: " << num_flips << " , SCL_num_flips: " << SCL_num_flips << endl;
-        for (auto& dz : Z_list) xor_vec(N, dz.data(), desired_Z.data(), dz.data());
-
-        if (turn_idx % 10 == 9) {
-            cerr << "SCL #err : " << SCL_num_Z_err << " / " << (turn_idx+1) << endl;
-            cerr << "SCL #err deg : " << SCL_num_Z_err_deg << " / " << (turn_idx+1) << endl;
+        if (is_SCL_wrong) {
+            if (num_flips == SCL_num_flips) equal_flips_err++;
+            if (SCL_num_flips < num_flips)  SCL_smaller++;
         }
+        for (auto& dz : Z_list) xor_vec(N, dz.data(), desired_Z.data(), dz.data());
 
         equiv_class.clear();
         equiv_class.push_back({0});
@@ -85,11 +87,41 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz)
                 equiv_class.push_back({i});
         }
         cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
-        largest_class_size = 0;
-        for (auto& ec : equiv_class) {
+        cerr << "Weight Distribution with added noise:" << endl;
+
+        std::fill(max_class_prob.begin(), max_class_prob.end(), 0.0);
+        for (int i = 0; i < max_class_idx.size(); i++) max_class_idx[i].clear();
+        desired_class_idx = -1; // desired class may not be in the list
+        SCL_class_idx = -1;     // this is guaranteed in the list
+        min_num_flips = (SCL_num_flips > num_flips) ? num_flips : SCL_num_flips;
+        largest_class_size = 0; largest_class_idx = 0;
+
+        for (int k = 0; k < equiv_class.size(); k++) {
+            auto& ec = equiv_class[k];
+            vector<int> wt(ec.size());
+            for (int l = 0; l < wt.size(); l++) {
+                wt[l] = count_flip(N, Z_list[ec[l]].data(), noise_Z.data()); 
+            }
+            // sort(wt.begin(), wt.end());
+            print_wt_dist(wt); // sort is included
+            for (int i = 0; i < weight.size(); i++) {
+                temp_prob = 0.0;
+                cal_wt_dist_prob(wt, temp_prob, min_num_flips, weight[i]);
+                if (temp_prob > max_class_prob[i]) {
+                    max_class_prob[i] = temp_prob;
+                    max_class_idx[i].clear();
+                    max_class_idx[i].push_back(k);
+                } else if (temp_prob > (max_class_prob[i] - std::numeric_limits<double>::epsilon())) {
+                    max_class_idx[i].push_back(k);
+                }
+            }
+
+            if (X_stab->is_codeword(Z_list[ec[0]].data())) desired_class_idx = k;
+
             if (ec.size() > largest_class_size) {
                 largest_class_size = ec.size();
                 largest_class = ec.data();
+                largest_class_idx = k;
             }
         }
         cerr << "largest class size: " << largest_class_size << ". Weight distribution ";
@@ -97,25 +129,55 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz)
         for (int i = 0; i < largest_class_size; i++) 
             wt[i] = count_weight(Z_list[largest_class[i]]);
         print_wt_dist(wt);
-
-        for (auto ec : equiv_class) {
-            if (X_stab->is_codeword(Z_list[ec[0]].data())) {
+        
+        if (largest_class_idx != desired_class_idx) {
+            largest_class_err++;
+            if (desired_class_idx >= 0) {
+                auto& ec = equiv_class[desired_class_idx];
                 cerr << "stabilizer class size: " << ec.size() << ". Weight distribution ";
                 vector<int> wt(ec.size());
                 for (int i = 0; i < ec.size(); i++) 
                     wt[i] = count_weight(Z_list[ec[i]]);
                 print_wt_dist(wt);
-                break;
             }
         }
-        // for (int i = 0; i < largest_class_size; i++) {
-        //     for (int k : Z_list[largest_class[i]]) cerr << k;
-        //     cerr << endl;
-        // }
+        else cerr << "stabilizer class is the largest class" << endl;
+       
+
+        cerr << "max class prob (normalized) : ";
+        for (auto i : max_class_prob) cerr << i << " ";
+        cerr << endl;
+        for (int i = 0; i < weight.size(); i++) {
+            is_SCL_weighted_deg_wrong = false;
+            if (max_class_idx[i][0] != desired_class_idx) {
+                SCL_num_Z_err_deg_list[i]++;
+                is_SCL_weighted_deg_wrong = true;
+            }
+            if (!is_SCL_weighted_deg_wrong && is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) {
+                cerr << "turn " << turn_idx << " degeneracy helps by not random guessing" << endl;
+                degeneracy_helps[i]++;
+            }
+            if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong) degeneracy_worse[i]++;
+        }
+
+        if (turn_idx % 10 == 9) {
+            cerr << "SCL #err : " << SCL_num_Z_err << " / " << (turn_idx+1) << endl;
+            cerr << "SCL #err deg : " << SCL_num_Z_err_deg << " / " << (turn_idx+1) << endl;
+            cerr << "largest class #err : " << largest_class_err << " / " << (turn_idx+1) << endl;
+            cerr << "SCL #err weighted degeneracy : ";
+            for (int i : SCL_num_Z_err_deg_list) cerr << i << " ";
+            cerr << endl << "degeneracy helps : ";
+            for (int i : degeneracy_helps) cerr << i << " ";
+            cerr << endl << "degeneracy worse : ";
+            for (int i : degeneracy_worse) cerr << i << " ";
+            cerr << endl;
+        }
 
 
     }
     cerr << "average #flips: " << (double)total_flips / num_total << endl;
     cerr << "SCL #err    : " << SCL_num_Z_err << ", SCL Frame Error Rate: " << (double)SCL_num_Z_err / num_total << endl;
     cerr << "SCL #err considering degeneracy: " << SCL_num_Z_err_deg << endl;
+    cerr << "error due to equal " << equal_flips_err << endl;
+    cerr << "error due to SCL smaller " << SCL_smaller << endl;
 }

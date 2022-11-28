@@ -2,7 +2,7 @@
 void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=100)
 {
     vector<int> info_bits_Z(K);
-    vector<int> desired_Z(N);
+    vector<int> desired_Z(N, 1);
     vector<int> noisy_codeword_Z(N);
     vector<double> llr_noisy_codeword_Z(N);
     vector<int> SCL_denoised_codeword_Z(N);

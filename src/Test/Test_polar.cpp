@@ -77,6 +77,93 @@ void test_crc()
     }
 }
 
+void test_encoding_inverse()
+{
+    // the inverse of the circuit is the circuit itself.
+    int N = 1024;
+    vector<int> input(N);
+    vector<int> output(N);
+    vector<int> outoutput(N);
+    vector<bool> frozen_bits(N, 0);
+    Encoder_polar* encoder = new Encoder_polar(N, N, frozen_bits);
+    for (int idx = 0; idx < 10000; idx++) {
+        generate_random(N, input.data());
+        output = input;
+        encoder->light_encode(output.data());
+        outoutput = output;
+        encoder->light_encode(outoutput.data());
+        assert (verify(N, input.data(), outoutput.data()));
+    }
+}
+
+
+void test_syndrome_extraction(int N, int K, bool print)
+{
+    // use the checks (the N-K rows of best channels) to create N-K syndromes
+    // the i^th row is the codeword obtained by setting only the i^th position
+    // as info and others as frozen.
+    vector<bool> frozen_bits(N, 0);
+    vector<bool> stab_frozen_bits(N, 1);
+    vector<int>  syndromes(N-K, 0);
+    vector<int>  syndromes_at_frozen(N-K, 0);
+    vector<int>  input(N, 0);
+    vector<int>  output(N, 0);
+    vector<int>  noise(N, 0);
+    vector<vector<int>> parity_checks(N-K, vector<int>(N,0));
+    frozen_bits_generator_PW(N, K, frozen_bits);
+    for (int i = 0; i < N; i++)
+        if (frozen_bits[i] == 0 && frozen_bits[N-1-i] == 1)
+            stab_frozen_bits[i] = 0;
+    Encoder_polar* encoder = new Encoder_polar(N, N, frozen_bits);
+    int j = 0;
+    for (int i = 0; i < N; i++) {
+        if (!stab_frozen_bits[i]) {
+            input[i] = 1;
+            output = input;
+            encoder->light_encode(output.data());
+            parity_checks[j++] = output;
+            input[i] = 0;
+            // cerr << "parity check at i=" << i << " is ";
+            // for (int k : output) cerr << k;
+            // cerr << endl;
+        }
+    }
+    for (int idx = 0; idx < 10000; idx++) {
+        generate_random(N, noise.data());
+        j = 0;
+        for (int i = 0; i < N-K; i++) {
+            syndromes[i] = dot_product(N, parity_checks[i], noise);
+        }
+        if (print) {
+            cerr << "syndromes                ";
+            for (int k : syndromes) cerr << k;
+        }
+
+        // compared with bits at frozen after encoding the noise
+        output = noise;
+        // bit reversal
+        bit_reversal(output); 
+        encoder->light_encode(output.data());
+        j = 0;
+        for (int i = 0; i < N; i++) {
+            if (frozen_bits[i]) {
+                syndromes_at_frozen[j++] = output[i];
+            }
+        }
+        // bit reversal again
+        bit_reversal(syndromes_at_frozen);
+        if (print) {
+            cerr << endl << "syndromes at frozen bits ";
+            for (int k : syndromes_at_frozen) cerr << k;
+            cerr << endl;
+        }
+
+        assert (verify(N-K, syndromes.data(), syndromes_at_frozen.data()));
+    }
+
+
+}
+
 /*
   from Arikan's paper: A Performance Comparison of Polar Codes and Reed-Muller Codes
   generate the information bit set

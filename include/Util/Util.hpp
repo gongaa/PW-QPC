@@ -22,6 +22,23 @@ inline void xor_vec(int N, int* a, const int* b, int* c) {
         c[i] = a[i] ^ b[i];
 }
 
+inline int dot_product(int N, vector<int>& a, vector<int>& b) {
+    int sum = 0;
+    for(int i = 0; i < N; i++)
+        if (a[i] && b[i]) sum++;
+    return (sum % 2);
+}
+
+inline void bit_reversal(vector<int>& a) {
+    int temp;
+    int N = a.size();
+    for (int i = 0; i < N/2; i++) {
+        temp = a[i];
+        a[i] = a[N-1-i];
+        a[N-1-i] = temp;
+    }
+}
+
 inline int count_flip(int N, const int* a, const int* b) {
     int cnt = 0;
     for (int i = 0; i < N; i++) 

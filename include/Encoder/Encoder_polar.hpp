@@ -19,6 +19,7 @@ public:
   
   virtual void encode(const int *U_K, int *X_N, const size_t frame_id);
   void light_encode(int *bits);
+  void transpose_encode(int *bits);
 
   bool is_codeword(const int *X_N);
 

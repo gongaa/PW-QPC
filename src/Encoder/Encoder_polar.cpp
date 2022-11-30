@@ -43,6 +43,14 @@ void Encoder_polar::light_encode(int *bits)
                 bits[j + i] = bits [j + i] ^ bits[k + j + i];
 }
 
+void Encoder_polar::transpose_encode(int *bits)
+{
+    for (auto k = (this->N >> 1); k > 0; k >>= 1)
+        for (auto j = 0; j < this->N; j += 2 * k)
+            for (auto i = 0; i < k; i++)
+                bits[k + j + i] = bits [j + i] ^ bits[k + j + i];
+}
+
 bool Encoder_polar::is_codeword(const int *X_N)
 {
     copy(X_N, X_N + this->N, this->X_N_tmp.data());

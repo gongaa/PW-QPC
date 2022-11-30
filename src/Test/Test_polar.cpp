@@ -103,6 +103,7 @@ void test_syndrome_extraction(int N, int K, bool print)
     // the i^th row is the codeword obtained by setting only the i^th position
     // as info and others as frozen.
     vector<bool> frozen_bits(N, 0);
+    vector<bool> reversed_frozen_bits(N, 0);
     vector<bool> stab_frozen_bits(N, 1);
     vector<int>  syndromes(N-K, 0);
     vector<int>  syndromes_at_frozen(N-K, 0);
@@ -111,6 +112,7 @@ void test_syndrome_extraction(int N, int K, bool print)
     vector<int>  noise(N, 0);
     vector<vector<int>> parity_checks(N-K, vector<int>(N,0));
     frozen_bits_generator_PW(N, K, frozen_bits);
+    for (int i = 0; i < N; i++) reversed_frozen_bits[i] = frozen_bits[N-1-i];
     for (int i = 0; i < N; i++)
         if (frozen_bits[i] == 0 && frozen_bits[N-1-i] == 1)
             stab_frozen_bits[i] = 0;
@@ -155,10 +157,49 @@ void test_syndrome_extraction(int N, int K, bool print)
         if (print) {
             cerr << endl << "syndromes at frozen bits ";
             for (int k : syndromes_at_frozen) cerr << k;
-            cerr << endl;
         }
 
         assert (verify(N-K, syndromes.data(), syndromes_at_frozen.data()));
+
+        // from syndrome back to a noisy codeword
+        bit_reversal(syndromes_at_frozen);
+        j = 0;
+        for (int i = 0; i < N; i++) {
+            if (frozen_bits[i]) {
+                output[i] = syndromes_at_frozen[j++];
+            } else output[i] = 0;
+        }
+        encoder->light_encode(output.data());
+        bit_reversal(output);
+        xor_vec(N, output.data(), noise.data(), output.data());
+        assert (encoder->is_codeword(output.data()));
+
+        // use the transpose encoding circuit
+        output = noise;
+        encoder->transpose_encode(output.data());
+        j = 0;
+        for (int i = 0; i < N; i++) {
+            if (reversed_frozen_bits[i]) {
+                syndromes_at_frozen[j++] = output[i];
+            }
+        }
+        if (print) {
+            cerr << endl << "transposed circuit       ";
+            for (int k : syndromes_at_frozen) cerr << k;
+            cerr << endl;
+        }
+        assert (verify(N-K, syndromes.data(), syndromes_at_frozen.data()));
+
+        // from syndrome back to a noisy codeword
+        j = 0;
+        for (int i = 0; i < N; i++) {
+            if (reversed_frozen_bits[i]) {
+                output[i] = syndromes_at_frozen[j++];
+            } else output[i] = 0;
+        }
+        encoder->transpose_encode(output.data());
+        xor_vec(N, output.data(), noise.data(), output.data());
+        assert (encoder->is_codeword(output.data()));
     }
 
 

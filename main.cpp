@@ -40,6 +40,7 @@ int main(int argc, char** argv)
   double px, pz; 
   int p_min, p_max; // in percentage
   bool use_crc = false;
+  int seed;
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
     if ((arg == "-h") || (arg == "--help")) {
@@ -69,7 +70,9 @@ int main(int argc, char** argv)
       iss >> n;
     } else if ((arg == "-l") || (arg == "--list_size")) {
       iss >> list_size;
-    } else if (arg == "--crc") {
+    } else if (arg == "-seed") {
+      iss >> seed;
+    } else if (arg == "-crc") {
       iss >> use_crc;
     } else {
       cerr << "argument not supported" << endl;
@@ -83,7 +86,8 @@ int main(int argc, char** argv)
   // int N = 32, K = 24, L = 1024;
   // m = 11; rx = 5;
   // double db = 3, design_snr = 3;
-  simulation_polar_CSS(N, K, list_size, pz, n);
+  // simulation_polar_CSS(N, K, list_size, pz, n);
+  simulation_polar_syndrome(N, K, list_size, pz, n, seed);
   // simulation_stab_MW_codewords(N, K);
   /*
   auto start = std::chrono::high_resolution_clock::now();

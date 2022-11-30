@@ -97,7 +97,7 @@ void test_encoding_inverse()
 }
 
 
-void test_syndrome_extraction(int N, int K, bool print)
+void test_syndrome_extraction(int N, int K, bool print=false)
 {
     // use the checks (the N-K rows of best channels) to create N-K syndromes
     // the i^th row is the codeword obtained by setting only the i^th position
@@ -202,6 +202,47 @@ void test_syndrome_extraction(int N, int K, bool print)
         assert (encoder->is_codeword(output.data()));
     }
 
+
+}
+
+void test_noise_dist(int N, int num_total=10000, int seed=42)
+{
+    Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, seed);
+    vector<int> noise_X(N, 0), noise_Z(N, 0);
+    int num_flips;
+    vector<int> flips(N+1, 0);
+    vector<double> pzs = {0.1, 0.12, 0.14, 0.16, 0.18, 0.2};
+    for (auto pz : pzs) {
+        std::fill(flips.begin(), flips.end(), 0);
+        chn_bsc_q->set_prob(0, pz);
+        for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
+            chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
+            num_flips = count_weight(noise_Z);
+            flips[num_flips]++;
+        }
+        for (int k : flips) cerr << k << " ";
+        cerr << endl;
+    }
+
+}
+
+void test_generate_exact_flip(int N, double p, int num_total=10000, int seed=42)
+{
+    int cnt = 0;
+    int floor = N * p, ceil = floor + 1;
+    cerr << "floor " << floor << ", ceiling " << ceil << endl; 
+    int num_flips;
+    vector<int> noise_X(N, 0), noise_Z(N, 0);
+    Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, seed);
+    chn_bsc_q->set_prob(0, p);
+    for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
+        do {
+            chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
+            num_flips = count_weight(noise_Z);
+            cnt++;
+        } while (num_flips != floor && num_flips != ceil);
+    }
+    cerr << "generate " << num_total << " noise that is with exact flip using " << cnt << " samples" << endl; 
 
 }
 

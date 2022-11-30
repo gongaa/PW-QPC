@@ -5,7 +5,18 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <map>
+#include <string>
 using namespace std;
+
+enum CONSTRUCTION { BEC = 0, RM = 1, PW = 2, HPW = 3 };
+static std::map<std::string, CONSTRUCTION> construction_map = {
+    {"BEC", BEC},
+    {"RM" , RM },
+    {"PW" , PW },
+    {"HPW", HPW}
+};
+
 inline bool verify(int K, int *U_K_1, int *U_K_2) {
     bool is_same = true;
     for (int i = 0; i < K; i++) {
@@ -122,6 +133,10 @@ void frozen_bits_generator_AWGN_SC(int N, int K, double db, vector<bool>& frozen
 void frozen_bits_generator_BSC_SC(int N, int K, double p, vector<bool>& frozen_bits);
 
 void frozen_bits_generator_PW(int N, int K, vector<bool>& frozen_bits);
+
+void frozen_bits_generator_RM(int N, int K, vector<bool>& frozen_bits);
+
+void frozen_bits_generator_HPW(int N, int K, vector<bool>& frozen_bits);
 
 double phi_inv(double t);
 

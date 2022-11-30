@@ -1,5 +1,5 @@
 #include "Simulation/Simulation.hpp"
-void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total=100, int seed = 42)
+void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, bool use_exact, int seed = 42)
 {
     vector<int>  desired_Z(N, 1);
     vector<int>  noisy_codeword_Z(N);
@@ -14,7 +14,25 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     vector<int>  input(N, 0);
     vector<int>  output(N, 0);
 
-    frozen_bits_generator_PW(N, K, Z_code_frozen_bits);
+    switch (con) {
+        case BEC:
+            cerr << "BEC construction" << endl;
+            frozen_bits_generator_BEC(N, K, pz, Z_code_frozen_bits);
+            break;
+        case RM:
+            cerr << "RM construction" << endl;
+            frozen_bits_generator_RM(N, K, Z_code_frozen_bits);
+            break;
+        case PW:
+            cerr << "PW construction" << endl;
+            frozen_bits_generator_PW(N, K, Z_code_frozen_bits);
+            break;
+        case HPW:
+            cerr << "HPW construction" << endl;
+            frozen_bits_generator_HPW(N, K, Z_code_frozen_bits);
+            break;
+    }
+
     for (int i = 0; i < N; i++) X_code_frozen_bits[i] = Z_code_frozen_bits[N-1-i];
     for (int i = 0; i < N; i++) 
         if (Z_code_frozen_bits[i] == 0 && Z_code_frozen_bits[N-1-i] == 1) 
@@ -37,6 +55,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, seed);
     chn_bsc_q->set_prob(0, pz);
+    int floor_Z = N * pz, ceil_Z = floor_Z + 1;
     vector<double> weight = {1.0, 0.1, 0.3, 0.5, 0.7, 1.0}; // weight[0] will be set to the real p 
     weight[0] = pz / (1.0-pz);
     vector<int> noise_X(N, 0), noise_Z(N, 0);
@@ -68,8 +87,15 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
         // reset flags
         is_SCL_deg_wrong = false; is_SCL_weighted_deg_wrong = false;
         // generate noise
-        chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
-        num_flips = count_weight(noise_Z);
+        if (!use_exact) {
+            chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
+            num_flips = count_weight(noise_Z);
+        } else {
+            do {
+                chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
+                num_flips = count_weight(noise_Z);
+            } while (num_flips != floor_Z && num_flips != ceil_Z);
+        }
         total_flips += num_flips;
         // obtain syndrome
         for (int i = 0; i < N-K; i++) {

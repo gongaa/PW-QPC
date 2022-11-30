@@ -42,7 +42,7 @@ void simulation_polar_SCL(int N, int K, int L, double p, double db, double desig
 
 void simulation_polar_CSS(int N, int K, int L, double p, int num_total, int seed);
 
-void simulation_polar_syndrome(int N, int K, int L, double p, int num_total, int seed);
+void simulation_polar_syndrome(int N, int K, int L, double p, int num_total, CONSTRUCTION con, bool use_exact, int seed);
 
 void simulation_stab_MW_codewords(int N, int K);
 

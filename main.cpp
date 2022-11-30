@@ -39,8 +39,10 @@ int main(int argc, char** argv)
   int N = 1024, K = 513;
   double px, pz; 
   int p_min, p_max; // in percentage
-  bool use_crc = false;
+  bool use_crc = false, use_exact = false;
   int seed;
+  string con_str;
+  CONSTRUCTION con;
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
     if ((arg == "-h") || (arg == "--help")) {
@@ -72,8 +74,13 @@ int main(int argc, char** argv)
       iss >> list_size;
     } else if (arg == "-seed") {
       iss >> seed;
+    } else if (arg == "-con") {
+      iss >> con_str;
+      con = construction_map[con_str];
     } else if (arg == "-crc") {
       iss >> use_crc;
+    } else if (arg == "-exact") {
+      iss >> use_exact;
     } else {
       cerr << "argument not supported" << endl;
       return 1;
@@ -87,20 +94,17 @@ int main(int argc, char** argv)
   // m = 11; rx = 5;
   // double db = 3, design_snr = 3;
   // simulation_polar_CSS(N, K, list_size, pz, n);
-  simulation_polar_syndrome(N, K, list_size, pz, n, seed);
-  // simulation_stab_MW_codewords(N, K);
-  /*
-  auto start = std::chrono::high_resolution_clock::now();
-  simulation_polar_SCL(N, K, L, p, db, design_snr);
-  auto stop = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  cerr << "polar takes " << duration.count() << " ms" << endl;
-  start = std::chrono::high_resolution_clock::now();
-  simulation_RM_SCL(m, rx, L, p, db, design_snr);
-  stop = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  cerr << "RM takes " << duration.count() << " ms" << endl;
-  */
+  simulation_polar_syndrome(N, K, list_size, pz, n, con, use_exact, seed);
+  // auto start = std::chrono::high_resolution_clock::now();
+  // simulation_polar_SCL(N, K, L, p, db, design_snr);
+  // auto stop = std::chrono::high_resolution_clock::now();
+  // auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+  // cerr << "polar takes " << duration.count() << " ms" << endl;
+  // start = std::chrono::high_resolution_clock::now();
+  // simulation_RM_SCL(m, rx, L, p, db, design_snr);
+  // stop = std::chrono::high_resolution_clock::now();
+  // duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  // cerr << "RM takes " << duration.count() << " ms" << endl;
   // Now RM takes twice the time of Polar to decode
   // TODO: optimize the copy in RM SCL decoder
   return 0;

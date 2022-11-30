@@ -31,6 +31,7 @@ void frozen_bits_generator_BEC(int N, int K, double p, vector<bool>& frozen_bits
 
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] < z[i2]; });
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
+	// for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
 }
 
 double my_alpha = -0.4527;
@@ -146,6 +147,51 @@ void frozen_bits_generator_PW(int N, int K, vector<bool>& frozen_bits)
 		temp = 0.0;
 		for (int k = 0; k < n; k++) 
 			if (bin[k]) temp += pow(base, k);
+		z[i] = temp;
+	}
+	std::fill(frozen_bits.begin(), frozen_bits.end(), 1);
+    vector<uint32_t> best_channels(N);
+    std::iota(best_channels.begin(), best_channels.end(), 0);
+	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
+    for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
+	// for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+}
+
+void frozen_bits_generator_RM(int N, int K, vector<bool>& frozen_bits)
+{
+	vector<double> z(N, 0);
+	int n = log2(N);
+	vector<int> bin(n, 0);
+	int weight;
+	vector<int> cnt(n+1, 0);
+	double eps = 1.0 / N;
+	for (int i = 0; i < N; i++) {
+		decimal2binary(i, bin);
+		weight = count_weight(bin);
+		z[i] = weight + cnt[weight] * eps;
+		cnt[weight]++;
+	}
+	std::fill(frozen_bits.begin(), frozen_bits.end(), 1);
+    vector<uint32_t> best_channels(N);
+    std::iota(best_channels.begin(), best_channels.end(), 0);
+	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
+    for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
+	// for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+}
+
+void frozen_bits_generator_HPW(int N, int K, vector<bool>& frozen_bits)
+{
+	vector<double> z(N, 0);
+	int n = log2(N);
+	vector<int> bin(n, 0);
+	double temp = 0.0;
+	double base = pow(2, 0.25);
+	double base_quad_root = pow(2, 0.25*0.25);
+	for (int i = 0; i < N; i++) {
+		decimal2binary(i, bin);
+		temp = 0.0;
+		for (int k = 0; k < n; k++) 
+			if (bin[k]) temp += pow(base, k) + 0.25 * pow(base_quad_root, k);
 		z[i] = temp;
 	}
 	std::fill(frozen_bits.begin(), frozen_bits.end(), 1);

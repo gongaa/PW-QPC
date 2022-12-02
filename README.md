@@ -35,8 +35,8 @@ The possible options are
 * `-l` - The list size. For N=1024, K=513, l=512, n=10000 the code runs ~48h on Euler. You can ask for more memory on Euler using `-R "rusage[mem=2048]"`.
 * `-n` - The number of samples. Ideally, the number of flips of the noise should follow a binomial distribution, but for N=1024, 10000 samples are not enough to approximate the distribution well.
 * `-pz` - The probability of Z error happening on each bit (independently).
-* `-con` - The construction method. Can choose from `BEC` `RM` `PW` `HPW`. Note that `BEC` suffers from the numerical problem so that the construction at $N\geq 256, K\geq 129$ is not CSS anymore.
-* `-exact` - As 10000 samples may not be enough the approximate the binomial distribution well at large $N$, when `exact` is set to true, only noise that has flips $\lfloor N*p_z\rfloor$ or $\lceil N_pz\lceil$ are generated.
+* `-con` - The construction method. Can choose from `BEC` `RM` `PW` `HPW`. Note that `BEC` suffers from the numerical problem so that the construction at $N\geq 256, K\geq 129$ is not CSS anymore. `HPW` gives the same construction as `PW` for $K=\frac{N}{2}+1$.
+* `-exact` - As 10000 samples may not be enough the approximate the binomial distribution well at large $N$, when `exact` is set to true, only noise that has flips $\lfloor N*p_z\rfloor$ or $\lceil N*p_z\rceil$ are generated.
 * `-seed` - The random seed used to generate the noise.
 
 

@@ -9,7 +9,7 @@ using namespace std;
 
 void test_crc();
 
-void test_polar_stabilizer();
+void test_polar_stabilizer(int N, int K, double p);
 
 void test_encoding_inverse();
 

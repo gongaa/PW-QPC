@@ -154,7 +154,7 @@ void frozen_bits_generator_PW(int N, int K, vector<bool>& frozen_bits)
     std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
-	// for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+	for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
 }
 
 void frozen_bits_generator_RM(int N, int K, vector<bool>& frozen_bits)
@@ -176,7 +176,7 @@ void frozen_bits_generator_RM(int N, int K, vector<bool>& frozen_bits)
     std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
-	// for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+	for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
 }
 
 void frozen_bits_generator_HPW(int N, int K, vector<bool>& frozen_bits)
@@ -199,5 +199,5 @@ void frozen_bits_generator_HPW(int N, int K, vector<bool>& frozen_bits)
     std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
-	// for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+	for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
 }

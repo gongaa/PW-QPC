@@ -1,1 +1,42 @@
 # QRM-List-Decoder
+
+This repo contains the Reed-Muller code and the Dumer's list decoder in LLR form. My implementation is based on both [ECCLab](https://github.com/kshabunov/ecclab) and [aff3ct](https://github.com/aff3ct/aff3ct).
+Compared to [ECCLab](https://github.com/kshabunov/ecclab), all the codes are in C++ style and all the calculations are based on log-likelihood ratio. Furthermore, the tree metric construction and (optimized) copy follows from [aff3ct](https://github.com/aff3ct/aff3ct) but on an unbalaneced tree. Alternatively, people can use the polar code with the Reed-Muller construction. `TODO` test they give the same performance.
+
+This repo also contains the polar code and the SCL decoder (taken from [aff3ct](https://github.com/aff3ct/aff3ct) but deleted the multi-kernel part).
+The code organization is a much simplified version of [aff3ct](https://github.com/aff3ct/aff3ct), with the modulator demodulator modules and some design patterns peeled off. 
+Various polar code construction methods are included, like the Arikan's BEC, the Gaussian Approximation, the Polarization Weight, the Higher Order Polarization Weight methods. I also wrote a Reed-Muller construction so that $K$ does not have to be $m\choose \leq r$.
+
+The goal of this project is to explore for the quantum polar code, whether the codewords in the list can be used to approximate the Maximum Likelihood decoding. Our approach is to weigh each codeword differently according to the distance to the noise (that is compatible with the syndrome), and then choose the equivalence class that has the maximum probability.
+Default decoding is syndrome decoding instead of codeword decoding.
+
+## Build and Run
+
+To be compiled on Euler, first clone this repo and then run the following before `make`:
+```Shell
+env2lmod
+modoule load gcc/9.3.0
+```
+Then build and run as:
+```
+mkdir logs
+make
+./build/apps/program -N 1024 -K 513 -l 128 -pz 0.1 -n 10000 -con PW -exact 1 -seed 25
+```
+On Euler, instead of the last command, run the following
+```
+bsub -W 24:00 "./build/apps/program -N 1024 -K 513 -l 128 -pz 0.1 -n 10000 -con PW -exact 1 -seed 25 &> logs/Polar_N1024_K513_l128_pz10_n10000_conPW_exact1_seed25_syndrome.log"
+```
+
+### Arguments
+The possible options are
+* `-N` - The length of the code, use a power of two so that it is CSS.
+* `-K` - The number of information bits, use $\frac{N}{2}+1$ to make the degeneracy effect the most obvious.
+* `-l` - The list size. For N=1024, K=513, l=512, n=10000 the code runs ~48h on Euler. You can ask for more memory on Euler using `-R "rusage[mem=2048]"`.
+* `-n` - The number of samples. Ideally, the number of flips of the noise should follow a binomial distribution, but for N=1024, 10000 samples are not enough to approximate the distribution well.
+* `-pz` - The probability of Z error happening on each bit (independently).
+* `-con` - The construction method. Can choose from `BEC` `RM` `PW` `HPW`. Note that `BEC` suffers from the numerical problem so that the construction at $N\geq 256, K\geq 129$ is not CSS anymore.
+* `-exact` - As 10000 samples may not be enough the approximate the binomial distribution well at large $N$, when `exact` is set to true, only noise that has flips $\lfloor N*p_z\rfloor$ or $\lceil N_pz\lceil$ are generated.
+* `-seed` - The random seed used to generate the noise.
+
+

@@ -10,12 +10,13 @@
 
 using namespace std;
 
-void test_polar_stabilizer() 
+void test_polar_stabilizer(int N, int K, double p) 
 {
     // int K = 1536, N = 2048;
-    int K = 50, N = 64, n = log2(N); 
+    int n = log2(N); 
     vector<bool> frozen_bits(N, 0);
-    frozen_bits_generator_PW(N, K, frozen_bits);
+    // frozen_bits_generator_PW(N, K, frozen_bits);
+    frozen_bits_generator_BEC(N, K, p, frozen_bits);
     // assume X and Z are using the same code
     // expect K - (N-K) = 1024 stabilizers
     vector<int> Z_code(K, 0);

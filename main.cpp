@@ -94,17 +94,29 @@ int main(int argc, char** argv)
   // m = 11; rx = 5;
   // double db = 3, design_snr = 3;
   // simulation_polar_CSS(N, K, list_size, pz, n);
-  simulation_polar_syndrome(N, K, list_size, pz, n, con, use_exact, seed);
-  // auto start = std::chrono::high_resolution_clock::now();
-  // simulation_polar_SCL(N, K, L, p, db, design_snr);
-  // auto stop = std::chrono::high_resolution_clock::now();
-  // auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-  // cerr << "polar takes " << duration.count() << " ms" << endl;
-  // start = std::chrono::high_resolution_clock::now();
-  // simulation_RM_SCL(m, rx, L, p, db, design_snr);
-  // stop = std::chrono::high_resolution_clock::now();
-  // duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-  // cerr << "RM takes " << duration.count() << " ms" << endl;
+  // simulation_polar_syndrome(N, K, list_size, pz, n, con, use_exact, seed);
+
+  /*
+  vector<bool> frozen_bits_HPW(N, 0);
+  vector<bool> frozen_bits_PW(N, 0);
+  frozen_bits_generator_HPW(N, K, frozen_bits_HPW);
+  frozen_bits_generator_PW(N, K, frozen_bits_PW);
+  for (int i = 0; i < N; i++)
+    if (frozen_bits_HPW[i] != frozen_bits_PW[i])
+      cerr << "differ at i=" << i << endl;
+  */
+  int db = 0;
+  int design_snr = 1.0; // 1.0dB is the best for Gaussian Approximation Construction
+  auto start = std::chrono::high_resolution_clock::now();
+  simulation_polar_SCL(N, K, list_size, pz, db, design_snr);
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+  cerr << "polar takes " << duration.count() << " s" << endl;
+  start = std::chrono::high_resolution_clock::now();
+  simulation_RM_SCL(m, rx, list_size, pz, db, design_snr);
+  stop = std::chrono::high_resolution_clock::now();
+  duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+  cerr << "RM takes " << duration.count() << " s" << endl;
   // Now RM takes twice the time of Polar to decode
   // TODO: optimize the copy in RM SCL decoder
   return 0;

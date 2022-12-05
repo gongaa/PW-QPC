@@ -11,7 +11,7 @@ void simulation_polar_SCL(int N, int K, int L, double p, double db, double desig
     vector<double> llr_noisy_codeword(N, 0);
     vector<int> denoised_codeword(N);
     vector<bool> frozen_bits(N, 0);
-#ifdef CHN_AWGN
+#ifdef CHN_AWGN      // flag in Simulation.hpp
     // double db = 1;
     // double design_snr = 1;
     double code_rate = (double)K / N;
@@ -29,11 +29,12 @@ void simulation_polar_SCL(int N, int K, int L, double p, double db, double desig
     // frozen_bits_generator_BEC(N, K, p, frozen_bits);
     // frozen_bits_generator_BSC_SC(N, K, p, frozen_bits);
     frozen_bits_generator_PW(N, K, frozen_bits);
+    // frozen_bits_generator_RM(N, K, frozen_bits);
 #endif
     int cnt = 0;
-    for (auto i : frozen_bits) if (i) cnt++;
-    cerr << "frozen bits mask contains " << cnt << " ones : ";
-    for (auto i : frozen_bits) cerr << i;
+    // for (auto i : frozen_bits) if (i) cnt++;
+    // cerr << "frozen bits mask contains " << cnt << " ones : ";
+    // for (auto i : frozen_bits) cerr << i;
     cerr << endl;
     // vector<bool> frozen_bits = {1,0,1,0,1,0,0,0}; // info bits at 8,4,6,7,2
     Encoder_polar* encoder = new Encoder_polar(K, N, frozen_bits);
@@ -71,7 +72,7 @@ void simulation_polar_SCL(int N, int K, int L, double p, double db, double desig
         // else cerr << k << " decode successfully" << endl;
         // else cerr << k << " decode successfully, ml_flips: " << ml_flips << endl;
     }
-    cerr << "FER: " << (double)SCL_num_err / num_total << endl;
+    cerr << "Polar SCL FER: " << (double)SCL_num_err / num_total << endl;
 }
 
 void simulation_stab_MW_codewords(int N, int K)

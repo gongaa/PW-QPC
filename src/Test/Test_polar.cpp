@@ -98,7 +98,7 @@ void test_encoding_inverse()
 }
 
 
-void test_syndrome_extraction(int N, int K, bool print=false)
+void test_syndrome_extraction(int N, int K, bool print)
 {
     // use the checks (the N-K rows of best channels) to create N-K syndromes
     // the i^th row is the codeword obtained by setting only the i^th position
@@ -206,13 +206,14 @@ void test_syndrome_extraction(int N, int K, bool print=false)
 
 }
 
-void test_noise_dist(int N, int num_total=10000, int seed=42)
+void test_noise_dist(int N, int num_total, int seed)
 {
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, seed);
     vector<int> noise_X(N, 0), noise_Z(N, 0);
     int num_flips;
     vector<int> flips(N+1, 0);
-    vector<double> pzs = {0.1, 0.12, 0.14, 0.16, 0.18, 0.2};
+    vector<double> pzs = {0.08};
+    // vector<double> pzs = {0.1, 0.12, 0.14, 0.16, 0.18, 0.2};
     for (auto pz : pzs) {
         std::fill(flips.begin(), flips.end(), 0);
         chn_bsc_q->set_prob(0, pz);
@@ -227,7 +228,7 @@ void test_noise_dist(int N, int num_total=10000, int seed=42)
 
 }
 
-void test_generate_exact_flip(int N, double p, int num_total=10000, int seed=42)
+void test_generate_exact_flip(int N, double p, int num_total, int seed)
 {
     int cnt = 0;
     int floor = N * p, ceil = floor + 1;

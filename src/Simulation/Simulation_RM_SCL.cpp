@@ -1,6 +1,6 @@
 #include "Simulation/Simulation.hpp"
 
-int simulation_RM_SCL(int m, int r, int list_size, double p, double db, double design_snr) {
+int simulation_RM_SCL(int m, int r, int list_size, double p, double db, double design_snr, int num_total) {
     // each time a decoding failure occurred, 
     // we checked whether the decoded codeword was more likely than the transmitted codeword.
     // If so, then the optimal ML decoder would surely misdecode y as well.
@@ -30,15 +30,15 @@ int simulation_RM_SCL(int m, int r, int list_size, double p, double db, double d
     vector<int> SC_denoised_codeword(N, 0);
     vector<int> SCL_denoised_codeword(N, 0);
     vector<int> decoded(K, 0);
-    int num_total = 1000, SC_num_err = 0, SCL_num_err = 0, num_ml_failed = 0;
-    int SC_num_flips = 0, SCL_num_flips = 0, ml_flips=0;
+    int SC_num_err = 0, SCL_num_err = 0, ML_err = 0;
+    int SC_num_flips = 0, SCL_num_flips = 0, num_flips=0;
     for (int i = 0; i < num_total; i++) {
         generate_random(K, info_bits.data());
         encoder->encode(info_bits.data(), codeword.data(), 1);
 #ifdef CHN_AWGN
         chn_awgn->add_noise(codeword.data(), llr_noisy_codeword.data(), 0);
 #else
-        ml_flips = chn_bsc->add_noise(codeword.data(), noisy_codeword.data(), 0);
+        num_flips = chn_bsc->add_noise(codeword.data(), noisy_codeword.data(), 0);
         for (int i = 0; i < N; i++) {
             llr_noisy_codeword[i] = noisy_codeword[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
             // llr_noisy_codeword[i] = noisy_codeword[i] ? -1.0 : 1.0; // 0 -> 1.0; 1 -> -1.0
@@ -46,40 +46,15 @@ int simulation_RM_SCL(int m, int r, int list_size, double p, double db, double d
 #endif // USE_AWGN
         SC_decoder->decode(llr_noisy_codeword.data(), SC_denoised_codeword.data(), 0);
         SCL_decoder->decode(llr_noisy_codeword.data(), SCL_denoised_codeword.data(), 0);
-#ifdef IS_VERBOSE
-        if (!verify(N, codeword.data(), SC_denoised_codeword.data())) {
-            SC_num_err++;
-            // test whether ml decoding will fail
-            SC_num_flips = 0;
-            for (int i = 0; i < N; i++)
-                if (codeword[i] != SC_denoised_codeword[i]) 
-                    SC_num_flips++;
-            if (SC_num_flips < ml_flips) {
-                // cerr << "ML decoding failed for SC, SC_num_flips=" << SC_num_flips << ", ml_flips=" << ml_flips << endl;
-                num_ml_failed++;
-            }
-        }
-#endif // IS_VERBOSE
-        if (!verify(N, codeword.data(), SC_denoised_codeword.data())) SC_num_err++;
-        if (!verify(N, codeword.data(), SCL_denoised_codeword.data())) {
+        if (!verify(N, codeword, SC_denoised_codeword)) SC_num_err++;
+        if (!verify(N, codeword, SCL_denoised_codeword)) {
             SCL_num_err++;
-#ifdef IS_VERBOSE
-            // test whether ml decoding will fail
-            SCL_num_flips = 0;
-            for (int i = 0; i < N; i++)
-                if (codeword[i] != SCL_denoised_codeword[i]) 
-                    SCL_num_flips++;
-            if (SCL_num_flips > SC_num_flips) {
-                cerr << "SCL is worse than SC, SC_num_flips=" << SC_num_flips << ", SCL_num_flips=" << SCL_num_flips << endl;
-                int path_idx = SCL_decoder->is_codeword_in_list(SC_denoised_codeword.data());
-                cerr << "path_idx=" << path_idx << endl;
-            }
-#endif // IS_VERBOSE
+            if (num_flips >= count_flip(N, noisy_codeword, SCL_denoised_codeword))
+                ML_err++;
         }
     }
-    cerr << "SC_num_err: " << SC_num_err << ". SCL_num_err: " << SCL_num_err << endl;
-    cerr << "SC Frame Error Rate: " << (double)SC_num_err / num_total << endl;
-    cerr << "SCL Frame Error Rate: " << (double)SCL_num_err / num_total << endl;
-    cerr << "ML decoding failed rate: " << (double)num_ml_failed / num_total << endl;
+    cerr << "RM SC FER: " << (double)SC_num_err / num_total << endl;
+    cerr << "RM SCL FER: " << (double)SCL_num_err / num_total << endl;
+    cerr << "RM ML FER: " << (double)ML_err / num_total << endl;
     return 0;
 }

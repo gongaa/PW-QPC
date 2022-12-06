@@ -56,7 +56,6 @@ private:
 
     void recursive_duplicate_tree_llr(Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b);
     void recursive_duplicate_tree_sums(Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b, Node<Contents_SCL>* node_caller);
-    void copy_tree( Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b);
 
 protected:
     virtual void select_best_path(const size_t frame_id);

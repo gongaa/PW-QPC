@@ -274,7 +274,6 @@ void Decoder_polar_SCL::duplicate_path(int path, int leaf_index, vector<vector<N
 	if (leaf_index < this->N - 1)
 		recursive_duplicate_tree_llr(leaves_array[path][leaf_index + 1], leaves_array[newpath][leaf_index + 1]);
 	// do not need to copy the whole tree, only copy the necessary part to compute llr for all the future leaf nodes
-	// copy_tree(polar_trees[path]->get_root(), polar_trees[newpath]->get_root());
 
 	leaves_array[newpath][leaf_index]->get_c()->s[0] = 1;
 	polar_trees[newpath]->set_path_metric(phi(polar_trees[path]->get_path_metric(),
@@ -283,18 +282,6 @@ void Decoder_polar_SCL::duplicate_path(int path, int leaf_index, vector<vector<N
 	leaves_array[path][leaf_index]->get_c()->s[0] = 0;
 	polar_trees[path]->set_path_metric(phi(polar_trees[path]->get_path_metric(),
 	                                                  leaves_array[path][leaf_index]->get_c()->l[0], 0));
-}
-
-void Decoder_polar_SCL::copy_tree( Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b) {
-    auto c_a = node_a->get_contents();
-    auto c_b = node_b->get_contents();
-	c_b->l = c_a->l;
-	c_b->s = c_a->s;
-    auto children_a = node_a->get_children();
-    auto children_b = node_b->get_children();
-	if (children_a.size() == 0) return;
-	copy_tree(children_a[0], children_b[0]);
-	copy_tree(children_a[1], children_b[1]);
 }
 
 void Decoder_polar_SCL::recursive_duplicate_tree_llr(Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b)
@@ -307,7 +294,7 @@ void Decoder_polar_SCL::recursive_duplicate_tree_llr(Node<Contents_SCL>* node_a,
 
 void Decoder_polar_SCL::recursive_duplicate_tree_sums(Node<Contents_SCL>* node_a, Node<Contents_SCL>* node_b, Node<Contents_SCL>* node_caller)
 {
-	if (!node_a->is_leaf()) {
+	if (!node_a->is_leaf()) { // if called by its right child
 		auto left_child = (node_a->get_children())[0];
 		if (left_child != node_caller) {
 			node_b->get_children()[0]->get_c()->s = left_child->get_c()->s;

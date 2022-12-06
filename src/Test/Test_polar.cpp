@@ -93,7 +93,7 @@ void test_encoding_inverse()
         encoder->light_encode(output.data());
         outoutput = output;
         encoder->light_encode(outoutput.data());
-        assert (verify(N, input.data(), outoutput.data()));
+        assert (verify(N, input, outoutput));
     }
 }
 
@@ -160,7 +160,7 @@ void test_syndrome_extraction(int N, int K, bool print)
             for (int k : syndromes_at_frozen) cerr << k;
         }
 
-        assert (verify(N-K, syndromes.data(), syndromes_at_frozen.data()));
+        assert (verify(N-K, syndromes, syndromes_at_frozen));
 
         // from syndrome back to a noisy codeword
         bit_reversal(syndromes_at_frozen);
@@ -189,7 +189,7 @@ void test_syndrome_extraction(int N, int K, bool print)
             for (int k : syndromes_at_frozen) cerr << k;
             cerr << endl;
         }
-        assert (verify(N-K, syndromes.data(), syndromes_at_frozen.data()));
+        assert (verify(N-K, syndromes, syndromes_at_frozen));
 
         // from syndrome back to a noisy codeword
         j = 0;

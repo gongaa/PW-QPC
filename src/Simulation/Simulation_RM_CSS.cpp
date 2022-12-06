@@ -50,14 +50,14 @@ int simulation_RM_CSS(int m, int rx, int rz, int list_size) {
             cerr << "SCL was wrong, the codeword it gave has pm=" << pm_best << " and content" << endl;
             for (int k : SCL_denoised_codeword_X) cerr << k;
             cerr << ", pm=" << pm_best << ", #flips=" << 
-            count_flip(N, SCL_denoised_codeword_X.data(), noise_X.data()) << endl;
+            count_flip(N, SCL_denoised_codeword_X, noise_X) << endl;
             SCL_num_X_err++;
             for (int i = 0; i < list_size; i++) {
                 if (encoder->is_X_stabilizer(X_list[i].data())) {
                     cerr << "wrong but idx=" << i << " differs by only a stabilizer" << endl;
                     for (int k : X_list[i]) cerr << k;
                     cerr << ", pm=" << pm_X_list[i] << ", #flips=" <<
-                    count_flip(N, X_list[i].data(), noise_X.data()) << endl;
+                    count_flip(N, X_list[i], noise_X) << endl;
                 }
             }
         }
@@ -186,7 +186,7 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
             // see whether it is in the all-zero's equiv class (stabilizers)
             min_num_flips = N; min_flip_indices.clear();
             for (int i = 0; i < num_codewords; i++) {
-                num_flips = count_flip(N, noise_X.data(), codewords[i].data());
+                num_flips = count_flip(N, noise_X, codewords[i]);
                 if (num_flips < min_num_flips) {
                     min_flip_indices.clear();
                     min_flip_indices.push_back(i);
@@ -213,7 +213,7 @@ int simulation_RM_degeneracy(int m, int rx, int rz, double px_dummy, double pz)
             for (int i = 0; i < num_equiv_class; i++) {
                 for (int k = 0; k < N + 1; k++) flips[k] = 0;
                 for (int idx : equiv_class[i]) {
-                    num_flips = count_flip(N, noise_X.data(), codewords[idx].data());
+                    num_flips = count_flip(N, noise_X, codewords[idx]);
                     flips[num_flips]++;
                 }
                 ec_err_prob = 0.0; 

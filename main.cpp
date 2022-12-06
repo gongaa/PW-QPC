@@ -35,11 +35,12 @@ int main(int argc, char** argv)
   // write a simple parser for selecting number of threads
   // which code to use
   // which channel to use and what's their parameters.
-  int m, rx, rz, list_size, n = 100;
+  int m, rx, rz, list_size, n = 1000;
   int N = 1024, K = 513;
   double px, pz; 
   int p_min, p_max; // in percentage
-  bool use_crc = false, use_exact = false;
+  bool use_crc = false;
+  int exact_t = 1;
   int seed;
   string con_str;
   CONSTRUCTION con;
@@ -80,7 +81,7 @@ int main(int argc, char** argv)
     } else if (arg == "-crc") {
       iss >> use_crc;
     } else if (arg == "-exact") {
-      iss >> use_exact;
+      iss >> exact_t;
     } else {
       cerr << "argument not supported" << endl;
       return 1;
@@ -94,7 +95,7 @@ int main(int argc, char** argv)
   // m = 11; rx = 5;
   // double db = 3, design_snr = 3;
   // simulation_polar_CSS(N, K, list_size, pz, n);
-  // simulation_polar_syndrome(N, K, list_size, pz, n, con, use_exact, seed);
+  simulation_polar_syndrome(N, K, list_size, pz, n, con, exact_t, seed);
 
   /*
   vector<bool> frozen_bits_HPW(N, 0);
@@ -105,19 +106,21 @@ int main(int argc, char** argv)
     if (frozen_bits_HPW[i] != frozen_bits_PW[i])
       cerr << "differ at i=" << i << endl;
   */
+
+  /*
   int db = 0;
   int design_snr = 1.0; // 1.0dB is the best for Gaussian Approximation Construction
   auto start = std::chrono::high_resolution_clock::now();
-  simulation_polar_SCL(N, K, list_size, pz, db, design_snr);
+  simulation_polar_SCL(N, K, list_size, pz, db, design_snr, CONSTRUCTION::RM, n);
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
   cerr << "polar takes " << duration.count() << " s" << endl;
   start = std::chrono::high_resolution_clock::now();
-  simulation_RM_SCL(m, rx, list_size, pz, db, design_snr);
+  simulation_RM_SCL(m, rx, list_size, pz, db, design_snr, n);
   stop = std::chrono::high_resolution_clock::now();
   duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
   cerr << "RM takes " << duration.count() << " s" << endl;
-  // Now RM takes twice the time of Polar to decode
-  // TODO: optimize the copy in RM SCL decoder
+  */
+
   return 0;
 }

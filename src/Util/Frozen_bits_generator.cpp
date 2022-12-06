@@ -8,8 +8,9 @@
 #include <cassert>
 using namespace std;
 
-void frozen_bits_generator_BEC(int N, int K, double p, vector<bool>& frozen_bits) 
+void frozen_bits_generator_BEC(const int& N, const int& K, const double& p, vector<bool>& frozen_bits) 
 {    // for BEC and BSC only
+    cerr << "BEC construction" << endl;
     for (int i = 0; i < N; i++) frozen_bits[i] = 1;
 
     vector<uint32_t> best_channels(N);
@@ -67,7 +68,7 @@ double square_plus_DE(const double& zl, const double& zr)
 	// return z;
 }
 
-void frozen_bits_generator_AWGN(int N, int K, double db, vector<bool>& frozen_bits) 
+void frozen_bits_generator_AWGN(const int& N, const int& K, const double& db, vector<bool>& frozen_bits) 
 {
     for (int i = 0; i < N; i++) frozen_bits[i] = 1;
     vector<uint32_t> best_channels(N);
@@ -99,7 +100,7 @@ void frozen_bits_generator_AWGN(int N, int K, double db, vector<bool>& frozen_bi
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
 }
 
-void frozen_bits_generator_AWGN_SC(int N, int K, double db, vector<bool>& frozen_bits) 
+void frozen_bits_generator_AWGN_SC(const int& N, const int& K, const double& db, vector<bool>& frozen_bits) 
 {
     vector<double> z(N, 0);
     std::fill(z.begin(), z.end(), 2.0 / std::pow(db, 2.0));
@@ -117,7 +118,7 @@ void frozen_bits_generator_AWGN_SC(int N, int K, double db, vector<bool>& frozen
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
 }
 
-void frozen_bits_generator_BSC_SC(int N, int K, double p, vector<bool>& frozen_bits) 
+void frozen_bits_generator_BSC_SC(const int& N, const int& K, const double& p, vector<bool>& frozen_bits) 
 {
     vector<double> z(N, 0);
 	std::fill(z.begin(), z.end(), log((1-p)/p));
@@ -135,8 +136,9 @@ void frozen_bits_generator_BSC_SC(int N, int K, double p, vector<bool>& frozen_b
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
 }
 
-void frozen_bits_generator_PW(int N, int K, vector<bool>& frozen_bits)
+void frozen_bits_generator_PW(const int& N, const int& K, vector<bool>& frozen_bits)
 {
+    cerr << "PW construction" << endl;
 	vector<double> z(N, 0);
 	int n = log2(N);
 	vector<int> bin(n, 0);
@@ -157,8 +159,9 @@ void frozen_bits_generator_PW(int N, int K, vector<bool>& frozen_bits)
 	for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
 }
 
-void frozen_bits_generator_RM(int N, int K, vector<bool>& frozen_bits)
+void frozen_bits_generator_RM(const int& N, const int& K, vector<bool>& frozen_bits)
 {
+    cerr << "RM construction" << endl;
 	vector<double> z(N, 0);
 	int n = log2(N);
 	vector<int> bin(n, 0);
@@ -179,8 +182,9 @@ void frozen_bits_generator_RM(int N, int K, vector<bool>& frozen_bits)
 	for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
 }
 
-void frozen_bits_generator_HPW(int N, int K, vector<bool>& frozen_bits)
+void frozen_bits_generator_HPW(const int& N, const int& K, vector<bool>& frozen_bits)
 {
+    cerr << "HPW construction" << endl;
 	vector<double> z(N, 0);
 	int n = log2(N);
 	vector<int> bin(n, 0);
@@ -200,4 +204,26 @@ void frozen_bits_generator_HPW(int N, int K, vector<bool>& frozen_bits)
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
 	for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+}
+
+bool construct_frozen_bits(CONSTRUCTION con, int& N, int& K, vector<bool>& frozen_bits) {
+    switch (con) {
+        case BEC:
+        // frozen_bits_generator_BEC(N, K, pz, frozen_bits);
+            cerr << "Do not use BEC for CSS code" << endl;
+            return false;
+        case RM:
+            frozen_bits_generator_RM(N, K, frozen_bits);
+            break;
+        case PW:
+            frozen_bits_generator_PW(N, K, frozen_bits);
+            break;
+        case HPW:
+            frozen_bits_generator_HPW(N, K, frozen_bits);
+            break;
+        default:
+            cerr << "Currently not supported" << endl;
+            return false;
+    }
+    return true;
 }

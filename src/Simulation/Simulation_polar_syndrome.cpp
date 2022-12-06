@@ -1,5 +1,5 @@
 #include "Simulation/Simulation.hpp"
-void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, bool use_exact, int seed = 42)
+void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed)
 {
     vector<int>  desired_Z(N, 1);
     vector<int>  noisy_codeword_Z(N);
@@ -14,24 +14,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     vector<int>  input(N, 0);
     vector<int>  output(N, 0);
 
-    switch (con) {
-        case BEC:
-            cerr << "BEC construction" << endl;
-            frozen_bits_generator_BEC(N, K, pz, Z_code_frozen_bits);
-            break;
-        case RM:
-            cerr << "RM construction" << endl;
-            frozen_bits_generator_RM(N, K, Z_code_frozen_bits);
-            break;
-        case PW:
-            cerr << "PW construction" << endl;
-            frozen_bits_generator_PW(N, K, Z_code_frozen_bits);
-            break;
-        case HPW:
-            cerr << "HPW construction" << endl;
-            frozen_bits_generator_HPW(N, K, Z_code_frozen_bits);
-            break;
-    }
+    construct_frozen_bits(con, N, K, Z_code_frozen_bits);
 
     for (int i = 0; i < N; i++) X_code_frozen_bits[i] = Z_code_frozen_bits[N-1-i];
     for (int i = 0; i < N; i++) 
@@ -66,7 +49,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     int total_flips = 0, num_flips = 0, SCL_num_flips = 0, min_num_flips = 0;
     double pm_best;
 
-    vector<vector<int>> equiv_class;
+    vector<vector<int>> equiv_class; // expect there to be 2*K-N classes
     bool is_in_one_class; int largest_class_size; int* largest_class;
 
     int equal_flips_err = 0, SCL_smaller = 0;
@@ -87,14 +70,14 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
         // reset flags
         is_SCL_deg_wrong = false; is_SCL_weighted_deg_wrong = false;
         // generate noise
-        if (!use_exact) {
+        if (!exact_t) {
             chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
             num_flips = count_weight(noise_Z);
         } else {
             do {
                 chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
                 num_flips = count_weight(noise_Z);
-            } while (num_flips != floor_Z && num_flips != ceil_Z);
+            } while (num_flips < (floor_Z - exact_t) || num_flips > (ceil_Z + exact_t));
         }
         total_flips += num_flips;
         // obtain syndrome
@@ -114,7 +97,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
         pm_best = SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
         SCL_decoder_Z->copy_codeword_list(Z_list, pm_Z_list);
         // post-processing
-        SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z.data(), noisy_codeword_Z.data());
+        SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z, noisy_codeword_Z);
         xor_vec(N, noise_Z.data(), noisy_codeword_Z.data(), desired_Z.data());
         xor_vec(N, SCL_denoised_codeword_Z.data(), desired_Z.data(), SCL_denoised_codeword_Z.data());
         if (!X_stab_encoder->is_codeword(SCL_denoised_codeword_Z.data())) { is_SCL_deg_wrong = true; SCL_num_Z_err_deg++; }
@@ -154,7 +137,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
             auto& ec = equiv_class[k];
             vector<int> wt(ec.size());
             for (int l = 0; l < wt.size(); l++) {
-                wt[l] = count_flip(N, Z_list[ec[l]].data(), noise_Z.data()); 
+                wt[l] = count_flip(N, Z_list[ec[l]], noise_Z); 
             }
             // sort(wt.begin(), wt.end());
             print_wt_dist(wt); // sort is included

@@ -31,7 +31,7 @@ int simulation_RM_closest_codewords(int m, int rx, int rz) {
             // see whether it is in the all-zero's equiv class (stabilizers)
             min_num_flips = N; min_flip_indices.clear();
             for (int i = 0; i < num_codewords; i++) {
-                num_flips = count_flip(N, noise_X.data(), codewords[i].data());
+                num_flips = count_flip(N, noise_X, codewords[i]);
                 if (num_flips < min_num_flips) {
                     min_flip_indices.clear();
                     min_flip_indices.push_back(i);
@@ -58,7 +58,7 @@ int simulation_RM_closest_codewords(int m, int rx, int rz) {
                     for (int k = 0; k < N + 1; k++) flips[k] = 0;
                     for (auto& s : stabilizers) {
                         xor_vec(N, codewords[i].data(), s.data(), noise_X_diff.data());
-                        num_flips = count_flip(N, noise_X.data(), noise_X_diff.data());
+                        num_flips = count_flip(N, noise_X, noise_X_diff);
                         flips[num_flips]++;
                     }
                     for (int n : flips) cerr << n << " ";
@@ -104,7 +104,7 @@ int simulation_RM_d_star(int m, int r) {
             // ML_err is just take the codeword with smallest flip, 
             min_num_flips = N; min_flip_indices.clear();
             for (int i = 0; i < num_codewords; i++) {
-                num_flips = count_flip(N, noise.data(), codewords[i].data());
+                num_flips = count_flip(N, noise, codewords[i]);
                 if (num_flips < min_num_flips) {
                     min_flip_indices.clear();
                     min_flip_indices.push_back(i);
@@ -183,7 +183,7 @@ int test_RM_d_star() {
     cerr << endl;
     min_num_flips = N; min_flip_indices.clear();
     for (int i = 0; i < num_codewords; i++) {
-        num_flips = count_flip(N, noise.data(), codewords[i].data());
+        num_flips = count_flip(N, noise, codewords[i]);
         if (num_flips < min_num_flips) {
             min_flip_indices.clear();
             min_flip_indices.push_back(i);
@@ -249,10 +249,10 @@ int compare_equiv_classes() {
     vector<int> flips2(N + 1, 0); // for \bar{repr}
     
     for (int i = 0; i < num_stab; i++) {
-        num_flips = count_flip(N, noise.data(), stabilizers[i].data());
+        num_flips = count_flip(N, noise, stabilizers[i]);
         flips1[num_flips]++;
         xor_vec(N, repr.data(), stabilizers[i].data(), temp.data());
-        num_flips = count_flip(N, noise.data(), temp.data());
+        num_flips = count_flip(N, noise, temp);
         flips2[num_flips]++;
     }
     cerr << "flips1: ";
@@ -299,7 +299,7 @@ int simulation_symmetric_noise(int m, int r) {
         cerr << "noise has weight " << count_weight(noise) << endl;
         min_num_flips = N; min_flip_indices.clear();
         for (int i = 0; i < num_codewords; i++) {
-            num_flips = count_flip(N, noise.data(), codewords[i].data());
+            num_flips = count_flip(N, noise, codewords[i]);
             flips[num_flips]++;
             if (num_flips < min_num_flips) {
                 min_flip_indices.clear();
@@ -314,25 +314,6 @@ int simulation_symmetric_noise(int m, int r) {
         cerr << endl;
     }
 
-    // generate_symmetric_noise(m, noise, 1);
-    // int noise_weight = count_weight(noise);
-    // cerr << "noise has weight " << noise_weight << endl;
-    // double p = (double)noise_weight / N;
-    // Decoder_RM_SCL* SCL_decoder = new Decoder_RM_SCL(m, r+1, 1024);
-    // vector<double> llr_noisy_codeword(N, 0);
-    // for (int i = 0; i < N; i++) {
-    //     llr_noisy_codeword[i] = noise[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
-    // }
-    // vector<int> SCL_denoised_codeword(N, 0);
-    // SCL_decoder->decode(llr_noisy_codeword.data(), SCL_denoised_codeword.data(), 0);
-    // vector<vector<int>> c_list(1024, vector<int>(N));
-    // vector<double> pm_list(1024);
-    // SCL_decoder->copy_codeword_list(c_list, pm_list);
-    // for (int l : SCL_denoised_codeword) cerr << l;
-    // cerr << endl;
-    // cerr << "SCL decoded codeword is distance " << count_flip(N, noise.data(), SCL_denoised_codeword.data()) << " from noise" << endl;
-    // for (auto& c : c_list) cerr << count_flip(N, c.data(), noise.data()) << " ";
-    // cerr << endl;
     return 0; 
 }
 // want to perform RM(6,4)/RM(6,3), need a clever way

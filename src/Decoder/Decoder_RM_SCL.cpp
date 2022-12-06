@@ -207,40 +207,41 @@ Node<Contents_RM_SCL>* Decoder_RM_SCL::copy_until(Node<Contents_RM_SCL>* node_st
 {   // copy tree 1 (to which node_a and node_stop belong) into copy tree 2 (to which node_b belongs) until node_stop
     // return: whether reached or not
     // instead of copying the whole tree until a node
-    // only need to copy the s array for all the leaves before this node
+    // only need to copy the s array for all the leaves before this node, and the left child if in its right subtree
     // and copy the l array along the path that was used to compute the llr for the current code
     auto c_a = node_a->get_contents();
     auto c_b = node_b->get_contents();
-    if (!node_a->is_root())
-        c_b->l = c_a->l;
     auto children_a = node_a->get_children();
     auto children_b = node_b->get_children();
     if (node_a->is_root()) {
         assert(node_stop != node_a);
         auto new_node_b = copy_until(node_stop, children_a[0], children_b[0]);
         if (new_node_b != nullptr) return new_node_b;
-        else return copy_until(node_stop, children_a[1], children_b[1]);
+        else {
+            children_b[0]->get_contents()->s = children_a[0]->get_contents()->s;
+            return copy_until(node_stop, children_a[1], children_b[1]);
+        }
     } else if (node_a->is_leaf()) {
         if (node_a == node_stop) return node_b;
         else {
-            // c_b->l = c_a->l;
             c_b->s = c_a->s;
             return nullptr;
         }
     } else {
         auto new_node_b = copy_until(node_stop, children_a[0], children_b[0]);
-        if (new_node_b != nullptr) return new_node_b;
-        else  {
+        if (new_node_b != nullptr) { // found in the left subtree
+            c_b->l = c_a->l;
+            return new_node_b;
+        } else  {
             new_node_b = copy_until(node_stop, children_a[1], children_b[1]);
-            if (new_node_b != nullptr) return new_node_b;
+            if (new_node_b != nullptr) { // found in the right subtree
+                children_b[0]->get_contents()->s = children_a[0]->get_contents()->s;
+                c_b->l = c_a->l;
+                return new_node_b;
+            }
         }
-        if (node_stop == node_a) return node_b; 
-        else {
-            // c_b->l = c_a->l;
-            c_b->s = c_a->s;
-            return nullptr;
-        }
-
+        if (node_stop == node_a) return node_b; // this line is at the bottom because I need to copy s at the leaves
+        else return nullptr; // not itself, not in its subtrees
     }
 }
 
@@ -390,7 +391,7 @@ void Decoder_RM_SCL::test_copy_until()
         node_stop = node_stop->get_children()[0];
     auto node_reached = copy_until(node_stop->get_father(), r1, r2);
     auto c_reached = node_reached->get_contents();
-    cerr << "reached node m=" << c_reached->m << ", r=" << c_reached->r << endl;
+    std::cerr << "reached node m=" << c_reached->m << ", r=" << c_reached->r << endl;
 
 }
 

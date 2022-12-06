@@ -94,7 +94,7 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
         }
         pm_best = SCL_decoder_X->decode(llr_noisy_codeword_X.data(), SCL_denoised_codeword_X.data(), 0);
         SCL_decoder_X->copy_codeword_list(X_list, pm_X_list);
-        if (!verify(N, SCL_denoised_codeword_X.data(), desired_X.data())) SCL_num_X_err++;
+        if (!verify(N, SCL_denoised_codeword_X, desired_X)) SCL_num_X_err++;
         if (use_crc) {
             for (int i = 0; i < list_size; i++) {
                 encoder_X->decode(X_list[i].data(), info_bits_X_crc.data());
@@ -104,7 +104,7 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
             if (std::none_of(crc_match_X.begin(), crc_match_X.end(), [](bool v) { return v; })) {
                 all_wrong_crc++;
                 SCL_num_X_crc_err++;
-                // for (auto& x : X_list) assert(!verify(N, x.data(), desired_X.data()));
+                // for (auto& x : X_list) assert(!verify(N, x, desired_X));
                 continue;
             }
             pm_best = std::numeric_limits<double>::max(); best_path = -1;
@@ -119,12 +119,12 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
         }
         for (auto& dx : X_list) xor_vec(N, dx.data(), desired_X.data(), dx.data());
         is_SCL_wrong = false;
-        if (!verify(N, SCL_denoised_codeword_X.data(), desired_X.data())) {
+        if (!verify(N, SCL_denoised_codeword_X, desired_X)) {
             SCL_num_X_crc_err++;
             is_SCL_wrong = true;
         }
         xor_vec(N, SCL_denoised_codeword_X.data(), desired_X.data(), SCL_denoised_codeword_X.data());
-        SCL_num_flips = count_flip(N, SCL_denoised_codeword_X.data(), noise_X.data());
+        SCL_num_flips = count_flip(N, SCL_denoised_codeword_X, noise_X);
         // if (is_SCL_wrong && (num_flips == SCL_num_flips)) 
         //     for (int i = 0; i < X_list.size(); i++) {
         //         if (count_weight(X_list[i]) == 0 && abs(pm_X_list[i] - pm_best) < std::numeric_limits<double>::epsilon()) 
@@ -133,10 +133,10 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
 
         //         break;
         //     }
-        max_num_flips = count_flip(N, X_list[0].data(), noise_X.data());
+        max_num_flips = count_flip(N, X_list[0], noise_X);
         min_num_flips = max_num_flips;
         for (auto& dx : X_list) {
-            int wt = count_flip(N, dx.data(), noise_X.data());
+            int wt = count_flip(N, dx, noise_X);
             if (wt > max_num_flips) max_num_flips = wt;
             if (wt < min_num_flips) min_num_flips = wt;
         }
@@ -177,7 +177,7 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
             auto& ec = equiv_class[k];
             vector<int> wt(ec.size());
             for (int l = 0; l < wt.size(); l++) {
-                wt[l] = count_flip(N, X_list[ec[l]].data(), noise_X.data()); 
+                wt[l] = count_flip(N, X_list[ec[l]], noise_X); 
             }
             sort(wt.begin(), wt.end());
             // kick out this class from the competition if no member passed CRC
@@ -187,7 +187,7 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
                 cal_wt_dist_prob(wt, temp_prob, min_num_flips, weight[i]);
                 // for (int ec_idx : ec) {
                 //     if (!crc_match_X[ec_idx]) continue;
-                //     temp_flips = count_flip(N, X_list[ec_idx].data(), noise_X.data());
+                //     temp_flips = count_flip(N, X_list[ec_idx], noise_X);
                 //     temp_prob += pow[i][temp_flips];
                 // }
                 // ******************* This line is causing trouble
@@ -213,7 +213,7 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
             vector<int> wt(ec.size());
             cerr << "stabilizer class (idx=" << desired_class_idx << ") wt dist ";
             for (int k = 0; k < wt.size(); k++) {
-                wt[k] = count_flip(N, X_list[ec[k]].data(), noise_X.data()); 
+                wt[k] = count_flip(N, X_list[ec[k]], noise_X); 
             }
             print_wt_dist(wt);
         } else cerr << "stabilizer class is not within the list" << endl;
@@ -223,7 +223,7 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
             vector<int> wt(ec.size());
             cerr << "SCL predicted class (idx=" << SCL_class_idx << ") wt dist ";
             for (int k = 0; k < wt.size(); k++) {
-                wt[k] = count_flip(N, X_list[ec[k]].data(), noise_X.data()); 
+                wt[k] = count_flip(N, X_list[ec[k]], noise_X); 
             }
             print_wt_dist(wt);
         }
@@ -233,7 +233,7 @@ int simulation_RM_CSS_weighted_degeneracy(int m, int rx, int rz, int list_size, 
             cerr << "class " << idx << " has " << ec.size() << " elements, wt dist ";
             vector<int> wt(ec.size());
             for (int k = 0; k < wt.size(); k++) {
-                wt[k] = count_flip(N, X_list[ec[k]].data(), noise_X.data()); 
+                wt[k] = count_flip(N, X_list[ec[k]], noise_X); 
             }
             print_wt_dist(wt);
             if (max_class_idx[0].size() > 5) {

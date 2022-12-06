@@ -19,7 +19,7 @@
 // #define CHN_AWGN
 
 // Reed-Muller
-int simulation_RM_SCL(int m, int r, int list_size, double p, double db, double design_snr); 
+int simulation_RM_SCL(int m, int r, int list_size, double p, double db, double design_snr, int num_total=1000); 
 
 int simulation_RM_CSS(int m, int rx, int rz, int list_size);
 
@@ -38,11 +38,11 @@ int test_RM_d_star();
 int compare_equiv_classes();
 
 // Polar
-void simulation_polar_SCL(int N, int K, int L, double p, double db, double design_snr); 
+void simulation_polar_SCL(int N, int K, int L, double p, double db, double design_snr, CONSTRUCTION con=CONSTRUCTION::PW, int num_total=1000); 
 
 void simulation_polar_CSS(int N, int K, int L, double p, int num_total, int seed);
 
-void simulation_polar_syndrome(int N, int K, int L, double p, int num_total, CONSTRUCTION con, bool use_exact, int seed);
+void simulation_polar_syndrome(int N, int K, int L, double p, int num_total, CONSTRUCTION con, int exact_t=1, int seed=42);
 
 void simulation_stab_MW_codewords(int N, int K);
 

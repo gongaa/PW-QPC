@@ -33,7 +33,7 @@ void test_linearity_xor(int m, int r) {
         encoder->encode(info_bits2.data(), codeword2.data(), 1);
         encoder->encode(info_bits_dest.data(), codeword_dest.data(), 1);
         for (int l = 0; l < K; l++) codeword_dest_xor[l] = codeword1[l] ^ codeword2[l];
-        assert (verify(N, codeword_dest.data(), codeword_dest_xor.data()));
+        assert (verify(N, codeword_dest, codeword_dest_xor));
     }
     cerr << "all tests completed, RM is linear under xor of info bits" << endl;
 }
@@ -184,7 +184,7 @@ void test_encoder_decode() {
         generate_random(K, info_bits.data());
         encoder->encode(info_bits.data(), codeword.data(), 1);
         encoder->decode(codeword.data(), decoded_info_bits.data());
-        assert (verify(K, info_bits.data(), decoded_info_bits.data()));
+        assert (verify(K, info_bits, decoded_info_bits));
     } 
 }
 
@@ -237,7 +237,7 @@ void test_dumer_llr() {
         }
 #endif // USE_AWGN
     decoder->decode(llr_noisy_codeword.data(), denoised_codeword.data(), 1);
-    if (verify(N, codeword.data(), denoised_codeword.data()))
+    if (verify(N, codeword, denoised_codeword))
         cerr << "decode successfully" << endl;
     else 
         cerr << "decoding failed" << endl;
@@ -288,7 +288,7 @@ void test_RM_syndrome_SC(int m, int r) {
         xor_vec(N, denoised_codeword.data(), noisy_codeword.data(), codeword_error.data());
         syndrome_decoder->decode(syndrome_llr.data(), syndrome.data(), syndrome_error.data(), 1);
         encoder->parity_check(syndrome_error.data(), syndrome_of_syndrome_error.data());
-        assert (verify(dual_K, syndrome_of_syndrome_error.data(), syndrome.data()));
+        assert (verify(dual_K, syndrome_of_syndrome_error, syndrome));
         cerr << endl << "syndrome error: ";
         for (int k : syndrome_error) cerr << k;
         cerr << endl << "codeword error: ";
@@ -296,17 +296,17 @@ void test_RM_syndrome_SC(int m, int r) {
         cerr << endl << "real noise    : ";
         for (int k : noise) cerr << k;
         cerr << endl;
-        if (verify(N, syndrome_error.data(), codeword_error.data()))
+        if (verify(N, syndrome_error, codeword_error))
             cerr << "syndrome decoding gave the same result as codeword decoding" << endl;
         else 
             cerr << "not the same" << endl;
-        if (verify(N, syndrome_error.data(), noise.data())) {
+        if (verify(N, syndrome_error, noise)) {
             cerr << "syndrome decoding succeeds" << endl;
         } else {
             cerr << "syndrome decoding fails" << endl;
             syndrome_SC_num_err++;
         }
-        if (!verify(N, codeword_error.data(), noise.data())) {
+        if (!verify(N, codeword_error, noise)) {
             SC_num_err++;
         }
     }
@@ -408,12 +408,12 @@ void test_RM_SCL_symmetry() {
         SCL_decoder->decode(llr_noisy_codeword_2.data(), SCL_denoised_codeword_2.data(), 0);
         SCL_decoder->copy_codeword_list(X_list_2, pm_X_list_2);
         for (int i = 0; i < list_size; i++) {
-            SCL_num_flips_1 = count_flip(N, noise.data(), X_list_1[i].data());
+            SCL_num_flips_1 = count_flip(N, noise, X_list_1[i]);
             cerr << "1: pm=" << pm_X_list_1[i] << "\t";
             cerr << "#flips=" << SCL_num_flips_1 << "\t";
             for (int j : X_list_1[i]) cerr << j;
             cerr << endl;
-            SCL_num_flips_2 = count_flip(N, noisy_codeword.data(), X_list_2[i].data());
+            SCL_num_flips_2 = count_flip(N, noisy_codeword, X_list_2[i]);
             cerr << "2: pm=" << pm_X_list_2[i] << "\t";
             cerr << "#flips=" << SCL_num_flips_2 << "\t";
             for (int j = 0; j < N; j++) X_list_2[i][j] ^= codeword[j];

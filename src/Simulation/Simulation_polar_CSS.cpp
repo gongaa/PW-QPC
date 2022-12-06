@@ -60,9 +60,9 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
         pm_best = SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
         SCL_decoder_Z->copy_codeword_list(Z_list, pm_Z_list);
 
-        if (!verify(N, SCL_denoised_codeword_Z.data(), desired_Z.data())) { is_SCL_wrong = true; SCL_num_Z_err++; }
+        if (!verify(N, SCL_denoised_codeword_Z, desired_Z)) { is_SCL_wrong = true; SCL_num_Z_err++; }
         xor_vec(N, SCL_denoised_codeword_Z.data(), desired_Z.data(), SCL_denoised_codeword_Z.data());
-        SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z.data(), noise_Z.data());
+        SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z, noise_Z);
         if (!X_stab->is_codeword(SCL_denoised_codeword_Z.data())) { is_SCL_deg_wrong = true; SCL_num_Z_err_deg++; }
         if (is_SCL_wrong) cerr << "num_flips: " << num_flips << " , SCL_num_flips: " << SCL_num_flips << endl;
         if (is_SCL_wrong) {
@@ -100,7 +100,7 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
             auto& ec = equiv_class[k];
             vector<int> wt(ec.size());
             for (int l = 0; l < wt.size(); l++) {
-                wt[l] = count_flip(N, Z_list[ec[l]].data(), noise_Z.data()); 
+                wt[l] = count_flip(N, Z_list[ec[l]], noise_Z); 
             }
             // sort(wt.begin(), wt.end());
             print_wt_dist(wt); // sort is included

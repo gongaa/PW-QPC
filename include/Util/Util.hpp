@@ -17,7 +17,7 @@ static std::map<std::string, CONSTRUCTION> construction_map = {
     {"HPW", HPW}
 };
 
-inline bool verify(int K, int *U_K_1, int *U_K_2) {
+inline bool verify(int K, vector<int>& U_K_1, vector<int>& U_K_2) {
     bool is_same = true;
     for (int i = 0; i < K; i++) {
         if (U_K_1[i] != U_K_2[i]) {
@@ -50,7 +50,7 @@ inline void bit_reversal(vector<int>& a) {
     }
 }
 
-inline int count_flip(int N, const int* a, const int* b) {
+inline int count_flip(int N, vector<int>& a, vector<int>& b) {
     int cnt = 0;
     for (int i = 0; i < N; i++) 
         if (a[i] != b[i]) cnt++;
@@ -124,19 +124,21 @@ inline void cal_wt_dist_prob(vector<int>& wt, double& p, const int& offset, cons
     p += pow(weight, i-offset) * cnt;
 }
 
-void frozen_bits_generator_BEC(int N, int K, double p, vector<bool>& frozen_bits); 
+void frozen_bits_generator_BEC(const int& N, const int& K, const double& p, vector<bool>& frozen_bits); 
 
-void frozen_bits_generator_AWGN(int N, int K, double db, vector<bool>& frozen_bits);
+void frozen_bits_generator_AWGN(const int& N, const int& K, const double& db, vector<bool>& frozen_bits);
 
-void frozen_bits_generator_AWGN_SC(int N, int K, double db, vector<bool>& frozen_bits);
+void frozen_bits_generator_AWGN_SC(const int& N, const int& K, const double& db, vector<bool>& frozen_bits);
 
-void frozen_bits_generator_BSC_SC(int N, int K, double p, vector<bool>& frozen_bits);
+void frozen_bits_generator_BSC_SC(const int& N, const int& K, const double& p, vector<bool>& frozen_bits);
 
-void frozen_bits_generator_PW(int N, int K, vector<bool>& frozen_bits);
+void frozen_bits_generator_PW(const int& N, const int& K, vector<bool>& frozen_bits);
 
-void frozen_bits_generator_RM(int N, int K, vector<bool>& frozen_bits);
+void frozen_bits_generator_RM(const int& N, const int& K, vector<bool>& frozen_bits);
 
-void frozen_bits_generator_HPW(int N, int K, vector<bool>& frozen_bits);
+void frozen_bits_generator_HPW(const int& N, const int& K, vector<bool>& frozen_bits);
+
+bool construct_frozen_bits(CONSTRUCTION con, int& N, int& K, vector<bool>& frozen_bits);
 
 double phi_inv(double t);
 

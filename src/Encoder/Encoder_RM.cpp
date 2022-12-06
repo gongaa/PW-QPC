@@ -17,7 +17,7 @@ int Encoder_RM::calculate_K(const int& m, const int& r)
 {
     vector<int> s(r+1, 1);
     for (int i = 1; i <= m; i++) 
-        for (int j = r; j >= 0; j--) 
+        for (int j = r; j >= 1; j--) 
             s[j] = s[j] + s[j-1];
     // recursion formula: {m\choose \leq r} = {(m-1)\choose \leq r} + {(m-1)\choose \leq (r-1)} 
     return s[r];

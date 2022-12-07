@@ -57,7 +57,7 @@ int simulation_RM_closest_codewords(int m, int rx, int rz) {
                     cerr << endl;                
                     for (int k = 0; k < N + 1; k++) flips[k] = 0;
                     for (auto& s : stabilizers) {
-                        xor_vec(N, codewords[i].data(), s.data(), noise_X_diff.data());
+                        xor_vec(N, codewords[i], s, noise_X_diff);
                         num_flips = count_flip(N, noise_X, noise_X_diff);
                         flips[num_flips]++;
                     }
@@ -205,7 +205,7 @@ int test_RM_d_star() {
         cerr << endl;
         cerr << "diffenrece to noise" << endl;
         vector<int> noise_diff(N, 0);
-        xor_vec(N, codewords[min_flip_indices[0]].data(), noise.data(), noise_diff.data());
+        xor_vec(N, codewords[min_flip_indices[0]], noise, noise_diff);
         for (int l : noise_diff) cerr << l;
         // cerr << endl << "binary representation of the one's" << endl;
         // vector<int> binary_repr(m, 0);
@@ -251,7 +251,7 @@ int compare_equiv_classes() {
     for (int i = 0; i < num_stab; i++) {
         num_flips = count_flip(N, noise, stabilizers[i]);
         flips1[num_flips]++;
-        xor_vec(N, repr.data(), stabilizers[i].data(), temp.data());
+        xor_vec(N, repr, stabilizers[i], temp);
         num_flips = count_flip(N, noise, temp);
         flips2[num_flips]++;
     }

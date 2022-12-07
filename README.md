@@ -21,11 +21,11 @@ Then build and run as:
 ```
 mkdir logs
 make
-./build/apps/program -N 1024 -K 513 -l 128 -pz 0.1 -n 10000 -con PW -exact 1 -seed 25
+./build/apps/program -N 1024 -K 513 -l 128 -pz 0.1 -n 10000 -con PW -exact 0 -seed 25
 ```
 On Euler, instead of the last command, run the following
 ```
-bsub -W 24:00 "./build/apps/program -N 1024 -K 513 -l 128 -pz 0.1 -n 10000 -con PW -exact 1 -seed 25 &> logs/Polar_N1024_K513_l128_pz10_n10000_conPW_exact1_seed25_syndrome.log"
+bsub -W 24:00 "./build/apps/program -N 1024 -K 513 -l 128 -pz 0.1 -n 10000 -con PW -exact 0 -seed 25 &> logs/Polar_N1024_K513_l128_pz10_n10000_conPW_exact0_seed25_syndrome.log"
 ```
 
 ### Arguments
@@ -38,7 +38,8 @@ The possible options are
 * `-n` - The number of samples. Ideally, the number of flips of the noise should follow a binomial distribution, but for $N=1024$, $10000$ samples are not enough to approximate the distribution well.
 * `-pz` - The probability of Z error happening on each bit (independently).
 * `-con` - The construction method. Can choose from `BEC` `RM` `PW` `HPW`. Note that `BEC` suffers from the numerical problem so that the construction at $N\geq 256, K\geq 129$ is not CSS anymore. `HPW` gives the same construction as `PW` for $N=256, K=129$, but not for the other $K=\frac{N}{2}+1$.
-* `-exact` - As $10000$ samples may not be enough to approximate the binomial distribution well at large $N$, when `exact` is set to a non zero integer $t$, only noise that has flips $\lfloor N\cdot p_z - t \rfloor$ or $\lceil N\cdot p_z + t \rceil$ are generated.
+* `-exact` - When `exact` is set to $0$, the number of flips of the noise is supposed to follow a binomial distribution. When `exact` is set to a non zero integer $t$, only noise that has flips $\lfloor N\cdot p_z - t \rfloor$ or $\lceil N\cdot p_z + t \rceil$ are generated.
 * `-seed` - The random seed used to generate the noise.
+* `-fast` - Whether to use the fast method or not. By default it is set to true. The fast version does not speed things up essentially, but its memory usage is better.
 
 

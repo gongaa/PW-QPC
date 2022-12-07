@@ -172,7 +172,7 @@ void test_syndrome_extraction(int N, int K, bool print)
         }
         encoder->light_encode(output.data());
         bit_reversal(output);
-        xor_vec(N, output.data(), noise.data(), output.data());
+        xor_vec(N, output, noise, output);
         assert (encoder->is_codeword(output.data()));
 
         // use the transpose encoding circuit
@@ -199,7 +199,7 @@ void test_syndrome_extraction(int N, int K, bool print)
             } else output[i] = 0;
         }
         encoder->transpose_encode(output.data());
-        xor_vec(N, output.data(), noise.data(), output.data());
+        xor_vec(N, output, noise, output);
         assert (encoder->is_codeword(output.data()));
     }
 

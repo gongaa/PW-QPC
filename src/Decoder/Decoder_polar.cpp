@@ -96,6 +96,30 @@ void Decoder_polar_SCL::recursive_compute_llr(Node<Contents_SCL>* node_cur, int 
 	}
 }
 
+void Decoder_polar_SCL::partition(vector<int>& info_indices, vector<vector<int>>& par, vector<vector<int>>& flips, vector<int>& noisy_codeword, int& best_path_class_idx)
+{
+	// partition into equivalence classes according to info bits
+	int size = info_indices.size();
+	vector<bool> path_info(size);
+	auto& best_path_leaves = leaves_array[this->best_path];
+	for (int i = 0; i < size; i++)
+		path_info[i] = best_path_leaves[info_indices[i]]->get_c()->s[0];
+	best_path_class_idx = binary2decimal(path_info, size);
+
+	int class_idx;
+	int wt;
+	for (int path : active_paths) {
+		auto& path_leaves = leaves_array[path];
+		for (int i = 0; i < size; i++)
+			path_info[i] = path_leaves[info_indices[i]]->get_c()->s[0];
+		class_idx = binary2decimal(path_info, size);
+		par[class_idx].push_back(path);
+		auto& codeword = polar_trees[path]->get_root()->get_c()->s;
+		wt = count_flip(N, noisy_codeword, codeword);
+		flips[class_idx].push_back(wt);
+	}
+}
+
 void Decoder_polar_SCL::select_best_path(const size_t frame_id)
 {   // select the best one, not the best L ones.
 	int best_path = 0;
@@ -105,20 +129,7 @@ void Decoder_polar_SCL::select_best_path(const size_t frame_id)
 	for (int path : active_paths)
 		if(polar_trees[path]->get_path_metric() < polar_trees[best_path]->get_path_metric())
 			best_path = path;
-		
-	/*
-	cerr << "The codewords in the lists are:" << endl;
-	for (int path : active_paths) {
-		const vector<int>& X = polar_trees[path]->get_root()->get_contents()->s;
-		for (int k : X) cerr << k;
-		cerr << " , pm=" << polar_trees[path]->get_path_metric() << endl;
-		cerr << "corresponding uncoded word in the leaves are: ";
-		auto path_leaves = leaves_array[path];
-		for (auto c : path_leaves) 
-			cerr << c->get_c()->s[0];
-		cerr << endl;
-	}
-	*/
+
 	this->best_path = best_path;
 }
 

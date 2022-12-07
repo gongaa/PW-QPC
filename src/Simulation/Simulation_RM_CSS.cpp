@@ -69,7 +69,7 @@ int simulation_RM_CSS(int m, int rx, int rz, int list_size) {
         for (int i = 1; i < list_size; i++) {
             is_in_one_class = false;
             for (auto& ec : equiv_class) {
-                xor_vec(N, X_list[ec[0]].data(), X_list[i].data(), noise_X_diff.data());
+                xor_vec(N, X_list[ec[0]], X_list[i], noise_X_diff);
                 if (encoder->is_X_stabilizer(noise_X_diff.data())) {
                     ec.push_back(i);
                     is_in_one_class = true;
@@ -92,7 +92,7 @@ int simulation_RM_CSS(int m, int rx, int rz, int list_size) {
 
         for (int i = 0; i < num_equiv_class; i++) {
             for (int j = i + 1; j < num_equiv_class; j++) {
-                xor_vec(N, X_list[equiv_class[i][0]].data(), X_list[equiv_class[j][0]].data(), noise_X_diff.data());
+                xor_vec(N, X_list[equiv_class[i][0]], X_list[equiv_class[j][0]], noise_X_diff);
                 assert (!encoder->is_X_stabilizer(noise_X_diff.data()));
                 assert (encoder->is_logical_X(noise_X_diff.data()));
             }
@@ -100,7 +100,7 @@ int simulation_RM_CSS(int m, int rx, int rz, int list_size) {
             if (ec_size > 1) {
                 for (int j = 0; j < ec_size; j++) {
                     for (int k = j + 1; k < ec_size; k++) {
-                        xor_vec(N, X_list[equiv_class[i][j]].data(), X_list[equiv_class[i][k]].data(), noise_X_diff.data());
+                        xor_vec(N, X_list[equiv_class[i][j]], X_list[equiv_class[i][k]], noise_X_diff);
                         // assert (Encoder_RM::is_codeword(noise_X_diff.data(), m, rz));
                         assert (!encoder->is_logical_X(noise_X_diff.data()));
                     }

@@ -5,6 +5,7 @@
 #include <set>
 #include "Decoder.hpp"
 #include "Tree.hpp"
+#include "Util/Util.hpp"
 using namespace std;
 
 class Contents_SCL
@@ -42,6 +43,7 @@ public:
     void decode_SC(const double *Y_N, int *V_K, const size_t frame_id);
     void get_llr_for_frozen_bits(double *Y_N);
     void copy_codeword_list(vector<vector<int>>& c_list, vector<double>& pm_list);
+    void partition(vector<int>& info_indices, vector<vector<int>>& par, vector<vector<int>>& flips, vector<int>& noisy_codeword, int& best_path_class_idx);
 
 protected:
     void _load(const double *Y_N);

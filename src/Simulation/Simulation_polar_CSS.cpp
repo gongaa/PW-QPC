@@ -55,13 +55,13 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
         chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
         num_flips = count_weight(noise_Z);
         total_flips += num_flips;
-        xor_vec(N, desired_Z.data(), noise_Z.data(), noisy_codeword_Z.data());
+        xor_vec(N, desired_Z, noise_Z, noisy_codeword_Z);
         for (int i = 0; i < N; i++) llr_noisy_codeword_Z[i] = noisy_codeword_Z[i] ? -log((1-pz)/pz) : log((1-pz)/pz); // 0 -> 1.0; 1 -> -1.0
         pm_best = SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
         SCL_decoder_Z->copy_codeword_list(Z_list, pm_Z_list);
 
         if (!verify(N, SCL_denoised_codeword_Z, desired_Z)) { is_SCL_wrong = true; SCL_num_Z_err++; }
-        xor_vec(N, SCL_denoised_codeword_Z.data(), desired_Z.data(), SCL_denoised_codeword_Z.data());
+        xor_vec(N, SCL_denoised_codeword_Z, desired_Z, SCL_denoised_codeword_Z);
         SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z, noise_Z);
         if (!X_stab->is_codeword(SCL_denoised_codeword_Z.data())) { is_SCL_deg_wrong = true; SCL_num_Z_err_deg++; }
         if (is_SCL_wrong) cerr << "num_flips: " << num_flips << " , SCL_num_flips: " << SCL_num_flips << endl;
@@ -69,14 +69,14 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
             if (num_flips == SCL_num_flips) equal_flips_err++;
             if (SCL_num_flips < num_flips)  SCL_smaller++;
         }
-        for (auto& dz : Z_list) xor_vec(N, dz.data(), desired_Z.data(), dz.data());
+        for (auto& dz : Z_list) xor_vec(N, dz, desired_Z, dz);
 
         equiv_class.clear();
         equiv_class.push_back({0});
         for (int i = 1; i < list_size; i++) {
             is_in_one_class = false;
             for (auto& ec : equiv_class) {
-                xor_vec(N, Z_list[ec[0]].data(), Z_list[i].data(), noise_Z_diff.data());
+                xor_vec(N, Z_list[ec[0]], Z_list[i], noise_Z_diff);
                 if (X_stab->is_codeword(noise_Z_diff.data())) {
                     ec.push_back(i);
                     is_in_one_class = true;

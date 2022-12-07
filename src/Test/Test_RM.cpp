@@ -135,7 +135,7 @@ void generate_all_equiv_classes(int m, int rx, int rz, vector<vector<int>>& code
     for (int i = 1; i < num_codewords; i++) {
         is_in_one_class = false;
         for (auto& ec : equiv_class) {
-            xor_vec(N, codewords[ec[0]].data(), codewords[i].data(), noise_X_diff.data());
+            xor_vec(N, codewords[ec[0]], codewords[i], noise_X_diff);
             if (encoder->is_X_stabilizer(noise_X_diff.data())) {
                 ec.push_back(i);
                 is_in_one_class = true;
@@ -271,7 +271,7 @@ void test_RM_syndrome_SC(int m, int r) {
         generate_random(K, info_bits.data());
         encoder->encode(info_bits.data(), codeword.data(), 1);
         ml_flips = chn_bsc->add_noise(codeword.data(), noisy_codeword.data(), 0);
-        xor_vec(N, codeword.data(), noisy_codeword.data(), noise.data());
+        xor_vec(N, codeword, noisy_codeword, noise);
         encoder->parity_check(noisy_codeword.data(), syndrome.data());
         if (p == 0.0)
             for (int i = 0; i < N; i++) {
@@ -285,7 +285,7 @@ void test_RM_syndrome_SC(int m, int r) {
             }
             
         decoder->decode(llr_noisy_codeword.data(), denoised_codeword.data(), 1);
-        xor_vec(N, denoised_codeword.data(), noisy_codeword.data(), codeword_error.data());
+        xor_vec(N, denoised_codeword, noisy_codeword, codeword_error);
         syndrome_decoder->decode(syndrome_llr.data(), syndrome.data(), syndrome_error.data(), 1);
         encoder->parity_check(syndrome_error.data(), syndrome_of_syndrome_error.data());
         assert (verify(dual_K, syndrome_of_syndrome_error, syndrome));
@@ -397,7 +397,7 @@ void test_RM_SCL_symmetry() {
         encoder->encode(info_bits.data(), codeword.data(), 1);
         bsc_flips = chn_bsc->add_noise(all_zero.data(), noise.data(), 0);
         cerr << "BSC #flips=" << bsc_flips << endl;
-        xor_vec(N, noise.data(), codeword.data(), noisy_codeword.data());
+        xor_vec(N, noise, codeword, noisy_codeword);
         for (int i = 0; i < N; i++) {
             llr_noisy_codeword_1[i] = noise[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
             llr_noisy_codeword_2[i] = noisy_codeword[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0

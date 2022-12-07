@@ -39,7 +39,7 @@ int main(int argc, char** argv)
   int N = 1024, K = 513;
   double px, pz; 
   int p_min, p_max; // in percentage
-  bool use_crc = false;
+  bool use_crc = false, use_fast = true;
   int exact_t = 1;
   int seed;
   string con_str;
@@ -82,45 +82,26 @@ int main(int argc, char** argv)
       iss >> use_crc;
     } else if (arg == "-exact") {
       iss >> exact_t;
+    } else if (arg == "-fast") {
+      iss >> use_fast;
     } else {
       cerr << "argument not supported" << endl;
       return 1;
     }
   }
-  // simulation_RM_CSS(m, rx, rz, list_size);
-  // cerr << "Use CRC: " << (use_crc ? "True" : "False") << endl;
-  // simulation_RM_CSS_weighted_degeneracy(m ,rx, rz, list_size, px, n, use_crc);
-  // int N = 256, K = 128, L = 1024;
-  // int N = 32, K = 24, L = 1024;
-  // m = 11; rx = 5;
-  // double db = 3, design_snr = 3;
-  // simulation_polar_CSS(N, K, list_size, pz, n);
-  simulation_polar_syndrome(N, K, list_size, pz, n, con, exact_t, seed);
 
-  /*
-  vector<bool> frozen_bits_HPW(N, 0);
-  vector<bool> frozen_bits_PW(N, 0);
-  frozen_bits_generator_HPW(N, K, frozen_bits_HPW);
-  frozen_bits_generator_PW(N, K, frozen_bits_PW);
-  for (int i = 0; i < N; i++)
-    if (frozen_bits_HPW[i] != frozen_bits_PW[i])
-      cerr << "differ at i=" << i << endl;
-  */
-
-  /*
-  int db = 0;
-  int design_snr = 1.0; // 1.0dB is the best for Gaussian Approximation Construction
+  // int db = 0;
+  // int design_snr = 1.0; // 1.0dB is the best for Gaussian Approximation Construction
+  // simulation_polar_SCL(N, K, list_size, pz, db, design_snr, CONSTRUCTION::RM, n);
+  // simulation_RM_SCL(m, rx, list_size, pz, db, design_snr, n);
   auto start = std::chrono::high_resolution_clock::now();
-  simulation_polar_SCL(N, K, list_size, pz, db, design_snr, CONSTRUCTION::RM, n);
+  if (!use_fast)
+    simulation_polar_syndrome(N, K, list_size, pz, n, con, exact_t, seed);
+  else
+    simulation_polar_syndrome_fast(N, K, list_size, pz, n, con, exact_t, seed);
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-  cerr << "polar takes " << duration.count() << " s" << endl;
-  start = std::chrono::high_resolution_clock::now();
-  simulation_RM_SCL(m, rx, list_size, pz, db, design_snr, n);
-  stop = std::chrono::high_resolution_clock::now();
-  duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-  cerr << "RM takes " << duration.count() << " s" << endl;
-  */
+  cerr << "Finish in " << duration.count() << " s" << endl;
 
   return 0;
 }

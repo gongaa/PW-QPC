@@ -41,7 +41,8 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, seed);
     chn_bsc_q->set_prob(0, pz);
     int floor_Z = N * pz, ceil_Z = floor_Z + 1;
-    cerr << "Noise #flips in range [" << floor_Z-exact_t << ", " << ceil_Z+exact_t << "]" << endl;
+    if (exact_t)
+        cerr << "Noise #flips in range [" << floor_Z-exact_t << ", " << ceil_Z+exact_t << "]" << endl;
     vector<double> weight = {1.0, 0.1, 0.3, 0.5, 0.7, 1.0}; // weight[0] will be set to the real p 
     weight[0] = pz / (1.0-pz);
     vector<int> noise_X(N, 0), noise_Z(N, 0);
@@ -267,7 +268,8 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, seed);
     chn_bsc_q->set_prob(0, pz);
     int floor_Z = N * pz, ceil_Z = floor_Z + 1;
-    cerr << "Noise #flips in range [" << floor_Z-exact_t << ", " << ceil_Z+exact_t << "]" << endl;
+    if (exact_t)
+        cerr << "Noise #flips in range [" << floor_Z-exact_t << ", " << ceil_Z+exact_t << "]" << endl;
     vector<double> weight = {1.0, 0.1, 0.3, 0.5, 0.7, 1.0}; // weight[0] will be set to the real p 
     weight[0] = pz / (1.0-pz);
     vector<int> noise_X(N, 0), noise_Z(N, 0);

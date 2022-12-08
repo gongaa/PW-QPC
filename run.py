@@ -34,9 +34,9 @@ except OSError as error:
 print("Your results will be saved under the directory logs/" + dir)
 
 for pz in np.arange(float(pz_min), float(pz_max), 0.01):
-    cmd = "./build/apps/program -N "+N+" -K "+K+" -l "+l+" -seed "+s+" -n "+n+" -exact "+exact+ " -con "+con+" -pz "+str(pz)
+    cmd = "./build/apps/program -N "+N+" -K "+K+" -l "+l+" -seed "+s+" -n "+n+" -exact "+exact+ " -con "+con+" -pz "+str(round(pz,2))
+    dest = "logs/" + dir + "/pz" + str(int(round(pz,2)*100)) + ".log"
     if euler:
-        cmd = 'bsub -W ' + runtime + ':00 "'+ cmd + '"'
-    dest = "logs/" + dir + "/pz" + str(int(pz*100)) + ".log"
-    process = subprocess.Popen(cmd.split(), stderr=open(dest, 'w'))
-    print(cmd)
+        process = subprocess.Popen(['bsub', '-W', runtime+':00', cmd+' &> '+dest])
+    else:
+        process = subprocess.Popen(cmd.split(), stderr=open(dest, 'w'))

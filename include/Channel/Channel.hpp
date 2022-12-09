@@ -56,9 +56,8 @@ public:
     // shared_ptr<Event_generator_unitary> event_generator;
     Event_generator_unitary* event_generator;
     int N;
-    int seed;
 
-    explicit Channel_q(const int N, Event_generator_unitary* event_generator, const int seed = 0);
+    explicit Channel_q(const int N, Event_generator_unitary* event_generator);
     virtual ~Channel_q() = default;
     // Channel_q* clone() const;
     void set_seed(const int seed);
@@ -75,8 +74,8 @@ protected:
     string type = "Depolarize_q";
 
 public:
-    Channel_depolarize_q(const int N, double p, const int seed = 0) 
-    : Channel_q(N, new Event_generator_unitary(seed, 2*p, p , 2*p), seed), p(p) {
+    Channel_depolarize_q(const int N, double p, const int seed) 
+    : Channel_q(N, new Event_generator_unitary(seed, 2*p, p , 2*p)), p(p) {
         if (3*p > 1)
             cerr << "Depolarizing channel 3*p>1" << endl;
     }
@@ -90,7 +89,7 @@ protected:
     string type = "BSC_q";
 
 public:
-    Channel_BSC_q(const int N, double px, double pz, const int seed = 0) 
+    Channel_BSC_q(const int N, double px, double pz, const int seed) 
     : Channel_q(N, new Event_generator_unitary(seed, px, px*pz, pz)), px(px), pz(pz) {}
     virtual void set_prob(double px, double pz) { this->event_generator->set_prob(px, px*pz, pz); }
 };

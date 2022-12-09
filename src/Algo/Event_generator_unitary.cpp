@@ -7,7 +7,7 @@ Event_generator_unitary::Event_generator_unitary(const int seed, double px, doub
 :px(px), py(py), pz(pz), tx(px - py), ty(px), tz(px + pz - py)
 {
 	if(py > px || py > pz)
-		cerr<<"Event generator unitary: py>px or py>pz"<<endl;
+		cerr << "Event generator unitary: py>px or py>pz" << endl;
 	this->set_seed(seed);
 }
 
@@ -20,6 +20,7 @@ Event_generator_unitary* Event_generator_unitary::clone() const
 void Event_generator_unitary::set_seed(const int seed)
 {
 	mt19937.seed(seed);
+	cerr << "Event generator random seed: " << seed << endl;;
 }
 
 

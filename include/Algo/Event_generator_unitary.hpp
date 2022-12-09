@@ -13,7 +13,7 @@ protected:
 	double tx, ty, tz;
 
 public:
-	explicit Event_generator_unitary(const int seed = 0, double px = 0, double py = 0, double pz = 0);
+	explicit Event_generator_unitary(const int seed, double px = 0, double py = 0, double pz = 0);
 	virtual ~Event_generator_unitary() = default;
 	virtual Event_generator_unitary* clone() const;
 	virtual void set_prob(double px, double py, double pz);

@@ -2,7 +2,8 @@
 using namespace std;
 void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed)
 {
-    cerr << "Simulation Polar syndrome N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz << ", #samples=" << num_total << endl;
+    cerr << "Simulation Polar syndrome N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
+         << ", #samples=" << num_total << ", seed=" << seed << endl;
     vector<int>  desired_Z(N, 1);
     vector<int>  noisy_codeword_Z(N);
     vector<double> llr_noisy_codeword_Z(N);
@@ -220,7 +221,8 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
 
 void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed)
 {
-    cerr << "Simulation Polar syndrome FASTER N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz << ", #samples=" << num_total << endl;
+    cerr << "Simulation Polar syndrome FASTER N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
+         << ", #samples=" << num_total << ", seed=" << seed << endl;
     vector<int>  desired_Z(N, 1);
     vector<int>  noisy_codeword_Z(N);
     vector<double> llr_noisy_codeword_Z(N);

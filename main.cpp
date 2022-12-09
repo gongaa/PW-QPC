@@ -41,7 +41,7 @@ int main(int argc, char** argv)
   int p_min, p_max; // in percentage
   bool use_crc = false, use_fast = true;
   int exact_t = 1;
-  int seed;
+  int seed = 0;
   string con_str;
   CONSTRUCTION con;
   for (int i = 1; i < argc; ++i) {

@@ -16,10 +16,9 @@ Channel_c::Channel_c(const int N, const int seed)
     mt19937.seed(seed);
 }
 
-Channel_q::Channel_q(const int N, Event_generator_unitary* event_generator, const int seed) 
+Channel_q::Channel_q(const int N, Event_generator_unitary* event_generator) 
 : event_generator(event_generator), N(N)
 {
-    this->set_seed(seed);
 }
 
 void Channel_q::set_seed(const int seed) 

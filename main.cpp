@@ -94,6 +94,7 @@ int main(int argc, char** argv)
   // int design_snr = 1.0; // 1.0dB is the best for Gaussian Approximation Construction
   // simulation_polar_SCL(N, K, list_size, pz, db, design_snr, CONSTRUCTION::RM, n);
   // simulation_RM_SCL(m, rx, list_size, pz, db, design_snr, n);
+  // print_polar_con(N, K, con);
   auto start = std::chrono::high_resolution_clock::now();
   if (!use_fast)
     simulation_polar_syndrome(N, K, list_size, pz, n, con, exact_t, seed);

@@ -19,4 +19,6 @@ void test_noise_dist(int N, int num_total=10000, int seed=42);
 
 void test_generate_exact_flip(int N, double p, int num_total=10000, int seed=42);
 
+void print_polar_con(int N, int K, CONSTRUCTION con);
+
 #endif // TEST_POLAR_HPP_

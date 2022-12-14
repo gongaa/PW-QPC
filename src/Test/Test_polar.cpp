@@ -10,6 +10,40 @@
 
 using namespace std;
 
+void print_polar_con(int N, int K, CONSTRUCTION con)
+{
+    cerr << "N=" << N << ", K=" << K << endl;
+    vector<bool> Z_code_frozen_bits(N, 0);
+    vector<bool> X_code_frozen_bits(N, 0);
+    vector<bool> X_stab_frozen_bits(N, 1);
+    vector<int>  X_stab_info_indices; // expect to have size 2*K-N
+    construct_frozen_bits(con, N, K, Z_code_frozen_bits);
+    for (int i = 0; i < N; i++) X_code_frozen_bits[i] = Z_code_frozen_bits[N-1-i];
+    for (int i = 0; i < N; i++) 
+        if (Z_code_frozen_bits[i] == 0 && Z_code_frozen_bits[N-1-i] == 1) 
+            X_stab_frozen_bits[i] = 0;
+
+    for (int i = 0; i < N; i++)
+        if (X_stab_frozen_bits[i] && !Z_code_frozen_bits[i])
+            X_stab_info_indices.push_back(i);
+
+    cerr << "info bits at ";
+    for (int i : X_stab_info_indices) cerr << i << " ";
+    cerr << endl << "logical operators" << endl;
+
+    Encoder_polar* encoder_Z = new Encoder_polar(K, N, Z_code_frozen_bits);
+    vector<int> output(N, 0);
+    for (int i : X_stab_info_indices) {
+        fill(output.begin(), output.end(), 0);
+        output[i] = 1;
+        encoder_Z->light_encode(output.data());
+        cerr << "weight=" << count_weight(output) << endl;
+    }
+    cerr << "Z code frozen bits mask" << endl;
+    for (auto i : Z_code_frozen_bits) cerr << i;
+    cerr << endl;
+}
+
 void test_polar_stabilizer(int N, int K, double p) 
 {
     // int K = 1536, N = 2048;
@@ -247,44 +281,3 @@ void test_generate_exact_flip(int N, double p, int num_total, int seed)
     cerr << "generate " << num_total << " noise that is with exact flip using " << cnt << " samples" << endl; 
 
 }
-
-/*
-  from Arikan's paper: A Performance Comparison of Polar Codes and Reed-Muller Codes
-  generate the information bit set
-  compute the vector z[n] = (z[N][1],...,z[N][N]) through recursion
-  z[1][1]  = 0.5
-  z[2k][j] = 2*z[k][j] - z[k][j]**2     for 1<=j<=k
-           = z[k][j-k]**2               for k+1<=j<=2k
-  then choose the positions corresponding to the K highest ones
-*/
-/*
-void calculate_frozen_bits_positions(int N, int K, double p, vector<bool>& frozen_bits) {
-    // for BEC and BSC only
-    vector<double> z(N, 0);
-    vector<double> z_temp(N, 0);
-    z[0] = p;
-    for (int k = 1; k < N; k <<= 1) {
-        for (int j = 0; j < k; j++) 
-            z_temp[j] = 2 * z[j] - z[j] * z[j];
-        for (int j = k; j < 2*k; j++) 
-            z_temp[j] = z[j-k] * z[j-k];
-        for (int j = 0; j < 2*k; j++) 
-            z[j] = z_temp[j];
-    }
-    // for (auto i : z) cerr << i << " ";
-    // cerr << endl;
-    vector<std::tuple<int, double>> idx_z_pair(N);
-    for (int i = 0; i < N; i++) idx_z_pair[i] = make_tuple(i, z[i]);
-    std::sort(idx_z_pair.begin(), idx_z_pair.end(),
-        [](std::tuple<int, double> x, std::tuple<int, double> y) {
-            return std::get<1>(x) > std::get<1>(y);
-        });
-    for (auto p : idx_z_pair) cerr << std::get<0>(p)+1 << " ";
-    cerr << endl;
-    for (auto p : idx_z_pair) cerr << std::get<1>(p) << " ";
-    cerr << endl;
-    for (int i = 0; i < N; i++) frozen_bits[i] = 0;
-    for (int i = 0; i < N-K; i++) frozen_bits[std::get<0>(idx_z_pair[i])] = 1;
-}
-*/
-

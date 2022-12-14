@@ -1,0 +1,408 @@
+Simulation Polar syndrome FASTER N=2048, K=1025, l=128, pz=0.109, #samples=10000, seed=22
+PW construction
+Event generator random seed: 22
+SCL #err deg : 33 / 100
+SCL #err weighted degeneracy : 37 36 38 37 36 37 
+degeneracy helps : 3 3 2 2 2 1 
+degeneracy worse : 7 6 7 6 5 5 
+SCL #err deg : 67 / 200
+SCL #err weighted degeneracy : 70 69 70 69 68 67 
+degeneracy helps : 7 7 7 7 7 8 
+degeneracy worse : 10 9 10 9 8 8 
+SCL #err deg : 107 / 300
+SCL #err weighted degeneracy : 106 106 106 103 102 103 
+degeneracy helps : 13 12 13 15 15 16 
+degeneracy worse : 12 11 12 11 10 12 
+SCL #err deg : 140 / 400
+SCL #err weighted degeneracy : 139 139 140 136 135 136 
+degeneracy helps : 16 15 16 19 19 20 
+degeneracy worse : 15 14 16 15 14 16 
+SCL #err deg : 179 / 500
+SCL #err weighted degeneracy : 173 173 174 171 171 173 
+degeneracy helps : 22 21 22 24 24 25 
+degeneracy worse : 16 15 17 16 16 19 
+SCL #err deg : 224 / 600
+SCL #err weighted degeneracy : 218 218 218 214 214 216 
+degeneracy helps : 27 26 27 30 30 31 
+degeneracy worse : 21 20 21 20 20 23 
+SCL #err deg : 273 / 700
+SCL #err weighted degeneracy : 267 267 264 261 261 263 
+degeneracy helps : 32 31 33 36 36 37 
+degeneracy worse : 26 25 24 24 24 27 
+SCL #err deg : 305 / 800
+SCL #err weighted degeneracy : 302 302 296 293 293 293 
+degeneracy helps : 38 37 42 45 45 47 
+degeneracy worse : 35 34 33 33 33 35 
+SCL #err deg : 344 / 900
+SCL #err weighted degeneracy : 334 334 327 325 325 326 
+degeneracy helps : 46 45 51 54 54 55 
+degeneracy worse : 36 35 34 35 35 37 
+SCL #err deg : 380 / 1000
+SCL #err weighted degeneracy : 369 369 360 358 358 358 
+degeneracy helps : 49 48 56 59 59 61 
+degeneracy worse : 38 37 36 37 37 39 
+SCL #err deg : 417 / 1100
+SCL #err weighted degeneracy : 408 408 402 399 399 400 
+degeneracy helps : 51 50 57 61 61 63 
+degeneracy worse : 42 41 42 43 43 46 
+SCL #err deg : 456 / 1200
+SCL #err weighted degeneracy : 443 443 439 437 436 436 
+degeneracy helps : 58 57 63 67 68 71 
+degeneracy worse : 45 44 46 48 48 51 
+SCL #err deg : 495 / 1300
+SCL #err weighted degeneracy : 484 484 481 479 478 478 
+degeneracy helps : 59 58 65 70 71 74 
+degeneracy worse : 48 47 51 54 54 57 
+SCL #err deg : 533 / 1400
+SCL #err weighted degeneracy : 519 520 515 512 510 509 
+degeneracy helps : 64 62 70 76 78 82 
+degeneracy worse : 50 49 52 55 55 58 
+SCL #err deg : 580 / 1500
+SCL #err weighted degeneracy : 568 569 564 563 561 560 
+degeneracy helps : 67 65 73 78 80 84 
+degeneracy worse : 55 54 57 61 61 64 
+SCL #err deg : 618 / 1600
+SCL #err weighted degeneracy : 605 606 602 602 600 601 
+degeneracy helps : 71 69 78 83 85 89 
+degeneracy worse : 58 57 62 67 67 72 
+SCL #err deg : 663 / 1700
+SCL #err weighted degeneracy : 650 651 648 649 647 648 
+degeneracy helps : 75 73 81 86 88 92 
+degeneracy worse : 62 61 66 72 72 77 
+SCL #err deg : 698 / 1800
+SCL #err weighted degeneracy : 686 687 683 684 683 683 
+degeneracy helps : 80 78 87 92 94 99 
+degeneracy worse : 68 67 72 78 79 84 
+SCL #err deg : 736 / 1900
+SCL #err weighted degeneracy : 726 727 724 724 723 723 
+degeneracy helps : 82 80 89 95 97 102 
+degeneracy worse : 72 71 77 83 84 89 
+SCL #err deg : 780 / 2000
+SCL #err weighted degeneracy : 768 769 766 766 764 764 
+degeneracy helps : 89 87 96 102 105 110 
+degeneracy worse : 77 76 82 88 89 94 
+SCL #err deg : 822 / 2100
+SCL #err weighted degeneracy : 813 814 809 808 806 806 
+degeneracy helps : 94 92 103 109 112 117 
+degeneracy worse : 85 84 90 95 96 101 
+SCL #err deg : 860 / 2200
+SCL #err weighted degeneracy : 851 852 845 844 842 842 
+degeneracy helps : 97 95 108 114 117 122 
+degeneracy worse : 88 87 93 98 99 104 
+SCL #err deg : 903 / 2300
+SCL #err weighted degeneracy : 894 895 890 888 887 886 
+degeneracy helps : 100 98 111 118 121 127 
+degeneracy worse : 91 90 98 103 105 110 
+SCL #err deg : 944 / 2400
+SCL #err weighted degeneracy : 935 937 932 930 929 928 
+degeneracy helps : 106 103 117 123 126 132 
+degeneracy worse : 97 96 105 109 111 116 
+SCL #err deg : 978 / 2500
+SCL #err weighted degeneracy : 966 968 962 959 958 956 
+degeneracy helps : 113 110 124 131 134 141 
+degeneracy worse : 101 100 108 112 114 119 
+SCL #err deg : 1017 / 2600
+SCL #err weighted degeneracy : 1009 1011 1005 1001 999 997 
+degeneracy helps : 117 114 128 136 140 147 
+degeneracy worse : 109 108 116 120 122 127 
+SCL #err deg : 1049 / 2700
+SCL #err weighted degeneracy : 1045 1047 1041 1035 1034 1032 
+degeneracy helps : 121 118 133 142 145 152 
+degeneracy worse : 117 116 125 128 130 135 
+SCL #err deg : 1088 / 2800
+SCL #err weighted degeneracy : 1086 1088 1083 1076 1076 1074 
+degeneracy helps : 124 121 136 146 149 156 
+degeneracy worse : 122 121 131 134 137 142 
+SCL #err deg : 1126 / 2900
+SCL #err weighted degeneracy : 1130 1130 1126 1119 1119 1119 
+degeneracy helps : 126 124 138 148 151 158 
+degeneracy worse : 130 128 138 141 144 151 
+SCL #err deg : 1170 / 3000
+SCL #err weighted degeneracy : 1176 1176 1172 1165 1167 1167 
+degeneracy helps : 130 128 142 152 155 161 
+degeneracy worse : 136 134 144 147 152 158 
+SCL #err deg : 1206 / 3100
+SCL #err weighted degeneracy : 1210 1210 1206 1200 1202 1203 
+degeneracy helps : 135 133 147 156 159 165 
+degeneracy worse : 139 137 147 150 155 162 
+SCL #err deg : 1251 / 3200
+SCL #err weighted degeneracy : 1249 1251 1245 1241 1243 1243 
+degeneracy helps : 148 144 160 167 170 177 
+degeneracy worse : 146 144 154 157 162 169 
+SCL #err deg : 1295 / 3300
+SCL #err weighted degeneracy : 1293 1295 1290 1285 1287 1287 
+degeneracy helps : 152 148 163 171 174 181 
+degeneracy worse : 150 148 158 161 166 173 
+SCL #err deg : 1331 / 3400
+SCL #err weighted degeneracy : 1333 1335 1331 1326 1328 1328 
+degeneracy helps : 154 150 165 173 176 183 
+degeneracy worse : 156 154 165 168 173 180 
+SCL #err deg : 1368 / 3500
+SCL #err weighted degeneracy : 1372 1374 1371 1368 1370 1371 
+degeneracy helps : 158 154 168 176 179 185 
+degeneracy worse : 162 160 171 176 181 188 
+SCL #err deg : 1407 / 3600
+SCL #err weighted degeneracy : 1413 1415 1410 1407 1409 1411 
+degeneracy helps : 160 156 172 180 183 189 
+degeneracy worse : 166 164 175 180 185 193 
+SCL #err deg : 1451 / 3700
+SCL #err weighted degeneracy : 1455 1458 1453 1450 1451 1453 
+degeneracy helps : 163 159 175 183 187 193 
+degeneracy worse : 167 166 177 182 187 195 
+SCL #err deg : 1481 / 3800
+SCL #err weighted degeneracy : 1485 1488 1484 1481 1483 1485 
+degeneracy helps : 168 164 181 189 192 198 
+degeneracy worse : 172 171 184 189 194 202 
+SCL #err deg : 1517 / 3900
+SCL #err weighted degeneracy : 1517 1521 1516 1513 1516 1518 
+degeneracy helps : 176 171 189 197 200 206 
+degeneracy worse : 176 175 188 193 199 207 
+SCL #err deg : 1554 / 4000
+SCL #err weighted degeneracy : 1556 1560 1555 1553 1556 1558 
+degeneracy helps : 178 173 192 200 203 209 
+degeneracy worse : 180 179 193 199 205 213 
+SCL #err deg : 1593 / 4100
+SCL #err weighted degeneracy : 1597 1601 1597 1593 1597 1597 
+degeneracy helps : 179 174 193 203 206 213 
+degeneracy worse : 183 182 197 203 210 217 
+SCL #err deg : 1635 / 4200
+SCL #err weighted degeneracy : 1640 1643 1642 1638 1641 1642 
+degeneracy helps : 181 176 194 205 209 216 
+degeneracy worse : 186 184 201 208 215 223 
+SCL #err deg : 1678 / 4300
+SCL #err weighted degeneracy : 1684 1687 1686 1682 1685 1686 
+degeneracy helps : 184 179 197 208 212 219 
+degeneracy worse : 190 188 205 212 219 227 
+SCL #err deg : 1720 / 4400
+SCL #err weighted degeneracy : 1723 1726 1725 1721 1724 1726 
+degeneracy helps : 189 184 202 213 217 224 
+degeneracy worse : 192 190 207 214 221 230 
+SCL #err deg : 1756 / 4500
+SCL #err weighted degeneracy : 1757 1760 1760 1756 1760 1762 
+degeneracy helps : 194 189 207 218 222 229 
+degeneracy worse : 195 193 211 218 226 235 
+SCL #err deg : 1790 / 4600
+SCL #err weighted degeneracy : 1793 1796 1795 1791 1795 1797 
+degeneracy helps : 197 192 212 223 227 234 
+degeneracy worse : 200 198 217 224 232 241 
+SCL #err deg : 1835 / 4700
+SCL #err weighted degeneracy : 1842 1845 1842 1839 1843 1845 
+degeneracy helps : 200 195 216 227 231 238 
+degeneracy worse : 207 205 223 231 239 248 
+SCL #err deg : 1873 / 4800
+SCL #err weighted degeneracy : 1881 1884 1881 1879 1883 1884 
+degeneracy helps : 203 198 221 232 236 243 
+degeneracy worse : 211 209 229 238 246 254 
+SCL #err deg : 1918 / 4900
+SCL #err weighted degeneracy : 1925 1928 1925 1922 1926 1927 
+degeneracy helps : 209 204 228 240 244 251 
+degeneracy worse : 216 214 235 244 252 260 
+SCL #err deg : 1967 / 5000
+SCL #err weighted degeneracy : 1970 1973 1969 1966 1969 1973 
+degeneracy helps : 214 209 234 246 251 256 
+degeneracy worse : 217 215 236 245 253 262 
+SCL #err deg : 2012 / 5100
+SCL #err weighted degeneracy : 2009 2012 2009 2005 2008 2012 
+degeneracy helps : 222 217 243 256 261 266 
+degeneracy worse : 219 217 240 249 257 266 
+SCL #err deg : 2058 / 5200
+SCL #err weighted degeneracy : 2050 2053 2051 2048 2051 2055 
+degeneracy helps : 229 224 249 262 267 272 
+degeneracy worse : 221 219 242 252 260 269 
+SCL #err deg : 2099 / 5300
+SCL #err weighted degeneracy : 2088 2091 2091 2087 2090 2094 
+degeneracy helps : 235 230 255 269 274 279 
+degeneracy worse : 224 222 247 257 265 274 
+SCL #err deg : 2143 / 5400
+SCL #err weighted degeneracy : 2129 2132 2133 2129 2133 2138 
+degeneracy helps : 240 235 260 274 279 283 
+degeneracy worse : 226 224 250 260 269 278 
+SCL #err deg : 2183 / 5500
+SCL #err weighted degeneracy : 2166 2169 2170 2166 2168 2173 
+degeneracy helps : 246 241 267 281 288 292 
+degeneracy worse : 229 227 254 264 273 282 
+SCL #err deg : 2230 / 5600
+SCL #err weighted degeneracy : 2213 2216 2218 2214 2216 2221 
+degeneracy helps : 250 245 271 287 294 298 
+degeneracy worse : 233 231 259 271 280 289 
+SCL #err deg : 2269 / 5700
+SCL #err weighted degeneracy : 2252 2255 2256 2250 2252 2258 
+degeneracy helps : 253 248 276 293 300 304 
+degeneracy worse : 236 234 263 274 283 293 
+SCL #err deg : 2314 / 5800
+SCL #err weighted degeneracy : 2295 2298 2296 2290 2293 2297 
+degeneracy helps : 258 253 283 300 306 311 
+degeneracy worse : 239 237 265 276 285 294 
+SCL #err deg : 2352 / 5900
+SCL #err weighted degeneracy : 2332 2335 2333 2327 2330 2334 
+degeneracy helps : 261 256 287 305 312 317 
+degeneracy worse : 241 239 268 280 290 299 
+SCL #err deg : 2393 / 6000
+SCL #err weighted degeneracy : 2374 2377 2373 2368 2372 2374 
+degeneracy helps : 264 259 292 310 316 322 
+degeneracy worse : 245 243 272 285 295 303 
+SCL #err deg : 2432 / 6100
+SCL #err weighted degeneracy : 2415 2418 2413 2406 2410 2412 
+degeneracy helps : 269 264 298 317 323 329 
+degeneracy worse : 252 250 279 291 301 309 
+SCL #err deg : 2469 / 6200
+SCL #err weighted degeneracy : 2454 2457 2450 2441 2446 2447 
+degeneracy helps : 272 267 302 323 329 336 
+degeneracy worse : 257 255 283 295 306 314 
+SCL #err deg : 2509 / 6300
+SCL #err weighted degeneracy : 2498 2501 2495 2486 2492 2492 
+degeneracy helps : 273 268 303 324 330 337 
+degeneracy worse : 262 260 289 301 313 320 
+SCL #err deg : 2560 / 6400
+SCL #err weighted degeneracy : 2547 2550 2544 2535 2540 2540 
+degeneracy helps : 279 274 309 330 336 343 
+degeneracy worse : 266 264 293 305 316 323 
+SCL #err deg : 2598 / 6500
+SCL #err weighted degeneracy : 2584 2587 2583 2574 2579 2579 
+degeneracy helps : 283 278 313 333 339 346 
+degeneracy worse : 269 267 298 309 320 327 
+SCL #err deg : 2648 / 6600
+SCL #err weighted degeneracy : 2635 2638 2634 2624 2629 2628 
+degeneracy helps : 288 283 318 339 345 353 
+degeneracy worse : 275 273 304 315 326 333 
+SCL #err deg : 2698 / 6700
+SCL #err weighted degeneracy : 2681 2684 2680 2671 2675 2674 
+degeneracy helps : 295 290 325 345 352 360 
+degeneracy worse : 278 276 307 318 329 336 
+SCL #err deg : 2738 / 6800
+SCL #err weighted degeneracy : 2721 2723 2721 2712 2716 2715 
+degeneracy helps : 299 294 330 350 357 365 
+degeneracy worse : 282 279 313 324 335 342 
+SCL #err deg : 2779 / 6900
+SCL #err weighted degeneracy : 2765 2767 2765 2756 2760 2759 
+degeneracy helps : 301 296 332 352 359 367 
+degeneracy worse : 287 284 318 329 340 347 
+SCL #err deg : 2822 / 7000
+SCL #err weighted degeneracy : 2806 2809 2805 2798 2801 2799 
+degeneracy helps : 305 299 337 357 365 373 
+degeneracy worse : 289 286 320 333 344 350 
+SCL #err deg : 2860 / 7100
+SCL #err weighted degeneracy : 2844 2847 2841 2835 2838 2833 
+degeneracy helps : 308 302 342 361 369 379 
+degeneracy worse : 292 289 323 336 347 352 
+SCL #err deg : 2901 / 7200
+SCL #err weighted degeneracy : 2885 2888 2880 2873 2876 2871 
+degeneracy helps : 310 304 346 366 374 383 
+degeneracy worse : 294 291 325 338 349 353 
+SCL #err deg : 2931 / 7300
+SCL #err weighted degeneracy : 2920 2923 2916 2910 2912 2907 
+degeneracy helps : 312 306 348 368 377 386 
+degeneracy worse : 301 298 333 347 358 362 
+SCL #err deg : 2968 / 7400
+SCL #err weighted degeneracy : 2952 2955 2947 2941 2944 2938 
+degeneracy helps : 320 314 357 378 386 395 
+degeneracy worse : 304 301 336 351 362 365 
+SCL #err deg : 3008 / 7500
+SCL #err weighted degeneracy : 2992 2995 2988 2982 2984 2978 
+degeneracy helps : 323 317 360 381 390 399 
+degeneracy worse : 307 304 340 355 366 369 
+SCL #err deg : 3049 / 7600
+SCL #err weighted degeneracy : 3037 3040 3032 3028 3029 3023 
+degeneracy helps : 325 319 364 385 395 404 
+degeneracy worse : 313 310 347 364 375 378 
+SCL #err deg : 3092 / 7700
+SCL #err weighted degeneracy : 3077 3080 3074 3069 3070 3064 
+degeneracy helps : 330 324 369 391 401 410 
+degeneracy worse : 315 312 351 368 379 382 
+SCL #err deg : 3130 / 7800
+SCL #err weighted degeneracy : 3115 3118 3113 3107 3108 3102 
+degeneracy helps : 334 328 375 397 407 416 
+degeneracy worse : 319 316 358 374 385 388 
+SCL #err deg : 3162 / 7900
+SCL #err weighted degeneracy : 3146 3149 3143 3136 3139 3133 
+degeneracy helps : 339 333 381 404 414 423 
+degeneracy worse : 323 320 362 378 391 394 
+SCL #err deg : 3198 / 8000
+SCL #err weighted degeneracy : 3183 3186 3181 3172 3175 3169 
+degeneracy helps : 345 339 386 409 419 428 
+degeneracy worse : 330 327 369 383 396 399 
+SCL #err deg : 3238 / 8100
+SCL #err weighted degeneracy : 3224 3227 3223 3213 3216 3209 
+degeneracy helps : 348 342 389 413 423 432 
+degeneracy worse : 334 331 374 388 401 403 
+SCL #err deg : 3275 / 8200
+SCL #err weighted degeneracy : 3255 3258 3254 3243 3246 3239 
+degeneracy helps : 355 349 396 421 431 440 
+degeneracy worse : 335 332 375 389 402 404 
+SCL #err deg : 3314 / 8300
+SCL #err weighted degeneracy : 3295 3298 3294 3284 3287 3279 
+degeneracy helps : 358 352 399 424 434 444 
+degeneracy worse : 339 336 379 394 407 409 
+SCL #err deg : 3353 / 8400
+SCL #err weighted degeneracy : 3335 3338 3332 3322 3325 3316 
+degeneracy helps : 363 357 404 430 440 451 
+degeneracy worse : 345 342 383 399 412 414 
+SCL #err deg : 3396 / 8500
+SCL #err weighted degeneracy : 3380 3383 3378 3366 3368 3359 
+degeneracy helps : 367 361 408 435 445 456 
+degeneracy worse : 351 348 390 405 417 419 
+SCL #err deg : 3432 / 8600
+SCL #err weighted degeneracy : 3420 3423 3416 3405 3407 3399 
+degeneracy helps : 367 361 410 438 448 459 
+degeneracy worse : 355 352 394 411 423 426 
+SCL #err deg : 3468 / 8700
+SCL #err weighted degeneracy : 3458 3461 3454 3444 3446 3437 
+degeneracy helps : 369 363 414 442 452 464 
+degeneracy worse : 359 356 400 418 430 433 
+SCL #err deg : 3511 / 8800
+SCL #err weighted degeneracy : 3500 3504 3494 3483 3484 3475 
+degeneracy helps : 373 366 423 452 462 474 
+degeneracy worse : 362 359 406 424 435 438 
+SCL #err deg : 3549 / 8900
+SCL #err weighted degeneracy : 3539 3543 3534 3523 3524 3515 
+degeneracy helps : 376 369 427 456 466 478 
+degeneracy worse : 366 363 412 430 441 444 
+SCL #err deg : 3589 / 9000
+SCL #err weighted degeneracy : 3575 3579 3570 3558 3559 3552 
+degeneracy helps : 381 374 432 462 472 484 
+degeneracy worse : 367 364 413 431 442 447 
+SCL #err deg : 3634 / 9100
+SCL #err weighted degeneracy : 3622 3626 3616 3604 3605 3599 
+degeneracy helps : 385 378 436 466 476 487 
+degeneracy worse : 373 370 418 436 447 452 
+SCL #err deg : 3680 / 9200
+SCL #err weighted degeneracy : 3671 3675 3665 3654 3654 3648 
+degeneracy helps : 387 380 438 468 478 490 
+degeneracy worse : 378 375 423 442 452 458 
+SCL #err deg : 3721 / 9300
+SCL #err weighted degeneracy : 3711 3715 3705 3694 3694 3687 
+degeneracy helps : 389 382 440 471 481 494 
+degeneracy worse : 379 376 424 444 454 460 
+SCL #err deg : 3760 / 9400
+SCL #err weighted degeneracy : 3751 3755 3747 3735 3734 3728 
+degeneracy helps : 392 385 442 473 484 497 
+degeneracy worse : 383 380 429 448 458 465 
+SCL #err deg : 3788 / 9500
+SCL #err weighted degeneracy : 3785 3788 3783 3774 3774 3766 
+degeneracy helps : 394 387 444 475 486 501 
+degeneracy worse : 391 387 439 461 472 479 
+SCL #err deg : 3836 / 9600
+SCL #err weighted degeneracy : 3832 3835 3830 3821 3820 3813 
+degeneracy helps : 399 392 449 480 492 507 
+degeneracy worse : 395 391 443 465 476 484 
+SCL #err deg : 3869 / 9700
+SCL #err weighted degeneracy : 3868 3871 3867 3857 3856 3849 
+degeneracy helps : 402 395 453 485 497 512 
+degeneracy worse : 401 397 451 473 484 492 
+SCL #err deg : 3920 / 9800
+SCL #err weighted degeneracy : 3915 3917 3912 3902 3900 3893 
+degeneracy helps : 408 401 461 493 506 521 
+degeneracy worse : 403 398 453 475 486 494 
+SCL #err deg : 3956 / 9900
+SCL #err weighted degeneracy : 3952 3954 3948 3938 3935 3927 
+degeneracy helps : 414 407 468 501 514 530 
+degeneracy worse : 410 405 460 483 493 501 
+SCL #err deg : 3997 / 10000
+SCL #err weighted degeneracy : 3990 3992 3986 3975 3972 3964 
+degeneracy helps : 419 412 474 508 521 537 
+degeneracy worse : 412 407 463 486 496 504 
+average #flips: 223.309
+SCL #err considering degeneracy: 3997
+error due to equal 238
+error due to SCL smaller 3531
+Finish in 138907 s

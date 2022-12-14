@@ -32,11 +32,11 @@ def run_exp(s):
     except OSError as error:
         print(error)  
 
-    print("Your results will be saved under the directory logs/" + dir)
+    print("Your results will be saved under the directory " + path + "/" + dir)
 
     for pz in np.arange(float(pz_min), float(pz_max), 0.01):
         cmd = "./build/apps/program -N "+N+" -K "+K+" -l "+l+" -seed "+s+" -n "+n+" -exact "+exact+ " -con "+con+" -pz "+str(round(pz,2))
-        dest = "logs/" + dir + "/pz" + str(int(round(pz,2)*100)) + ".log"
+        dest = path + "/" + dir + "/pz" + str(int(round(pz,2)*100)) + ".log"
         if euler:
             process = subprocess.Popen(['bsub', '-W', runtime+':00', cmd+' &> '+dest])
         else:

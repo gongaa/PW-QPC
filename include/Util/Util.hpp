@@ -9,12 +9,13 @@
 #include <string>
 using namespace std;
 
-enum CONSTRUCTION { BEC = 0, RM = 1, PW = 2, HPW = 3 };
+enum CONSTRUCTION { BEC = 0, RM = 1, PW = 2, HPW = 3, Q1 = 4 };
 static std::map<std::string, CONSTRUCTION> construction_map = {
     {"BEC", BEC},
     {"RM" , RM },
     {"PW" , PW },
-    {"HPW", HPW}
+    {"HPW", HPW},
+    {"Q1" , Q1 }
 };
 
 template <typename T> inline bool verify(int K, vector<T>& U_K_1, vector<T>& U_K_2) {

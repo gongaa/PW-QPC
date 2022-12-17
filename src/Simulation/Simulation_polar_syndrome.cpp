@@ -1,6 +1,6 @@
 #include "Simulation/Simulation.hpp"
 using namespace std;
-void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed)
+void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
 {
     cerr << "Simulation Polar syndrome N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
          << ", #samples=" << num_total << ", seed=" << seed << endl;
@@ -11,9 +11,11 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     vector<bool> Z_code_frozen_bits(N, 0);
     vector<bool> X_code_frozen_bits(N, 0);
     vector<bool> X_stab_frozen_bits(N, 1);
-    vector<int>  X_stab_syndromes(N-K, 0);
 
-    vector<vector<int>> X_stab(N-K, vector<int>(N,0));
+    int num_stab = (con == CONSTRUCTION::Q1) ? K-1 : N-K;
+    vector<int>  X_stab_syndromes(num_stab, 0);
+    vector<vector<int>> X_stab(num_stab, vector<int>(N,0));
+
     vector<int>  input(N, 0);
     vector<int>  output(N, 0);
 
@@ -23,10 +25,18 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     for (int i = 0; i < N; i++) 
         if (Z_code_frozen_bits[i] == 0 && Z_code_frozen_bits[N-1-i] == 1) 
             X_stab_frozen_bits[i] = 0;
+            
+    if (con == CONSTRUCTION::Q1) {
+        cerr << "Q1 construction" << endl;
+        std::fill(X_code_frozen_bits.begin(), X_code_frozen_bits.end(), 0);
+        for (int i=0; i < num_stab; i++) X_code_frozen_bits[N-1-i] = 1;
+        std::copy(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), X_stab_frozen_bits.begin());
+        X_stab_frozen_bits[N-K] = 1;
+    }
 
     Encoder_polar* encoder_Z         = new Encoder_polar(K, N, Z_code_frozen_bits);
     Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(K, N, list_size, Z_code_frozen_bits);
-    Encoder_polar* X_stab_encoder    = new Encoder_polar(N-K, N, X_stab_frozen_bits);
+    Encoder_polar* X_stab_encoder    = new Encoder_polar(num_stab, N, X_stab_frozen_bits);
 
     int j = 0;
     for (int i = 0; i < N; i++) {
@@ -85,7 +95,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
         }
         total_flips += num_flips;
         // obtain syndrome
-        for (int i = 0; i < N-K; i++) {
+        for (int i = 0; i < num_stab; i++) {
             X_stab_syndromes[i] = dot_product(N, X_stab[i], noise_Z);
         }
         // from syndrome back to a noisy codeword
@@ -200,7 +210,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
             if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong) degeneracy_worse[i]++;
         }
 
-        if (turn_idx % 100 == 99) {
+        if (turn_idx % interval == (interval-1)) {
             cerr << "SCL #err deg : " << SCL_num_Z_err_deg << " / " << (turn_idx+1) << endl;
             cerr << "SCL #err weighted degeneracy : ";
             for (int i : SCL_num_Z_err_deg_list) cerr << i << " ";
@@ -219,7 +229,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     cerr << "error due to SCL smaller " << SCL_smaller << endl;
 }
 
-void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed)
+void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
 {
     cerr << "Simulation Polar syndrome FASTER N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
          << ", #samples=" << num_total << ", seed=" << seed << endl;
@@ -231,9 +241,11 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
     vector<bool> X_code_frozen_bits(N, 0);
     vector<bool> X_stab_frozen_bits(N, 1);
     vector<int>  X_stab_info_indices; // expect to have size 2*K-N
-    vector<int>  X_stab_syndromes(N-K, 0);
 
-    vector<vector<int>> X_stab(N-K, vector<int>(N,0));
+    int num_stab = (con == CONSTRUCTION::Q1) ? K-1 : N-K;
+    vector<int>  X_stab_syndromes(num_stab, 0);
+    vector<vector<int>> X_stab(num_stab, vector<int>(N,0));
+
     vector<int>  input(N, 0);
     vector<int>  output(N, 0);
 
@@ -244,9 +256,17 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
         if (Z_code_frozen_bits[i] == 0 && Z_code_frozen_bits[N-1-i] == 1) 
             X_stab_frozen_bits[i] = 0;
 
+    if (con == CONSTRUCTION::Q1) {
+        cerr << "Q1 construction" << endl;
+        std::fill(X_code_frozen_bits.begin(), X_code_frozen_bits.end(), 0);
+        for (int i=N-K+1; i < N; i++) X_code_frozen_bits[i] = 1;
+        // for (int i=0; i < num_stab; i++) X_code_frozen_bits[N-1-i] = 1;
+        std::copy(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), X_stab_frozen_bits.begin());
+        X_stab_frozen_bits[N-K] = 1;
+    }
+
     Encoder_polar* encoder_Z         = new Encoder_polar(K, N, Z_code_frozen_bits);
     Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(K, N, list_size, Z_code_frozen_bits);
-    Encoder_polar* X_stab_encoder    = new Encoder_polar(N-K, N, X_stab_frozen_bits);
 
     int j = 0;
     for (int i = 0; i < N; i++) {
@@ -264,6 +284,7 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
             X_stab_info_indices.push_back(i);
 
     int info_size = 2*K - N;
+    if (con == CONSTRUCTION::Q1) info_size = 1;
     int num_equiv_classes = 1 << info_size;
     assert (X_stab_info_indices.size() == info_size);
     
@@ -297,7 +318,6 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
     int desired_class_idx, largest_class_idx, SCL_best_class_idx;
     double temp_prob;
     bool is_SCL_deg_wrong = false, is_SCL_weighted_deg_wrong = false;
-
     for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
         // reset flags
         is_SCL_deg_wrong = false; is_SCL_weighted_deg_wrong = false;
@@ -313,7 +333,7 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
         }
         total_flips += num_flips;
         // obtain syndrome
-        for (int i = 0; i < N-K; i++) {
+        for (int i = 0; i < num_stab; i++) {
             X_stab_syndromes[i] = dot_product(N, X_stab[i], noise_Z);
         }
         // from syndrome back to a noisy codeword
@@ -392,7 +412,7 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
             if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong) degeneracy_worse[i]++;
         }
 
-        if (turn_idx % 100 == 99) {
+        if (turn_idx % interval == (interval-1)) {
             cerr << "SCL #err deg : " << SCL_num_Z_err_deg << " / " << (turn_idx+1) << endl;
             cerr << "SCL #err weighted degeneracy : ";
             for (int i : SCL_num_Z_err_deg_list) cerr << i << " ";

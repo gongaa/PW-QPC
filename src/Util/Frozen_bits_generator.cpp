@@ -221,6 +221,10 @@ bool construct_frozen_bits(CONSTRUCTION con, int& N, int& K, vector<bool>& froze
         case HPW:
             frozen_bits_generator_HPW(N, K, frozen_bits);
             break;
+		case Q1:
+			std::fill(frozen_bits.begin(), frozen_bits.end(), 0);
+			for (int i = 0; i < N-K; i++) frozen_bits[i] = 1;
+			break;
         default:
             cerr << "Currently not supported" << endl;
             return false;

@@ -42,6 +42,7 @@ int main(int argc, char** argv)
   bool use_crc = false, use_fast = true;
   int exact_t = 1;
   int seed = 0;
+  int print_interval = 1000;
   string con_str;
   CONSTRUCTION con;
   for (int i = 1; i < argc; ++i) {
@@ -84,6 +85,8 @@ int main(int argc, char** argv)
       iss >> exact_t;
     } else if (arg == "-fast") {
       iss >> use_fast;
+    } else if (arg == "-interval") {
+      iss >> print_interval;
     } else {
       cerr << "argument not supported" << endl;
       return 1;
@@ -95,11 +98,12 @@ int main(int argc, char** argv)
   // simulation_polar_SCL(N, K, list_size, pz, db, design_snr, CONSTRUCTION::RM, n);
   // simulation_RM_SCL(m, rx, list_size, pz, db, design_snr, n);
   // print_polar_con(N, K, con);
+  // test_polar_stabilizer(N, K, con);
   auto start = std::chrono::high_resolution_clock::now();
   if (!use_fast)
-    simulation_polar_syndrome(N, K, list_size, pz, n, con, exact_t, seed);
+    simulation_polar_syndrome(N, K, list_size, pz, n, con, exact_t, seed, print_interval);
   else
-    simulation_polar_syndrome_fast(N, K, list_size, pz, n, con, exact_t, seed);
+    simulation_polar_syndrome_fast(N, K, list_size, pz, n, con, exact_t, seed, print_interval);
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
   cerr << "Finish in " << duration.count() << " s" << endl;

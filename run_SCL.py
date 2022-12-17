@@ -10,16 +10,14 @@ pz_max = input('Enter a range of pz, pz_max (not inclusive): ')
 seed = input('Enter random seed:')
 n = input('Enter number of samples: ')
 while True:
-    con = input('Enter construction method (PW, HPW, RM, Q1): ')
-    if con in ['PW', 'HPW', 'RM', 'Q1']:
+    con = input('Enter construction method (PW, HPW, RM): ')
+    if con in ['PW', 'HPW', 'RM']:
         break
-exact = input("Enter exact interval (0 to not use exact): ")
-interval = input("Enter print interval (default is 100): ")
 euler = input("Running on Euler? 'y' or 'n': ") == 'y'
 if euler:
     runtime = input("Enter runtime: ")
 
-path = 'logs'
+path = 'logs_SCL'
 if not os.path.exists(path):    
     try:
         os.mkdir(path)
@@ -27,7 +25,7 @@ if not os.path.exists(path):
         print(error)   
 
 def run_exp(s):
-    dir = 'N'+N+'_K'+K+'_l'+l+'_s'+s+'_n'+n+'_exact'+exact+'_'+con
+    dir = 'N'+N+'_K'+K+'_l'+l+'_s'+s+'_n'+n+'_'+con
     try:
         os.mkdir(path+'/'+dir)
     except OSError as error:
@@ -36,7 +34,7 @@ def run_exp(s):
     print("Your results will be saved under the directory " + path + "/" + dir)
 
     for pz in np.arange(float(pz_min), float(pz_max), 0.01):
-        cmd = "./build/apps/program -N "+N+" -K "+K+" -l "+l+" -seed "+s+" -n "+n+" -exact "+exact+" -interval "+interval+ " -con "+con+" -pz "+str(round(pz,2))
+        cmd = "./build/apps/program -N "+N+" -K "+K+" -l "+l+" -seed "+s+" -n "+n+" -con "+con+" -pz "+str(round(pz,2))
         dest = path + "/" + dir + "/pz" + str(int(round(pz,2)*100)) + ".log"
         if euler:
             process = subprocess.Popen(['bsub', '-W', runtime+':00', cmd+' &> '+dest])

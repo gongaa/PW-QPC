@@ -41,5 +41,6 @@ The possible options are
 * `-exact` - When `exact` is set to $0$, the number of flips of the noise is supposed to follow a binomial distribution. When `exact` is set to a non zero integer $t$, only noise that has flips $\lfloor N\cdot p_z - t \rfloor$ or $\lceil N\cdot p_z + t \rceil$ are generated.
 * `-seed` - The random seed used to generate the noise.
 * `-fast` - Whether to use the fast method or not. By default it is set to true. The fast version does not speed things up essentially, but its memory usage is better.
+* `-interval` - The print interval for showing intermediate results.
 
 

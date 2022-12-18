@@ -40,7 +40,7 @@ int compare_equiv_classes();
 // Polar
 void simulation_polar_SCL(int N, int K, int L, double p, double db, double design_snr, CONSTRUCTION con=CONSTRUCTION::PW, int num_total=1000); 
 
-void simulation_polar_CSS(int N, int K, int L, double p, int num_total, int seed);
+void simulation_polar_CSS(int N, int K, int L, double p, int num_total, CONSTRUCTION con, int seed=42, int print_interval=100);
 
 void simulation_polar_syndrome(int N, int K, int L, double p, int num_total, CONSTRUCTION con, int exact_t=0, int seed=42, int print_interval=100);
 

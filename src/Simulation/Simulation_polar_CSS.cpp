@@ -1,5 +1,5 @@
 #include "Simulation/Simulation.hpp"
-void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=100, int seed=42)
+void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total,  CONSTRUCTION con,int seed, int print_interval)
 {
     vector<int> info_bits_Z(K);
     vector<int> desired_Z(N, 1);
@@ -9,14 +9,25 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
     vector<bool> Z_code_frozen_bits(N, 0);
     vector<bool> X_stab_frozen_bits(N, 1);
 
-    frozen_bits_generator_PW(N, K, Z_code_frozen_bits);
+    construct_frozen_bits(con, N, K, Z_code_frozen_bits);
+
     for (int i = 0; i < N; i++) 
         if (Z_code_frozen_bits[i] == 0 && Z_code_frozen_bits[N-1-i] == 1) 
             X_stab_frozen_bits[i] = 0;
 
+    if (con == CONSTRUCTION::Q1) {
+        cerr << "Q1 construction" << endl;
+        std::copy(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), X_stab_frozen_bits.begin());
+        X_stab_frozen_bits[N-K] = 1;
+    }
+
     Encoder_polar* encoder_Z = new Encoder_polar(K, N, Z_code_frozen_bits);
     Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(K, N, list_size, Z_code_frozen_bits);
-    Encoder_polar* X_stab = new Encoder_polar(N-K, N, X_stab_frozen_bits);
+    Encoder_polar* X_stab;
+    if (con == CONSTRUCTION::Q1)
+        X_stab = new Encoder_polar(K-1, N, X_stab_frozen_bits);
+    else
+        X_stab = new Encoder_polar(N-K, N, X_stab_frozen_bits);
 
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, seed);
     chn_bsc_q->set_prob(0, pz);
@@ -64,7 +75,7 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
         xor_vec(N, SCL_denoised_codeword_Z, desired_Z, SCL_denoised_codeword_Z);
         SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z, noise_Z);
         if (!X_stab->is_codeword(SCL_denoised_codeword_Z.data())) { is_SCL_deg_wrong = true; SCL_num_Z_err_deg++; }
-        if (is_SCL_wrong) cerr << "num_flips: " << num_flips << " , SCL_num_flips: " << SCL_num_flips << endl;
+        // if (is_SCL_wrong) cerr << "num_flips: " << num_flips << " , SCL_num_flips: " << SCL_num_flips << endl;
         if (is_SCL_wrong) {
             if (num_flips == SCL_num_flips) equal_flips_err++;
             if (SCL_num_flips < num_flips)  SCL_smaller++;
@@ -86,8 +97,8 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
             if (!is_in_one_class)
                 equiv_class.push_back({i});
         }
-        cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
-        cerr << "Weight Distribution with added noise:" << endl;
+        // cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
+        // cerr << "Weight Distribution with added noise:" << endl;
 
         std::fill(max_class_prob.begin(), max_class_prob.end(), 0.0);
         for (int i = 0; i < max_class_idx.size(); i++) max_class_idx[i].clear();
@@ -102,8 +113,8 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
             for (int l = 0; l < wt.size(); l++) {
                 wt[l] = count_flip(N, Z_list[ec[l]], noise_Z); 
             }
-            // sort(wt.begin(), wt.end());
-            print_wt_dist(wt); // sort is included
+            sort(wt.begin(), wt.end());
+            // print_wt_dist(wt); // sort is included
             for (int i = 0; i < weight.size(); i++) {
                 temp_prob = 0.0;
                 cal_wt_dist_prob(wt, temp_prob, min_num_flips, weight[i]);
@@ -124,6 +135,7 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
                 largest_class_idx = k;
             }
         }
+        /*
         cerr << "largest class size: " << largest_class_size << ". Weight distribution ";
         vector<int> wt(largest_class_size);
         for (int i = 0; i < largest_class_size; i++) 
@@ -142,11 +154,11 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
             }
         }
         else cerr << "stabilizer class is the largest class" << endl;
-       
-
         cerr << "max class prob (normalized) : ";
         for (auto i : max_class_prob) cerr << i << " ";
         cerr << endl;
+        */
+
         for (int i = 0; i < weight.size(); i++) {
             is_SCL_weighted_deg_wrong = false;
             if (max_class_idx[i][0] != desired_class_idx) {
@@ -154,16 +166,16 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
                 is_SCL_weighted_deg_wrong = true;
             }
             if (!is_SCL_weighted_deg_wrong && is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) {
-                cerr << "turn " << turn_idx << " degeneracy helps by not random guessing" << endl;
+                // cerr << "turn " << turn_idx << " degeneracy helps by not random guessing" << endl;
                 degeneracy_helps[i]++;
             }
             if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong) degeneracy_worse[i]++;
         }
 
-        if (turn_idx % 10 == 9) {
+        if (turn_idx % print_interval == (print_interval-1)) {
             cerr << "SCL #err : " << SCL_num_Z_err << " / " << (turn_idx+1) << endl;
             cerr << "SCL #err deg : " << SCL_num_Z_err_deg << " / " << (turn_idx+1) << endl;
-            cerr << "largest class #err : " << largest_class_err << " / " << (turn_idx+1) << endl;
+            // cerr << "largest class #err : " << largest_class_err << " / " << (turn_idx+1) << endl;
             cerr << "SCL #err weighted degeneracy : ";
             for (int i : SCL_num_Z_err_deg_list) cerr << i << " ";
             cerr << endl << "degeneracy helps : ";
@@ -177,7 +189,7 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total=
     }
     cerr << "average #flips: " << (double)total_flips / num_total << endl;
     cerr << "SCL #err    : " << SCL_num_Z_err << ", SCL Frame Error Rate: " << (double)SCL_num_Z_err / num_total << endl;
-    cerr << "SCL #err considering degeneracy: " << SCL_num_Z_err_deg << endl;
+    cerr << "SCL #err considering degeneracy: " << SCL_num_Z_err_deg << ", deg FER: " << (double)SCL_num_Z_err_deg / num_total << endl;
     cerr << "error due to equal " << equal_flips_err << endl;
     cerr << "error due to SCL smaller " << SCL_smaller << endl;
 }

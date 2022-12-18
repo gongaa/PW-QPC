@@ -39,7 +39,8 @@ int main(int argc, char** argv)
   int N = 1024, K = 513;
   double px, pz; 
   int p_min, p_max; // in percentage
-  bool use_crc = false, use_fast = true;
+  bool use_crc = false;
+  int version = 1;
   int exact_t = 1;
   int seed = 0;
   int print_interval = 1000;
@@ -84,7 +85,7 @@ int main(int argc, char** argv)
     } else if (arg == "-exact") {
       iss >> exact_t;
     } else if (arg == "-fast") {
-      iss >> use_fast;
+      iss >> version;
     } else if (arg == "-interval") {
       iss >> print_interval;
     } else {
@@ -100,10 +101,12 @@ int main(int argc, char** argv)
   // print_polar_con(N, K, con);
   // test_polar_stabilizer(N, K, con);
   auto start = std::chrono::high_resolution_clock::now();
-  if (!use_fast)
+  if (version == 0)
     simulation_polar_syndrome(N, K, list_size, pz, n, con, exact_t, seed, print_interval);
-  else
+  else if (version == 1)
     simulation_polar_syndrome_fast(N, K, list_size, pz, n, con, exact_t, seed, print_interval);
+  else
+    simulation_polar_CSS(N, K, list_size, pz, n, con, seed, print_interval);
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
   cerr << "Finish in " << duration.count() << " s" << endl;

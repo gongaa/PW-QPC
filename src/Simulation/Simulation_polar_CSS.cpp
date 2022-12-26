@@ -1,6 +1,8 @@
 #include "Simulation/Simulation.hpp"
 void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total,  CONSTRUCTION con,int seed, int print_interval)
 {
+    cerr << "Simulation Polar codeword decoding N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
+         << ", #samples=" << num_total << ", seed=" << seed << endl;
     vector<int> info_bits_Z(K);
     vector<int> desired_Z(N, 1);
     vector<int> noisy_codeword_Z(N);
@@ -61,7 +63,7 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total,
 
     for (int turn_idx = 0; turn_idx < num_total; turn_idx++) {
         is_SCL_wrong = false; is_SCL_deg_wrong = false; is_SCL_weighted_deg_wrong = false;
-        generate_random(K, info_bits_Z.data());
+        generate_random(K, info_bits_Z.data()); // otherwise if all-zero is among the closest to the noise, SCL will always guess correctly
         encoder_Z->encode(info_bits_Z.data(), desired_Z.data(), 0);
         chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
         num_flips = count_weight(noise_Z);
@@ -135,7 +137,8 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total,
                 largest_class_idx = k;
             }
         }
-        /*
+
+#ifdef VERBOSE
         cerr << "largest class size: " << largest_class_size << ". Weight distribution ";
         vector<int> wt(largest_class_size);
         for (int i = 0; i < largest_class_size; i++) 
@@ -157,7 +160,7 @@ void simulation_polar_CSS(int N, int K, int list_size, double pz, int num_total,
         cerr << "max class prob (normalized) : ";
         for (auto i : max_class_prob) cerr << i << " ";
         cerr << endl;
-        */
+#endif
 
         for (int i = 0; i < weight.size(); i++) {
             is_SCL_weighted_deg_wrong = false;

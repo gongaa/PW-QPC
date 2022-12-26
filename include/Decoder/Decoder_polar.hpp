@@ -25,12 +25,12 @@ public:
 class Decoder_polar_SCL : Decoder
 {
 protected:
-    // const double metric_init; // init value of the metrics in the trees
     const int L;             // maximum path number
     std::set<int> active_paths;
     int best_path;
 
     vector<bool> frozen_bits;
+    vector<int> frozen_values; // support arbitrary frozen values (not all-zero)
     vector<Tree_metric<Contents_SCL>*> polar_trees;
     vector<vector<Node<Contents_SCL>*>> leaves_array;   
 
@@ -43,7 +43,7 @@ public:
     void decode_SC(const double *Y_N, int *V_K, const size_t frame_id);
     void get_llr_for_frozen_bits(double *Y_N);
     void copy_codeword_list(vector<vector<int>>& c_list, vector<double>& pm_list);
-    void partition(vector<int>& info_indices, vector<vector<int>>& par, vector<vector<int>>& flips, vector<int>& noisy_codeword, int& best_path_class_idx);
+    void partition(vector<int>& info_indices, unordered_map<int, vector<int>>& par, unordered_map<int, vector<int>>& flips, vector<int>& noisy_codeword, int& best_path_class_idx);
 
 protected:
     void _load(const double *Y_N);

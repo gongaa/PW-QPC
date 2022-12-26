@@ -96,7 +96,7 @@ void Decoder_polar_SCL::recursive_compute_llr(Node<Contents_SCL>* node_cur, int 
 	}
 }
 
-void Decoder_polar_SCL::partition(vector<int>& info_indices, vector<vector<int>>& par, vector<vector<int>>& flips, vector<int>& noisy_codeword, int& best_path_class_idx)
+void Decoder_polar_SCL::partition(vector<int>& info_indices, unordered_map<int, vector<int>>& par, unordered_map<int, vector<int>>& flips, vector<int>& noisy_codeword, int& best_path_class_idx)
 {
 	// partition into equivalence classes according to info bits
 	int size = info_indices.size();
@@ -167,7 +167,7 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 		// if current leaf is a frozen bit
 		if (leaves_array[0][leaf_index]->get_c()->is_frozen_bit) {
 		    // penalize if the prediction for frozen bit is wrong, frozen value is 0
-			// frozen bit should not be set it to CRC of info bits
+			// frozen bit should not be set to CRC of info bits
 			// the CRC checksums should be placed at the best channels
 			auto min_phi = std::numeric_limits<double>::max();
 			for (auto path : active_paths) {

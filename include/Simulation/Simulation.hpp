@@ -17,6 +17,7 @@
 #include "Util/Util.hpp"
 
 // #define CHN_AWGN
+// #define VERBOSE
 
 // Reed-Muller
 int simulation_RM_SCL(int m, int r, int list_size, double p, double db, double design_snr, int num_total=1000); 

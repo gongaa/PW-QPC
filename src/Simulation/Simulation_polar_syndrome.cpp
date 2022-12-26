@@ -1,8 +1,9 @@
 #include "Simulation/Simulation.hpp"
 using namespace std;
+// #define COPY_LIST
 void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
 {
-    cerr << "Simulation Polar syndrome N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
+    cerr << "Simulation Polar syndrome decoding N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
          << ", #samples=" << num_total << ", seed=" << seed << endl;
     vector<int>  desired_Z(N, 1);
     vector<int>  noisy_codeword_Z(N);
@@ -33,7 +34,6 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
             
     Encoder_polar* encoder_Z         = new Encoder_polar(K, N, Z_code_frozen_bits);
     Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(K, N, list_size, Z_code_frozen_bits);
-    Encoder_polar* X_stab_encoder    = new Encoder_polar(num_stab, N, X_stab_frozen_bits);
 
     int j = 0;
     for (int i = 0; i < N; i++) {
@@ -55,13 +55,25 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     weight[0] = pz / (1.0-pz);
     vector<int> noise_X(N, 0), noise_Z(N, 0);
     vector<int> noise_Z_diff(N, 0);
-    vector<vector<int>> Z_list(list_size, vector<int>(N, 0));
-    vector<double> pm_Z_list(list_size, 0.0);
-
     int total_flips = 0, num_flips = 0, SCL_num_flips = 0, min_num_flips = 0;
     double pm_best;
+#ifdef COPY_LIST
+    Encoder_polar* X_stab_encoder    = new Encoder_polar(num_stab, N, X_stab_frozen_bits);
+    vector<vector<int>> Z_list(list_size, vector<int>(N, 0));
+    vector<double> pm_Z_list(list_size, 0.0);
+    vector<vector<int>> equiv_class; // expect there to be Kz+Kx-N classes
+#else
+    vector<int>  X_stab_info_indices; // expect to have size Kz+Kx-N
+    for (int i = 0; i < N; i++)
+        if (X_stab_frozen_bits[i] && !Z_code_frozen_bits[i])
+            X_stab_info_indices.push_back(i);
 
-    vector<vector<int>> equiv_class; // expect there to be 2*K-N classes
+    int info_size = 2*K - N; // TODO: modify this to be Kz+Kx-N
+    assert (X_stab_info_indices.size() == info_size);
+    unordered_map<int, vector<int>> equiv_class; // expect there to be Kz+Kx-N classes
+    unordered_map<int, vector<int>> flips;
+    vector<int> path_info(info_size); // store the binary representation of desired_class_idx
+#endif
     bool is_in_one_class; int largest_class_size; int* largest_class;
 
     int equal_flips_err = 0, SCL_smaller = 0;
@@ -73,7 +85,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     vector<int> degeneracy_worse(weight.size(), 0);
     vector<double> max_class_prob(weight.size());
     vector<vector<int>> max_class_idx(weight.size());
-    int desired_class_idx, SCL_class_idx, largest_class_idx;
+    int desired_class_idx, largest_class_idx, SCL_best_class_idx;
     double temp_prob;
     bool is_SCL_deg_wrong = false, is_SCL_weighted_deg_wrong = false;
 
@@ -106,10 +118,11 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
         // SCL decode
         for (int i = 0; i < N; i++) llr_noisy_codeword_Z[i] = noisy_codeword_Z[i] ? -log((1-pz)/pz) : log((1-pz)/pz); // 0 -> 1.0; 1 -> -1.0
         pm_best = SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
-        SCL_decoder_Z->copy_codeword_list(Z_list, pm_Z_list);
-        // post-processing
         SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z, noisy_codeword_Z);
         xor_vec(N, noise_Z, noisy_codeword_Z, desired_Z);
+
+#ifdef COPY_LIST
+        SCL_decoder_Z->copy_codeword_list(Z_list, pm_Z_list);
         xor_vec(N, SCL_denoised_codeword_Z, desired_Z, SCL_denoised_codeword_Z);
         if (!X_stab_encoder->is_codeword(SCL_denoised_codeword_Z.data())) { is_SCL_deg_wrong = true; SCL_num_Z_err_deg++; }
         if (is_SCL_deg_wrong) {
@@ -133,23 +146,40 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
             if (!is_in_one_class)
                 equiv_class.push_back({i});
         }
-        // cerr << "num_flips: " << num_flips << " , SCL_num_flips: " << SCL_num_flips << endl;
-        // cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
-        // cerr << "Weight Distribution with added noise:" << endl;
+#else
+        // obtain the partition and number of flips
+        equiv_class.clear(); flips.clear();
+        SCL_decoder_Z->partition(X_stab_info_indices, equiv_class, flips, noisy_codeword_Z, SCL_best_class_idx);
+        encoder_Z->light_encode(desired_Z.data()); // find pre-image
+        for (int i = 0; i < info_size; i++)
+            path_info[i] = desired_Z[X_stab_info_indices[i]];
+        desired_class_idx = binary2decimal(path_info, info_size);
+        if (SCL_best_class_idx != desired_class_idx) { is_SCL_deg_wrong = true; SCL_num_Z_err_deg++; }
+        if (is_SCL_deg_wrong) {
+            if (num_flips == SCL_num_flips) equal_flips_err++;
+            if (SCL_num_flips < num_flips)  SCL_smaller++;
+        }
+#endif
         // determine max class with respect to weighted degeneracy
         std::fill(max_class_prob.begin(), max_class_prob.end(), 0.0);
         for (int i = 0; i < max_class_idx.size(); i++) max_class_idx[i].clear();
-        desired_class_idx = -1; // desired class may not be in the list
-        SCL_class_idx = -1;     // this is guaranteed in the list
         min_num_flips = (SCL_num_flips > num_flips) ? num_flips : SCL_num_flips;
         largest_class_size = 0; largest_class_idx = 0;
 
+#ifdef COPY_LIST
+        desired_class_idx = -1; // desired class may not be in the list
         for (int k = 0; k < equiv_class.size(); k++) {
             auto& ec = equiv_class[k];
+            if (X_stab_encoder->is_codeword(Z_list[ec[0]].data())) desired_class_idx = k;
             vector<int> wt(ec.size());
-            for (int l = 0; l < wt.size(); l++) {
-                wt[l] = count_flip(N, Z_list[ec[l]], noise_Z); 
-            }
+            for (int l = 0; l < wt.size(); l++) wt[l] = count_flip(N, Z_list[ec[l]], noise_Z); 
+#else
+        for (auto& x : equiv_class) {
+            auto& ec = x.second;
+            int k = x.first;
+            if (ec.size() == 0) continue;
+            auto& wt = flips[k];
+#endif        
             sort(wt.begin(), wt.end());
             // print_wt_dist(wt); // sort is included
             for (int i = 0; i < weight.size(); i++) {
@@ -164,7 +194,6 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
                 }
             }
 
-            if (X_stab_encoder->is_codeword(Z_list[ec[0]].data())) desired_class_idx = k;
 
             if (ec.size() > largest_class_size) {
                 largest_class_size = ec.size();
@@ -172,28 +201,35 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
                 largest_class_idx = k;
             }
         }
-        // cerr << "largest class size: " << largest_class_size << ". Weight distribution ";
-        // vector<int> wt(largest_class_size);
-        // for (int i = 0; i < largest_class_size; i++) 
-        //     wt[i] = count_weight(Z_list[largest_class[i]]);
-        // print_wt_dist(wt);
-        
-        // if (largest_class_idx != desired_class_idx) {
-        //     if (desired_class_idx >= 0) {
-        //         auto& ec = equiv_class[desired_class_idx];
-        //         cerr << "stabilizer class size: " << ec.size() << ". Weight distribution ";
-        //         vector<int> wt(ec.size());
-        //         for (int i = 0; i < ec.size(); i++) 
-        //             wt[i] = count_weight(Z_list[ec[i]]);
-        //         print_wt_dist(wt);
-        //     }
-        // }
-        // else cerr << "stabilizer class is the largest class" << endl;
-       
 
-        // cerr << "max class prob (normalized) : ";
-        // for (auto i : max_class_prob) cerr << i << " ";
-        // cerr << endl;
+#ifdef VERBOSE
+        cerr << "num_flips: " << num_flips << " , SCL_num_flips: " << SCL_num_flips << endl;
+        cerr << "there are " << equiv_class.size() << " equiv classes" << endl;
+        cerr << "Weight Distribution with added noise:" << endl;
+        // and uncomment print_wt_dist(wt);
+        cerr << "largest class size: " << largest_class_size << ". Weight distribution ";
+        vector<int> wt(largest_class_size);
+        for (int i = 0; i < largest_class_size; i++) 
+            wt[i] = count_weight(Z_list[largest_class[i]]);
+        print_wt_dist(wt);
+        
+        if (largest_class_idx != desired_class_idx) {
+            if (desired_class_idx >= 0) {
+                auto& ec = equiv_class[desired_class_idx];
+                cerr << "stabilizer class size: " << ec.size() << ". Weight distribution ";
+                vector<int> wt(ec.size());
+                for (int i = 0; i < ec.size(); i++) 
+                    wt[i] = count_weight(Z_list[ec[i]]);
+                print_wt_dist(wt);
+            }
+        }
+        else cerr << "stabilizer class is the largest class" << endl;
+       
+        cerr << "max class prob (normalized) : ";
+        for (auto i : max_class_prob) cerr << i << " ";
+        cerr << endl;
+#endif
+
         for (int i = 0; i < weight.size(); i++) {
             is_SCL_weighted_deg_wrong = false;
             if (max_class_idx[i][0] != desired_class_idx) {
@@ -277,7 +313,6 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
             X_stab_info_indices.push_back(i);
 
     int info_size = 2*K - N;
-    int num_equiv_classes = 1 << info_size;
     assert (X_stab_info_indices.size() == info_size);
     
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, seed);
@@ -293,9 +328,9 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
     int total_flips = 0, num_flips = 0, SCL_num_flips = 0, min_num_flips = 0;
     double pm_best;
 
-    vector<vector<int>> equiv_class(num_equiv_classes, vector<int>()); // expect there to be 2*K-N classes
-    vector<vector<int>> flips(num_equiv_classes, vector<int>());
-    vector<int> path_info(info_size);
+    unordered_map<int, vector<int>> equiv_class; // expect there to be 2*K-N classes
+    unordered_map<int, vector<int>> flips;
+    vector<int> path_info(info_size); // store the binary representation of desired_class_idx
     bool is_in_one_class; int largest_class_size; int* largest_class;
 
     int equal_flips_err = 0, SCL_smaller = 0;
@@ -342,7 +377,7 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
         SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z, noisy_codeword_Z);
 
         // obtain the partition and number of flips
-        for (int i = 0; i < num_equiv_classes; i++) { equiv_class[i].clear(); flips[i].clear(); }
+        equiv_class.clear(); flips.clear();
         SCL_decoder_Z->partition(X_stab_info_indices, equiv_class, flips, noisy_codeword_Z, SCL_best_class_idx);
 
         xor_vec(N, noise_Z, noisy_codeword_Z, desired_Z);
@@ -364,8 +399,9 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
         min_num_flips = (SCL_num_flips > num_flips) ? num_flips : SCL_num_flips;
         largest_class_size = 0; largest_class_idx = 0;
 
-        for (int k = 0; k < num_equiv_classes; k++) {
-            auto& ec = equiv_class[k];
+        for (auto& x : equiv_class) {
+            auto& ec = x.second;
+            int k = x.first;
             if (ec.size() == 0) continue;
 
             auto& wt = flips[k];

@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <map>
 #include <string>
+#include <unordered_map>
 using namespace std;
 
 enum CONSTRUCTION { BEC = 0, RM = 1, PW = 2, HPW = 3, Q1 = 4 };

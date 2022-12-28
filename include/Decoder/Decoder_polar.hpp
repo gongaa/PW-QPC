@@ -44,6 +44,7 @@ public:
     void get_llr_for_frozen_bits(double *Y_N);
     void copy_codeword_list(vector<vector<int>>& c_list, vector<double>& pm_list);
     void partition(vector<int>& info_indices, unordered_map<int, vector<int>>& par, unordered_map<int, vector<int>>& flips, vector<int>& noisy_codeword, int& best_path_class_idx);
+    void set_frozen_values(const vector<int>& fv);
 
 protected:
     void _load(const double *Y_N);

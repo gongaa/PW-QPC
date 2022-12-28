@@ -1,6 +1,5 @@
 #include "Simulation/Simulation.hpp"
 using namespace std;
-// #define COPY_LIST
 void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
 {
     cerr << "Simulation Polar syndrome decoding N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
@@ -224,7 +223,6 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
             }
         }
         else cerr << "stabilizer class is the largest class" << endl;
-       
         cerr << "max class prob (normalized) : ";
         for (auto i : max_class_prob) cerr << i << " ";
         cerr << endl;
@@ -262,15 +260,16 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     cerr << "error due to SCL smaller " << SCL_smaller << endl;
 }
 
-void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
+void simulation_polar_syndrome_direct(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
 {
-    cerr << "Simulation Polar syndrome FASTER N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
+    cerr << "Simulation Polar direct syndrome decoding N=" << N << ", K=" << K << ", l=" << list_size << ", pz=" << pz 
          << ", #samples=" << num_total << ", seed=" << seed << endl;
     vector<int>  desired_Z(N, 1);
-    vector<int>  noisy_codeword_Z(N);
-    vector<double> llr_noisy_codeword_Z(N);
+    vector<int>  noisy_codeword_Z(N, 0);
+    vector<double> llr_noisy_codeword_Z(N, log((1-pz)/pz));
     vector<int>  SCL_denoised_codeword_Z(N);
     vector<bool> Z_code_frozen_bits(N, 0);
+    vector<int>  Z_code_frozen_values(N, 0);
     vector<bool> X_code_frozen_bits(N, 0);
     vector<bool> X_stab_frozen_bits(N, 1);
     vector<int>  X_stab_info_indices; // expect to have size 2*K-N
@@ -363,18 +362,16 @@ void simulation_polar_syndrome_fast(int N, int K, int list_size, double pz, int 
         for (int i = 0; i < num_stab; i++) {
             X_stab_syndromes[i] = dot_product(N, X_stab[i], noise_Z);
         }
-        // from syndrome back to a noisy codeword
-        j = 0;
-        for (int i = 0; i < N; i++) {
-            if (X_code_frozen_bits[i]) {
-                noisy_codeword_Z[i] = X_stab_syndromes[j++];
-            } else noisy_codeword_Z[i] = 0; // TODO: make it random
-        }
-        encoder_Z->transpose_encode(noisy_codeword_Z.data());
+        // put reversed syndrome into frozen values
+        j = num_stab - 1;
+        for (int i = 0; i < N; i++) 
+            if (Z_code_frozen_bits[i]) Z_code_frozen_values[i] = X_stab_syndromes[j--];
+        SCL_decoder_Z->set_frozen_values(Z_code_frozen_values);
         // SCL decode
-        for (int i = 0; i < N; i++) llr_noisy_codeword_Z[i] = noisy_codeword_Z[i] ? -log((1-pz)/pz) : log((1-pz)/pz); // 0 -> 1.0; 1 -> -1.0
         pm_best = SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
         SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z, noisy_codeword_Z);
+        // reverse noise
+        bit_reversal(noise_Z);
 
         // obtain the partition and number of flips
         equiv_class.clear(); flips.clear();

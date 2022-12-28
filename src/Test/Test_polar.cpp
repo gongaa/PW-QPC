@@ -281,3 +281,61 @@ void test_generate_exact_flip(int N, double p, int num_total, int seed)
     cerr << "generate " << num_total << " noise that is with exact flip using " << cnt << " samples" << endl; 
 
 }
+
+void test_direct_syndrome_decoding(int N, int K, int list_size, double pz)
+{
+    vector<bool> frozen_bits(N, 0);
+    vector<int>  frozen_values(N, 0);
+    vector<bool> stab_frozen_bits(N, 1);
+    vector<int>  syndromes(N-K, 0);
+    vector<int>  syndromes_at_frozen(N-K, 0);
+    vector<int>  input(N, 0);
+    vector<int>  output(N, 0);
+    vector<int>  noise_Z(N, 0);
+    vector<int>  noise_X(N, 0);
+    vector<int>  noisy_codeword_Z(N, 0);
+    vector<double> llr_noisy_codeword_Z(N);
+    vector<int>  SCL_denoised_codeword_Z(N);
+    double pm_best;
+    vector<vector<int>> parity_checks(N-K, vector<int>(N,0));
+    Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, 42);
+    chn_bsc_q->set_prob(0, pz);
+    frozen_bits_generator_PW(N, K, frozen_bits);
+    for (int i = 0; i < N; i++)
+        if (frozen_bits[i] == 0 && frozen_bits[N-1-i] == 1)
+            stab_frozen_bits[i] = 0;
+    Encoder_polar* encoder = new Encoder_polar(N, N, frozen_bits);
+    Decoder_polar_SCL* decoder = new Decoder_polar_SCL(K, N, list_size, frozen_bits);
+    int j = 0;
+    for (int i = 0; i < N; i++) {
+        if (!stab_frozen_bits[i]) {
+            input[i] = 1;
+            output = input;
+            encoder->light_encode(output.data());
+            parity_checks[j++] = output;
+            input[i] = 0;
+        }
+    }
+    for (int idx = 0; idx < 100; idx++) {
+        chn_bsc_q->add_noise(noise_X.data(), noise_Z.data(), 0);
+        cerr << "noise number of flips: " << count_weight(noise_Z) << endl;
+        cerr << "noise: ";
+        for (auto i : noise_Z) cerr << i;
+        cerr << endl;
+        for (int i = 0; i < N-K; i++) 
+            syndromes[i] = dot_product(N, parity_checks[i], noise_Z);
+        // put reversed syndrome into frozen values
+        j = N-K-1;
+        for (int i = 0; i < N; i++) 
+            if (frozen_bits[i]) frozen_values[i] = syndromes[j--];
+        decoder->set_frozen_values(frozen_values);
+        for (int i = 0; i < N; i++) llr_noisy_codeword_Z[i] = noisy_codeword_Z[i] ? -log((1-pz)/pz) : log((1-pz)/pz); // 0 -> 1.0; 1 -> -1.0
+        pm_best = decoder->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
+        cerr << "reSCL: ";
+        bit_reversal(SCL_denoised_codeword_Z);
+        for (auto i : SCL_denoised_codeword_Z) cerr << i;
+        cerr << endl;
+        cerr << "reSCL number of flips: " << count_weight(SCL_denoised_codeword_Z) << endl;
+
+    }
+}

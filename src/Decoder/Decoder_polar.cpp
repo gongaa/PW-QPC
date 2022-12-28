@@ -8,6 +8,7 @@ using namespace std;
 Decoder_polar_SCL::Decoder_polar_SCL(const int& K, const int& N, const int& L, const vector<bool>& frozen_bits) 
 : Decoder(K, N), L(L), frozen_bits(frozen_bits)
 {
+	this->frozen_values = vector<int>(N, 0);
     this->active_paths.insert(0);
 	int n = log2(N);
 	int max_depth_llrs = n - 1;
@@ -19,6 +20,11 @@ Decoder_polar_SCL::Decoder_polar_SCL(const int& K, const int& N, const int& L, c
     }
     for (auto i = 0; i < L; i++) 
         leaves_array.push_back(this->polar_trees[i]->get_leaves());
+}
+
+void Decoder_polar_SCL::set_frozen_values(const vector<int>& fv)
+{
+	this->frozen_values = fv;
 }
 
 void Decoder_polar_SCL::recursive_allocate_nodes_contents(Node<Contents_SCL>* node_curr, const int vector_size, int& max_depth_llrs)
@@ -169,11 +175,12 @@ void Decoder_polar_SCL::_decode(const size_t frame_id)
 		    // penalize if the prediction for frozen bit is wrong, frozen value is 0
 			// frozen bit should not be set to CRC of info bits
 			// the CRC checksums should be placed at the best channels
+			int x = frozen_values[leaf_index]; // may not be 0
 			auto min_phi = std::numeric_limits<double>::max();
 			for (auto path : active_paths) {
 				auto cur_leaf = leaves_array[path][leaf_index];
-				cur_leaf->get_c()->s[0] = 0;
-				auto phi_cur = phi(polar_trees[path]->get_path_metric(), cur_leaf->get_c()->l[0], 0);
+				cur_leaf->get_c()->s[0] = x;
+				auto phi_cur = phi(polar_trees[path]->get_path_metric(), cur_leaf->get_c()->l[0], x);
 				this->polar_trees[path]->set_path_metric(phi_cur);
 				min_phi = std::min<double>(min_phi, phi_cur);
 			}

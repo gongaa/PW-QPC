@@ -171,7 +171,6 @@ void simulation_polar_codeword(int N, int K, int list_size, double pz, int num_t
                 }
             }
 
-
             if (ec.size() > largest_class_size) {
                 largest_class_size = ec.size();
                 largest_class = ec.data();
@@ -209,7 +208,14 @@ void simulation_polar_codeword(int N, int K, int list_size, double pz, int num_t
 
         for (int i = 0; i < weight.size(); i++) {
             is_SCL_weighted_deg_wrong = false;
-            if (max_class_idx[i][0] != desired_class_idx) {
+            auto& c = max_class_idx[i];
+            int to_compare = c[0];
+#ifndef COPY_LIST 
+            // SCL-C and SCL-E should guess the same if the SCL result is among the closest to the noise
+            if (c.size() > 1 && (std::find(c.begin(), c.end(), SCL_best_class_idx) != c.end()))
+                to_compare = SCL_best_class_idx;
+#endif
+            if (to_compare != desired_class_idx) {
                 SCL_num_Z_err_deg_list[i]++;
                 is_SCL_weighted_deg_wrong = true;
             }

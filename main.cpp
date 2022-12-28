@@ -40,8 +40,8 @@ int main(int argc, char** argv)
   double px, pz; 
   int p_min, p_max; // in percentage
   bool use_crc = false;
-  int version = 1;
-  int exact_t = 1;
+  int version = 0;
+  int exact_t = 0;
   int seed = 0;
   int print_interval = 1000;
   string con_str;
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
       iss >> use_crc;
     } else if (arg == "-exact") {
       iss >> exact_t;
-    } else if (arg == "-fast") {
+    } else if (arg == "-version") {
       iss >> version;
     } else if (arg == "-interval") {
       iss >> print_interval;

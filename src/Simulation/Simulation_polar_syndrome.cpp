@@ -193,7 +193,6 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
                 }
             }
 
-
             if (ec.size() > largest_class_size) {
                 largest_class_size = ec.size();
                 largest_class = ec.data();

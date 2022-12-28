@@ -19,7 +19,7 @@ euler = input("Running on Euler? 'y' or 'n': ") == 'y'
 if euler:
     runtime = input("Enter runtime: ")
 
-path = 'logs'
+path = 'logs_codeword'
 if not os.path.exists(path):    
     try:
         os.mkdir(path)

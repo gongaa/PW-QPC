@@ -37,10 +37,10 @@ The possible options are
 * `-l` - The list size. For $N=1024, K=513, l=512, n=10000$ the code runs ~48h on Euler. You can ask for more memory on Euler using `-R "rusage[mem=2048]"`.
 * `-n` - The number of samples. Ideally, the number of flips of the noise should follow a binomial distribution, but for $N=1024$, $10000$ samples are not enough to approximate the distribution well.
 * `-pz` - The probability of Z error happening on each bit (independently).
-* `-con` - The construction method. Can choose from `BEC` `RM` `PW` `HPW` `Q1`. Note that `BEC` suffers from the numerical problem so that the construction at $N\geq 256, K\geq 129$ is not CSS anymore. `HPW` gives the same construction as `PW` for $N=256, K=129$, but not for the other $K=\frac{N}{2}+1$.
+* `-con` - The construction method. Can choose from `BEC` `RM` `PW` `HPW` `Q1`. Note that `BEC` is not guaranteed to be CSS (e.g. at $N\geq 256, K\geq 129$). `HPW` gives the same construction as `PW` for $N=256, K=129$, but not for the other $K=\frac{N}{2}+1$.
 * `-exact` - When `exact` is set to $0$, the number of flips of the noise is supposed to follow a binomial distribution. When `exact` is set to a non zero integer $t$, only noise that has flips $\lfloor N\cdot p_z - t \rfloor$ or $\lceil N\cdot p_z + t \rceil$ are generated.
 * `-seed` - The random seed used to generate the noise.
-* `-fast` - Choose from `0` syndrome decoding that works for high rate, not memory efficient. `1` syndrome decoding that is memory efficient but does not support high rate for now ($K-\frac{N}{2}$ too large will trigger segmentation fault). `2` codeword decoding, you should only use `Q1` construction together with this version.
+* `-version` - Choose from `0` codeword decoding (default). `1` syndrome decoding. `2` direct syndrome decoding.
 * `-interval` - The print interval for showing intermediate results.
 
 

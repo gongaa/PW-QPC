@@ -102,7 +102,7 @@ void Decoder_polar_SCL::recursive_compute_llr(Node<Contents_SCL>* node_cur, int 
 	}
 }
 
-void Decoder_polar_SCL::partition(vector<int>& info_indices, unordered_map<int, vector<int>>& par, unordered_map<int, vector<int>>& flips, vector<int>& noisy_codeword, int& best_path_class_idx)
+void Decoder_polar_SCL::partition(vector<int>& info_indices, map<int, vector<int>>& par, map<int, vector<int>>& flips, vector<int>& noisy_codeword, int& best_path_class_idx)
 {
 	// partition into equivalence classes according to info bits
 	int size = info_indices.size();

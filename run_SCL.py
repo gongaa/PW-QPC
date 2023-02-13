@@ -17,7 +17,7 @@ euler = input("Running on Euler? 'y' or 'n': ") == 'y'
 if euler:
     runtime = input("Enter runtime: ")
 
-path = 'logs_SCL'
+path = 'logs_SCL_RM'
 if not os.path.exists(path):    
     try:
         os.mkdir(path)

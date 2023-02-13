@@ -136,7 +136,7 @@ void frozen_bits_generator_BSC_SC(const int& N, const int& K, const double& p, v
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
 }
 
-void frozen_bits_generator_PW(const int& N, const int& K, vector<bool>& frozen_bits)
+void frozen_bits_generator_PW(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits)
 {
     cerr << "PW construction" << endl;
 	vector<double> z(N, 0);
@@ -151,15 +151,17 @@ void frozen_bits_generator_PW(const int& N, const int& K, vector<bool>& frozen_b
 			if (bin[k]) temp += pow(base, k);
 		z[i] = temp;
 	}
-	std::fill(frozen_bits.begin(), frozen_bits.end(), 1);
+	std::fill(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), 1);
+	std::fill(Z_stab_info_bits.begin(), Z_stab_info_bits.end(), 0);
     vector<uint32_t> best_channels(N);
     std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
-    for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
-	for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+    for (int i = 0; i < Kz; i++) Z_code_frozen_bits[best_channels[i]] = 0;
+	for (int i = 0; i < Kz; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+	for (int i = 0; i < N-Kx; i++) Z_stab_info_bits[best_channels[i]] = 1;
 }
 
-void frozen_bits_generator_RM(const int& N, const int& K, vector<bool>& frozen_bits)
+void frozen_bits_generator_RM(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits)
 {
     cerr << "RM construction" << endl;
 	vector<double> z(N, 0);
@@ -174,15 +176,17 @@ void frozen_bits_generator_RM(const int& N, const int& K, vector<bool>& frozen_b
 		z[i] = weight + cnt[weight] * eps;
 		cnt[weight]++;
 	}
-	std::fill(frozen_bits.begin(), frozen_bits.end(), 1);
+	std::fill(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), 1);
+	std::fill(Z_stab_info_bits.begin(), Z_stab_info_bits.end(), 0);
     vector<uint32_t> best_channels(N);
     std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
-    for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
-	for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+    for (int i = 0; i < Kz; i++) Z_code_frozen_bits[best_channels[i]] = 0;
+	for (int i = 0; i < Kz; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+	for (int i = 0; i < N-Kx; i++) Z_stab_info_bits[best_channels[i]] = 1;
 }
 
-void frozen_bits_generator_HPW(const int& N, const int& K, vector<bool>& frozen_bits)
+void frozen_bits_generator_HPW(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits)
 {
     cerr << "HPW construction" << endl;
 	vector<double> z(N, 0);
@@ -198,32 +202,38 @@ void frozen_bits_generator_HPW(const int& N, const int& K, vector<bool>& frozen_
 			if (bin[k]) temp += pow(base, k) + 0.25 * pow(base_quad_root, k);
 		z[i] = temp;
 	}
-	std::fill(frozen_bits.begin(), frozen_bits.end(), 1);
+	std::fill(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), 1);
+	std::fill(Z_stab_info_bits.begin(), Z_stab_info_bits.end(), 0);
     vector<uint32_t> best_channels(N);
     std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
-    for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
-	for (int i = 0; i < K; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+    for (int i = 0; i < Kz; i++) Z_code_frozen_bits[best_channels[i]] = 0;
+	for (int i = 0; i < Kz; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
+	for (int i = 0; i < N-Kx; i++) Z_stab_info_bits[best_channels[i]] = 1;
 }
 
-bool construct_frozen_bits(CONSTRUCTION con, int& N, int& K, vector<bool>& frozen_bits) {
+bool construct_frozen_bits(CONSTRUCTION con, const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits) {
+	// the best Kz positions will be chosen as the info bits for Z code
+	// the best N-Kx positions will be chosen as the info bits for Z stabilizers
+	// the best N-Kz positions will be chosen as the info bits for X stabilizers (not in this function, as codeword decoding does not need X stabilizers)
     switch (con) {
         case BEC:
-        // frozen_bits_generator_BEC(N, K, pz, frozen_bits);
             cerr << "Do not use BEC for CSS code" << endl;
             return false;
         case RM:
-            frozen_bits_generator_RM(N, K, frozen_bits);
+            frozen_bits_generator_RM(N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
             break;
         case PW:
-            frozen_bits_generator_PW(N, K, frozen_bits);
+            frozen_bits_generator_PW(N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
             break;
         case HPW:
-            frozen_bits_generator_HPW(N, K, frozen_bits);
+            frozen_bits_generator_HPW(N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
             break;
-		case Q1:
-			std::fill(frozen_bits.begin(), frozen_bits.end(), 0);
-			for (int i = 0; i < N-K; i++) frozen_bits[i] = 1;
+		case Q1: // Kz+Kx=N+1, so N-Kx=Kz+1
+			std::fill(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), 1);
+			std::fill(Z_stab_info_bits.begin(), Z_stab_info_bits.end(), 0);
+			for (int i = 0; i < Kz; i++) Z_code_frozen_bits[N-i-1] = 0;
+			for (int i = 0; i < N-Kx; i++) Z_stab_info_bits[N-i-1] = 1;
 			break;
         default:
             cerr << "Currently not supported" << endl;

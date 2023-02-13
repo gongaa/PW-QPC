@@ -140,13 +140,13 @@ void frozen_bits_generator_AWGN_SC(const int& N, const int& K, const double& db,
 
 void frozen_bits_generator_BSC_SC(const int& N, const int& K, const double& p, vector<bool>& frozen_bits);
 
-void frozen_bits_generator_PW(const int& N, const int& K, vector<bool>& frozen_bits);
+void frozen_bits_generator_PW(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_frozen_bits);
 
-void frozen_bits_generator_RM(const int& N, const int& K, vector<bool>& frozen_bits);
+void frozen_bits_generator_RM(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_frozen_bits);
 
-void frozen_bits_generator_HPW(const int& N, const int& K, vector<bool>& frozen_bits);
+void frozen_bits_generator_HPW(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_frozen_bits);
 
-bool construct_frozen_bits(CONSTRUCTION con, int& N, int& K, vector<bool>& frozen_bits);
+bool construct_frozen_bits(CONSTRUCTION con, const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits);
 
 double phi_inv(double t);
 

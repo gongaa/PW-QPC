@@ -14,10 +14,11 @@ void print_polar_con(int N, int K, CONSTRUCTION con)
 {
     cerr << "N=" << N << ", K=" << K << endl;
     vector<bool> Z_code_frozen_bits(N, 0);
+    vector<bool> Z_stab_info_bits(N, 0);
     vector<bool> X_code_frozen_bits(N, 0);
     vector<bool> X_stab_frozen_bits(N, 1);
     vector<int>  X_stab_info_indices; // expect to have size 2*K-N
-    construct_frozen_bits(con, N, K, Z_code_frozen_bits);
+    construct_frozen_bits(con, N, K, K, Z_code_frozen_bits, Z_stab_info_bits);
     for (int i = 0; i < N; i++) X_code_frozen_bits[i] = Z_code_frozen_bits[N-1-i];
     for (int i = 0; i < N; i++) 
         if (Z_code_frozen_bits[i] == 0 && Z_code_frozen_bits[N-1-i] == 1) 
@@ -138,6 +139,7 @@ void test_syndrome_extraction(int N, int K, bool print)
     // the i^th row is the codeword obtained by setting only the i^th position
     // as info and others as frozen.
     vector<bool> frozen_bits(N, 0);
+    vector<bool> stab_info_bits(N, 0);
     vector<bool> reversed_frozen_bits(N, 0);
     vector<bool> stab_frozen_bits(N, 1);
     vector<int>  syndromes(N-K, 0);
@@ -146,7 +148,7 @@ void test_syndrome_extraction(int N, int K, bool print)
     vector<int>  output(N, 0);
     vector<int>  noise(N, 0);
     vector<vector<int>> parity_checks(N-K, vector<int>(N,0));
-    frozen_bits_generator_PW(N, K, frozen_bits);
+    frozen_bits_generator_PW(N, K, K, frozen_bits, stab_info_bits);
     for (int i = 0; i < N; i++) reversed_frozen_bits[i] = frozen_bits[N-1-i];
     for (int i = 0; i < N; i++)
         if (frozen_bits[i] == 0 && frozen_bits[N-1-i] == 1)
@@ -285,6 +287,7 @@ void test_generate_exact_flip(int N, double p, int num_total, int seed)
 void test_direct_syndrome_decoding(int N, int K, int list_size, double pz)
 {
     vector<bool> frozen_bits(N, 0);
+    vector<bool> stab_info_bits(N, 0);
     vector<int>  frozen_values(N, 0);
     vector<bool> stab_frozen_bits(N, 1);
     vector<int>  syndromes(N-K, 0);
@@ -300,7 +303,7 @@ void test_direct_syndrome_decoding(int N, int K, int list_size, double pz)
     vector<vector<int>> parity_checks(N-K, vector<int>(N,0));
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, 42);
     chn_bsc_q->set_prob(0, pz);
-    frozen_bits_generator_PW(N, K, frozen_bits);
+    frozen_bits_generator_PW(N, K, K, frozen_bits, stab_info_bits);
     for (int i = 0; i < N; i++)
         if (frozen_bits[i] == 0 && frozen_bits[N-1-i] == 1)
             stab_frozen_bits[i] = 0;

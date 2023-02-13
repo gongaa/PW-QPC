@@ -11,6 +11,7 @@ void simulation_polar_SCL(int N, int K, int L, double p, double db, double desig
     vector<double> llr_noisy_codeword(N, 0);
     vector<int> denoised_codeword(N);
     vector<bool> frozen_bits(N, 0);
+    vector<bool> stab_info_bits(N, 0);
 #ifdef CHN_AWGN      // flag in Simulation.hpp
     double code_rate = (double)K / N;
     double sigma = 1 / sqrt(2 * code_rate * db2val(db));
@@ -20,10 +21,10 @@ void simulation_polar_SCL(int N, int K, int L, double p, double db, double desig
     Channel_AWGN* chn_awgn = new Channel_AWGN(N, sigma, design_sigma, 42);
     // frozen_bits_generator_AWGN(N, K, design_snr, frozen_bits);
     // frozen_bits_generator_AWGN_SC(N, K, design_snr, frozen_bits);
-    frozen_bits_generator_PW(N, K, frozen_bits);
+    frozen_bits_generator_PW(N, K, K, frozen_bits, stab_info_bits);
 #else
     Channel_BSC* chn_bsc = new Channel_BSC(N, p, 42);
-    construct_frozen_bits(con, N, K, frozen_bits);
+    construct_frozen_bits(con, N, K, K, frozen_bits, stab_info_bits);
 #endif
     Encoder_polar* encoder = new Encoder_polar(K, N, frozen_bits);
     Decoder_polar_SCL* decoder = new Decoder_polar_SCL(K, N, L, frozen_bits);
@@ -57,12 +58,13 @@ void simulation_stab_MW_codewords(int N, int K)
 {
 
     vector<bool> Z_code_frozen_bits(N, 0);
+    vector<bool> Z_stab_info_bits(N, 0);
     vector<bool> X_stab_frozen_bits(N, 1);
     vector<bool> worst_frozen_bits(N, 1);
     vector<int> codeword_Z(N);
     vector<int> stab_X(N);
     vector<int> codeword(N);
-    frozen_bits_generator_PW(N, K, Z_code_frozen_bits);
+    frozen_bits_generator_PW(N, K, K, Z_code_frozen_bits, Z_stab_info_bits);
     for (int i = 0; i < N; i++) 
         if (Z_code_frozen_bits[i] == 0 && Z_code_frozen_bits[N-1-i] == 1) 
             X_stab_frozen_bits[i] = 0;

@@ -13,12 +13,11 @@ while True:
     con = input('Enter construction method (PW, HPW, RM): ')
     if con in ['PW', 'HPW', 'RM']:
         break
-exact = input("Enter exact interval (0 to not use exact): ")
 euler = input("Running on Euler? 'y' or 'n': ") == 'y'
 if euler:
     runtime = input("Enter runtime: ")
 
-path = 'logs_thresh'
+path = 'logs_SCL_thresh'
 if not os.path.exists(path):    
     try:
         os.mkdir(path)
@@ -26,7 +25,7 @@ if not os.path.exists(path):
         print(error)   
 
 def run_exp(s):
-    dir = 'N'+N+'_K'+K+'_l'+l+'_s'+s+'_n'+n+'_exact'+exact+'_'+con
+    dir = 'N'+N+'_K'+K+'_l'+l+'_s'+s+'_n'+n+'_'+con
     try:
         os.mkdir(path+'/'+dir)
     except OSError as error:
@@ -35,7 +34,7 @@ def run_exp(s):
     print("Your results will be saved under the directory " + path + "/" + dir)
 
     for pz in np.arange(float(pz_min), float(pz_max), 0.001):
-        cmd = "./build/apps/program -N "+N+" -K "+K+" -l "+l+" -seed "+s+" -n "+n+" -exact "+exact+ " -con "+con+" -pz "+str(round(pz,3))
+        cmd = "./build/apps/program -N "+N+" -K "+K+" -l "+l+" -seed "+s+" -n "+n+" -con "+con+" -pz "+str(round(pz,3))
         dest = path + "/" + dir + "/pz" + str(int(round(pz,3)*1000)) + ".log"
         if euler:
             process = subprocess.Popen(['bsub', '-W', runtime+':00', cmd+' &> '+dest])

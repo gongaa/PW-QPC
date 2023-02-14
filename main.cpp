@@ -36,7 +36,7 @@ int main(int argc, char** argv)
   // which code to use
   // which channel to use and what's their parameters.
   int m, rx, rz, list_size, n = 1000;
-  int N = 1024, K = 513;
+  int N = 1024, Kz = 513, Kx = 513;
   double px, pz; 
   int p_min, p_max; // in percentage
   bool use_crc = false;
@@ -61,8 +61,10 @@ int main(int argc, char** argv)
       iss >> rz;
     } else if (arg == "-N")  {
       iss >> N;
-    } else if (arg == "-K")  {
-      iss >> K;
+    } else if (arg == "-Kz") {
+      iss >> Kz;
+    } else if (arg == "-Kx") {
+      iss >> Kx;
     } else if (arg == "-px") {
       iss >> px;  
     } else if (arg == "-pz") {
@@ -103,11 +105,11 @@ int main(int argc, char** argv)
   // test_direct_syndrome_decoding(N, K, list_size, pz);
   auto start = std::chrono::high_resolution_clock::now();
   if (version == 0)
-    simulation_polar_codeword(N, K, list_size, pz, n, con, exact_t, seed, print_interval);
+    simulation_polar_codeword(N, Kz, Kx, list_size, pz, n, con, exact_t, seed, print_interval);
   else if (version == 1)
-    simulation_polar_syndrome_direct(N, K, list_size, pz, n, con, exact_t, seed, print_interval);
+    simulation_polar_syndrome_direct(N, Kz, Kx, list_size, pz, n, con, exact_t, seed, print_interval);
   else
-    simulation_polar_syndrome(N, K, list_size, pz, n, con, exact_t, seed, print_interval);
+    simulation_polar_syndrome(N, Kz, Kx, list_size, pz, n, con, exact_t, seed, print_interval);
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
   cerr << "Finish in " << duration.count() << " s" << endl;

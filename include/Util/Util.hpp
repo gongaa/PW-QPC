@@ -148,6 +148,8 @@ void frozen_bits_generator_HPW(const int& N, const int& Kz, const int& Kx, vecto
 
 bool construct_frozen_bits(CONSTRUCTION con, const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits);
 
+void print_mixing_factor(vector<bool>& frozen_bits);
+
 double phi_inv(double t);
 
 double phi(double t);

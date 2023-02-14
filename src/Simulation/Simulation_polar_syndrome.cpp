@@ -1,8 +1,7 @@
 #include "Simulation/Simulation.hpp"
 using namespace std;
-void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
+void simulation_polar_syndrome(int N, int Kz, int Kx, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
 {
-    int Kx = K, Kz= K;
     cerr << "Simulation Polar syndrome decoding N=" << N << ", Kx=" << Kx << ", Kz=" << Kz << ", l=" << list_size << ", pz=" << pz 
          << ", #samples=" << num_total << ", seed=" << seed << endl;
     vector<int>  desired_Z(N, 1);
@@ -11,7 +10,6 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     vector<int>  SCL_denoised_codeword_Z(N);
     vector<bool> Z_code_frozen_bits(N, 0);
     vector<bool> Z_stab_info_bits(N, 0);
-    vector<bool> X_code_frozen_bits(N, 0);
     vector<bool> X_stab_info_bits(N, 0);
     // Z type noisy codeword has the syndrome at the N-Kz frozen positions.
 
@@ -23,14 +21,14 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     vector<int>  output(N, 0);
 
     construct_frozen_bits(con, N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
+    print_mixing_factor(Z_code_frozen_bits);
 
     // N-Kx of Z_stab_info_bits are 1. N-Kx of X_code_frozen_bits are 1.
     // N-Kz of Z_code_frozen_bits are 1. N-Kz of X_stab_info_bits are 1.
-    for (int i = 0; i < N; i++) X_code_frozen_bits[N-1-i] = Z_stab_info_bits[i];
     for (int i = 0; i < N; i++) X_stab_info_bits[N-1-i] = Z_code_frozen_bits[i];
             
-    Encoder_polar* encoder_Z         = new Encoder_polar(K, N, Z_code_frozen_bits);
-    Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(K, N, list_size, Z_code_frozen_bits);
+    Encoder_polar* encoder_Z         = new Encoder_polar(Kz, N, Z_code_frozen_bits);
+    Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(Kz, N, list_size, Z_code_frozen_bits);
 
     int j = 0;
     for (int i = 0; i < N; i++) {
@@ -104,7 +102,7 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
         // from syndrome back to a noisy codeword
         j = 0;
         for (int i = 0; i < N; i++) {
-            if (X_code_frozen_bits[N-i-1]) {
+            if (X_stab_info_bits[i]) {
                 noisy_codeword_Z[i] = X_stab_syndromes[j++];
             } else noisy_codeword_Z[i] = 0; // TODO: make it random
         }
@@ -187,9 +185,8 @@ void simulation_polar_syndrome(int N, int K, int list_size, double pz, int num_t
     cerr << "error due to SCL smaller " << SCL_smaller << endl;
 }
 
-void simulation_polar_syndrome_direct(int N, int K, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
+void simulation_polar_syndrome_direct(int N, int Kz, int Kx, int list_size, double pz, int num_total, CONSTRUCTION con, int exact_t, int seed, int interval)
 {
-    int Kx = K, Kz = K;
     cerr << "Simulation Polar direct syndrome decoding N=" << N << ", Kx=" << Kx << ", Kz=" << Kz << ", l=" << list_size << ", pz=" << pz 
          << ", #samples=" << num_total << ", seed=" << seed << endl;
     vector<int>  desired_Z(N, 1);
@@ -201,7 +198,7 @@ void simulation_polar_syndrome_direct(int N, int K, int list_size, double pz, in
     vector<int>  Z_code_frozen_values(N, 0);
     vector<bool> X_stab_info_bits(N, 1);
 
-    int num_stab = N-K;
+    int num_stab = N-Kz;
     vector<int>  X_stab_syndromes(num_stab, 0);
     vector<vector<int>> X_stab(num_stab, vector<int>(N,0));
 
@@ -209,11 +206,12 @@ void simulation_polar_syndrome_direct(int N, int K, int list_size, double pz, in
     vector<int>  output(N, 0);
 
     construct_frozen_bits(con, N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
+    print_mixing_factor(Z_code_frozen_bits);
 
     for (int i = 0; i < N; i++) X_stab_info_bits[N-1-i] = Z_code_frozen_bits[i];
 
-    Encoder_polar* encoder_Z         = new Encoder_polar(K, N, Z_code_frozen_bits);
-    Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(K, N, list_size, Z_code_frozen_bits);
+    Encoder_polar* encoder_Z         = new Encoder_polar(Kz, N, Z_code_frozen_bits);
+    Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(Kz, N, list_size, Z_code_frozen_bits);
 
     int j = 0;
     for (int i = 0; i < N; i++) {

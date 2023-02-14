@@ -1,8 +1,7 @@
 #include "Simulation/Simulation.hpp"
 using namespace std;
-void simulation_polar_codeword(int N, int K, int list_size, double pz, int num_total,  CONSTRUCTION con, int exact_t, int seed, int print_interval)
+void simulation_polar_codeword(int N, int Kz, int Kx, int list_size, double pz, int num_total,  CONSTRUCTION con, int exact_t, int seed, int print_interval)
 {
-    int Kx = K, Kz = K;
     cerr << "Simulation Polar codeword decoding N=" << N << ", Kx=" << Kx << ", Kz=" << Kz << ", l=" << list_size << ", pz=" << pz 
          << ", #samples=" << num_total << ", seed=" << seed << endl;
     vector<int> info_bits_Z(Kz);
@@ -17,9 +16,10 @@ void simulation_polar_codeword(int N, int K, int list_size, double pz, int num_t
     // Z equivalence classes (size Kz+Kx-N) = Z code (size Kz) quotient Z stablizers (size N-Kx)
 
     construct_frozen_bits(con, N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
+    print_mixing_factor(Z_code_frozen_bits);
 
-    Encoder_polar* encoder_Z = new Encoder_polar(K, N, Z_code_frozen_bits);
-    Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(K, N, list_size, Z_code_frozen_bits);
+    Encoder_polar* encoder_Z = new Encoder_polar(Kz, N, Z_code_frozen_bits);
+    Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(Kz, N, list_size, Z_code_frozen_bits);
 
     vector<int>  Z_class_info_indices; // expect to have size Kz+Kx-N
     for (int i = 0; i < N; i++)
@@ -70,7 +70,7 @@ void simulation_polar_codeword(int N, int K, int list_size, double pz, int num_t
         is_SCL_wrong = false; is_SCL_deg_wrong = false; is_SCL_weighted_deg_wrong = false;
         // generate_random(K, info_bits_Z.data()); // otherwise if all-zero is among the closest to the noise, SCL will always guess correctly
         // generate_random is causing extra randomness other than the BSC channel
-        for (int i = 0; i < K; i++) info_bits_Z[i] = d(gen);
+        for (int i = 0; i < Kz; i++) info_bits_Z[i] = d(gen);
         encoder_Z->encode(info_bits_Z.data(), desired_Z.data(), 0);
         // generate noise
         if (!exact_t) {
@@ -128,9 +128,7 @@ void simulation_polar_codeword(int N, int K, int list_size, double pz, int num_t
 
         for (int i = 0; i < weight.size(); i++) {
             is_SCL_weighted_deg_wrong = false;
-            if (max_class_idx[i].size() > 1) {
-                cerr << "turn idx " << turn_idx << " SCL-C multiple guess max_class_idx" << endl;
-            }
+            // if (max_class_idx[i].size() > 1) cerr << "turn idx " << turn_idx << " SCL-C multiple guess max_class_idx" << endl;
             auto& c = max_class_idx[i];
             int to_compare = c[0];
             // SCL-C and SCL-E should guess the same if the SCL result is among the closest to the noise

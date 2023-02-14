@@ -241,3 +241,14 @@ bool construct_frozen_bits(CONSTRUCTION con, const int& N, const int& Kz, const 
     }
     return true;
 }
+
+void print_mixing_factor(vector<bool>& frozen_bits) {
+	// the mixing factor is the number of information bits that appear before the last frozen bit
+	int last_frozen_bit = -1;
+	int mixing_factor = 0;
+	for (int i = 0; i < frozen_bits.size(); i++)
+		if (frozen_bits[i]) last_frozen_bit = i;
+	for (int i = 0; i < last_frozen_bit; i++)
+		if (!frozen_bits[i]) mixing_factor++;
+	cerr << "mixing factor is " << mixing_factor << endl;
+}

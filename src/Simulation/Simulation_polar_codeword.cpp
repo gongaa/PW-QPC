@@ -97,7 +97,7 @@ void simulation_polar_codeword(int N, int Kz, int Kx, int list_size, double pz, 
             path_info[i] = desired_Z[Z_class_info_indices[i]];
         desired_class_idx = binary2decimal(path_info, info_size);
         if (SCL_best_class_idx != desired_class_idx) { is_SCL_deg_wrong = true; SCL_num_Z_err_deg++; }
-        if (is_SCL_deg_wrong) {
+        if (is_SCL_wrong) {
             if (num_flips == SCL_num_flips) equal_flips_err++;
             if (SCL_num_flips < num_flips)  SCL_smaller++;
         }
@@ -120,7 +120,7 @@ void simulation_polar_codeword(int N, int Kz, int Kx, int list_size, double pz, 
                     max_class_prob[i] = temp_prob;
                     max_class_idx[i].clear();
                     max_class_idx[i].push_back(k);
-                } else if (temp_prob > (max_class_prob[i] - std::numeric_limits<double>::epsilon())) {
+                } else if (temp_prob >= (max_class_prob[i] - std::numeric_limits<double>::epsilon())) {
                     max_class_idx[i].push_back(k);
                 }
             }
@@ -128,7 +128,6 @@ void simulation_polar_codeword(int N, int Kz, int Kx, int list_size, double pz, 
 
         for (int i = 0; i < weight.size(); i++) {
             is_SCL_weighted_deg_wrong = false;
-            // if (max_class_idx[i].size() > 1) cerr << "turn idx " << turn_idx << " SCL-C multiple guess max_class_idx" << endl;
             auto& c = max_class_idx[i];
             int to_compare = c[0];
             // SCL-C and SCL-E should guess the same if the SCL result is among the closest to the noise
@@ -138,11 +137,10 @@ void simulation_polar_codeword(int N, int Kz, int Kx, int list_size, double pz, 
                 SCL_num_Z_err_deg_list[i]++;
                 is_SCL_weighted_deg_wrong = true;
             }
-            if (!is_SCL_weighted_deg_wrong && is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) {
-                // cerr << "turn " << turn_idx << " degeneracy helps by not random guessing" << endl;
+            if (!is_SCL_weighted_deg_wrong && is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) 
                 degeneracy_helps[i]++;
-            }
-            if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong) degeneracy_worse[i]++;
+            if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) 
+                degeneracy_worse[i]++;
         }
 
         if (turn_idx % print_interval == (print_interval-1)) {

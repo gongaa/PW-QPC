@@ -18,6 +18,8 @@ euler = input("Running on Euler? 'y' or 'n': ") == 'y'
 if euler:
     runtime = input("Enter runtime: ")
 
+# path = 'logs_Q1_PW_list_size'
+# path = 'logs_Q1_PW_new'
 path = 'logs_Q1_PW'
 if not os.path.exists(path):    
     try:

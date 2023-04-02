@@ -10,36 +10,17 @@ void simulation_polar_syndrome(int N, int Kz, int Kx, int list_size, double pz, 
     vector<int>  SCL_denoised_codeword_Z(N);
     vector<bool> Z_code_frozen_bits(N, 0);
     vector<bool> Z_stab_info_bits(N, 0);
-    vector<bool> X_stab_info_bits(N, 0);
     // Z type noisy codeword has the syndrome at the N-Kz frozen positions.
-
-    int num_stab = N-Kz;
-    vector<int>  X_stab_syndromes(num_stab, 0);
-    vector<vector<int>> X_stab(num_stab, vector<int>(N,0));
+    vector<int> X_stab_syndromes(N, 0);
 
     vector<int>  input(N, 0);
     vector<int>  output(N, 0);
 
     construct_frozen_bits(con, N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
     print_mixing_factor(Z_code_frozen_bits);
-
-    // N-Kx of Z_stab_info_bits are 1. N-Kx of X_code_frozen_bits are 1.
-    // N-Kz of Z_code_frozen_bits are 1. N-Kz of X_stab_info_bits are 1.
-    for (int i = 0; i < N; i++) X_stab_info_bits[N-1-i] = Z_code_frozen_bits[i];
-            
+    // N-Kx of Z_stab_info_bits are 1. N-Kz of Z_code_frozen_bits are 1.
     Encoder_polar* encoder_Z         = new Encoder_polar(Kz, N, Z_code_frozen_bits);
     Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(Kz, N, list_size, Z_code_frozen_bits);
-
-    int j = 0;
-    for (int i = 0; i < N; i++) {
-        if (X_stab_info_bits[i]) {
-            input[i] = 1;
-            output = input;
-            encoder_Z->light_encode(output.data());
-            X_stab[j++] = output;
-            input[i] = 0;
-        }
-    }
     
     Channel_BSC_q* chn_bsc_q = new Channel_BSC_q(N, 0, 0, seed);
     chn_bsc_q->set_prob(0, pz);
@@ -95,18 +76,16 @@ void simulation_polar_syndrome(int N, int Kz, int Kx, int list_size, double pz, 
             } while (num_flips < (floor_Z - exact_t) || num_flips > (ceil_Z + exact_t));
         }
         total_flips += num_flips;
+
         // obtain syndrome
-        for (int i = 0; i < num_stab; i++) {
-            X_stab_syndromes[i] = dot_product(N, X_stab[i], noise_Z);
-        }
+        copy(noise_Z.data(), noise_Z.data() + N, X_stab_syndromes.data());
+        encoder_Z->light_encode(X_stab_syndromes.data());
         // from syndrome back to a noisy codeword
-        j = 0;
         for (int i = 0; i < N; i++) {
-            if (X_stab_info_bits[i]) {
-                noisy_codeword_Z[i] = X_stab_syndromes[j++];
-            } else noisy_codeword_Z[i] = 0; // TODO: make it random
+            if(!Z_code_frozen_bits[i]) noisy_codeword_Z[i] = 0;
+            else noisy_codeword_Z[i] = X_stab_syndromes[i];
         }
-        encoder_Z->transpose_encode(noisy_codeword_Z.data());
+        encoder_Z->light_encode(noisy_codeword_Z.data());
         // SCL decode
         for (int i = 0; i < N; i++) llr_noisy_codeword_Z[i] = noisy_codeword_Z[i] ? -log((1-pz)/pz) : log((1-pz)/pz); // 0 -> 1.0; 1 -> -1.0
         pm_best = SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
@@ -144,7 +123,7 @@ void simulation_polar_syndrome(int N, int Kz, int Kx, int list_size, double pz, 
                     max_class_prob[i] = temp_prob;
                     max_class_idx[i].clear();
                     max_class_idx[i].push_back(k);
-                } else if (temp_prob > (max_class_prob[i] - std::numeric_limits<double>::epsilon())) {
+                } else if (temp_prob >= (max_class_prob[i] - std::numeric_limits<double>::epsilon())) {
                     max_class_idx[i].push_back(k);
                 }
             }
@@ -152,18 +131,19 @@ void simulation_polar_syndrome(int N, int Kz, int Kx, int list_size, double pz, 
 
         for (int i = 0; i < weight.size(); i++) {
             is_SCL_weighted_deg_wrong = false;
-            if (max_class_idx[i].size() > 1) {
-                cerr << "turn idx " << turn_idx << " SCL-C multiple guess" << endl;
-            }
-            if (max_class_idx[i][0] != desired_class_idx) {
+            auto& c = max_class_idx[i];
+            int to_compare = c[0];
+            // SCL-C and SCL-E should guess the same if the SCL result is among the closest to the noise
+            if (c.size() > 1 && (std::find(c.begin(), c.end(), SCL_best_class_idx) != c.end()))
+                to_compare = SCL_best_class_idx;
+            if (to_compare != desired_class_idx) {
                 SCL_num_Z_err_deg_list[i]++;
                 is_SCL_weighted_deg_wrong = true;
             }
-            if (!is_SCL_weighted_deg_wrong && is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) {
-                // cerr << "turn " << turn_idx << " degeneracy helps by not random guessing" << endl;
+            if (!is_SCL_weighted_deg_wrong && is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) 
                 degeneracy_helps[i]++;
-            }
-            if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong) degeneracy_worse[i]++;
+            if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) 
+                degeneracy_worse[i]++;
         }
 
         if (turn_idx % interval == (interval-1)) {
@@ -196,11 +176,7 @@ void simulation_polar_syndrome_direct(int N, int Kz, int Kx, int list_size, doub
     vector<bool> Z_code_frozen_bits(N, 0);
     vector<bool> Z_stab_info_bits(N, 0);
     vector<int>  Z_code_frozen_values(N, 0);
-    vector<bool> X_stab_info_bits(N, 1);
-
-    int num_stab = N-Kz;
-    vector<int>  X_stab_syndromes(num_stab, 0);
-    vector<vector<int>> X_stab(num_stab, vector<int>(N,0));
+    vector<int> X_stab_syndromes(N, 0);
 
     vector<int>  input(N, 0);
     vector<int>  output(N, 0);
@@ -208,21 +184,8 @@ void simulation_polar_syndrome_direct(int N, int Kz, int Kx, int list_size, doub
     construct_frozen_bits(con, N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
     print_mixing_factor(Z_code_frozen_bits);
 
-    for (int i = 0; i < N; i++) X_stab_info_bits[N-1-i] = Z_code_frozen_bits[i];
-
     Encoder_polar* encoder_Z         = new Encoder_polar(Kz, N, Z_code_frozen_bits);
     Decoder_polar_SCL* SCL_decoder_Z = new Decoder_polar_SCL(Kz, N, list_size, Z_code_frozen_bits);
-
-    int j = 0;
-    for (int i = 0; i < N; i++) {
-        if (X_stab_info_bits[i]) {
-            input[i] = 1;
-            output = input;
-            encoder_Z->light_encode(output.data());
-            X_stab[j++] = output;
-            input[i] = 0;
-        }
-    } 
 
     vector<int>  Z_class_info_indices; // expect to have size Kz+Kx-N
     for (int i = 0; i < N; i++)
@@ -279,20 +242,17 @@ void simulation_polar_syndrome_direct(int N, int Kz, int Kx, int list_size, doub
             } while (num_flips < (floor_Z - exact_t) || num_flips > (ceil_Z + exact_t));
         }
         total_flips += num_flips;
+
         // obtain syndrome
-        for (int i = 0; i < num_stab; i++) {
-            X_stab_syndromes[i] = dot_product(N, X_stab[i], noise_Z);
-        }
-        // put reversed syndrome into frozen values
-        j = num_stab - 1;
+        copy(noise_Z.data(), noise_Z.data() + N, X_stab_syndromes.data());
+        encoder_Z->light_encode(X_stab_syndromes.data());
+        // from syndrome back to a noisy codeword
         for (int i = 0; i < N; i++) 
-            if (Z_code_frozen_bits[i]) Z_code_frozen_values[i] = X_stab_syndromes[j--];
+            if(Z_code_frozen_bits[i]) Z_code_frozen_values[i] = X_stab_syndromes[i];
         SCL_decoder_Z->set_frozen_values(Z_code_frozen_values);
         // SCL decode
         pm_best = SCL_decoder_Z->decode(llr_noisy_codeword_Z.data(), SCL_denoised_codeword_Z.data(), 0);
         SCL_num_flips = count_flip(N, SCL_denoised_codeword_Z, noisy_codeword_Z);
-        // reverse noise
-        bit_reversal(noise_Z);
 
         // obtain the partition and number of flips
         equiv_class.clear(); flips.clear();
@@ -308,7 +268,6 @@ void simulation_polar_syndrome_direct(int N, int Kz, int Kx, int list_size, doub
             if (num_flips == SCL_num_flips) equal_flips_err++;
             if (SCL_num_flips < num_flips)  SCL_smaller++;
         }
-
         // cerr << "num_flips: " << num_flips << " , SCL_num_flips: " << SCL_num_flips << endl;
 
         // determine max class with respect to weighted degeneracy
@@ -338,17 +297,20 @@ void simulation_polar_syndrome_direct(int N, int Kz, int Kx, int list_size, doub
         }
        
         for (int i = 0; i < weight.size(); i++) {
-            // if (max_class_idx[i].size() > 1) cerr << "multiple max class" << endl;
             is_SCL_weighted_deg_wrong = false;
-            if (max_class_idx[i][0] != desired_class_idx) {
+            auto& c = max_class_idx[i];
+            int to_compare = c[0];
+            // SCL-C and SCL-E should guess the same if the SCL result is among the closest to the noise
+            if (c.size() > 1 && (std::find(c.begin(), c.end(), SCL_best_class_idx) != c.end()))
+                to_compare = SCL_best_class_idx;
+            if (to_compare != desired_class_idx) {
                 SCL_num_Z_err_deg_list[i]++;
                 is_SCL_weighted_deg_wrong = true;
             }
-            if (!is_SCL_weighted_deg_wrong && is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) {
-                // cerr << "turn " << turn_idx << " degeneracy helps by not random guessing" << endl;
+            if (!is_SCL_weighted_deg_wrong && is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) 
                 degeneracy_helps[i]++;
-            }
-            if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong) degeneracy_worse[i]++;
+            if (is_SCL_weighted_deg_wrong && !is_SCL_deg_wrong && (max_class_idx[i].size() == 1)) 
+                degeneracy_worse[i]++;
         }
 
         if (turn_idx % interval == (interval-1)) {

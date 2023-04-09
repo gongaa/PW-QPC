@@ -42,11 +42,11 @@ int compare_equiv_classes();
 // Polar
 void simulation_polar_SCL(int N, int K, int L, double p, double db, double design_snr, CONSTRUCTION con=CONSTRUCTION::PW, int num_total=1000); 
 
-void simulation_polar_codeword(int N, int Kz, int Kx, int L, double p, int num_total, CONSTRUCTION con, int exact_t=0, int seed=42, int print_interval=100);
+void simulation_polar_codeword(int N, int Kz, int Kx, int L, double p, int num_total, CONSTRUCTION con, double beta, int seed=42, int print_interval=1000);
 
-void simulation_polar_syndrome(int N, int Kz, int Kx, int L, double p, int num_total, CONSTRUCTION con, int exact_t=0, int seed=42, int print_interval=100);
+void simulation_polar_syndrome(int N, int Kz, int Kx, int L, double p, int num_total, CONSTRUCTION con, double beta, int seed=42, int print_interval=1000);
 
-void simulation_polar_syndrome_direct(int N, int Kz, int Kx, int L, double p, int num_total, CONSTRUCTION con, int exact_t=0, int seed=42, int print_interval=100);
+void simulation_polar_syndrome_direct(int N, int Kz, int Kx, int L, double p, int num_total, CONSTRUCTION con, double beta, int seed=42, int print_interval=1000);
 
 void simulation_stab_MW_codewords(int N, int K);
 

@@ -18,8 +18,6 @@ euler = input("Running on Euler? 'y' or 'n': ") == 'y'
 if euler:
     runtime = input("Enter runtime: ")
 
-# path = 'logs_Q1_PW_list_size'
-# path = 'logs_Q1_PW_new'
 path = 'logs_Q1_PW'
 if not os.path.exists(path):    
     try:
@@ -27,6 +25,7 @@ if not os.path.exists(path):
     except OSError as error:
         print(error)   
 
+# the optimal info position at odd log(N) is subject to change
 Q1_dict = {'8': 4, '16': 7, '32': 8, '64': 23, '128': 16, '256': 91, 
            '512': 32, '1024': 363, '2048': 96, '4096': 1451}
 

@@ -1,46 +1,48 @@
-# QRM-List-Decoder
+# List Decoder for PW-QPC 
 
-This repo contains the Reed-Muller code and the Dumer's list decoder in LLR form. My implementation is based on both [ECCLab](https://github.com/kshabunov/ecclab) and [aff3ct](https://github.com/aff3ct/aff3ct).
-Compared to [ECCLab](https://github.com/kshabunov/ecclab), all the codes are in C++ style and all the calculations are based on log-likelihood ratio. Furthermore, the tree metric construction and (optimized) copy follows from [aff3ct](https://github.com/aff3ct/aff3ct) but on an unbalaneced tree. Alternatively, people can use the polar code with the Reed-Muller construction. They give very similar FER performance.
+This repo contains the source code of the paper ??, where the Polarization Weight family of Quantum Polar Code is considered. 
 
-This repo also contains the polar code and the SCL decoder (taken from [aff3ct](https://github.com/aff3ct/aff3ct) but deleted the multi-kernel part).
-The code organization is a much simplified version of [aff3ct](https://github.com/aff3ct/aff3ct), with the modulator demodulator modules and some design patterns peeled off. 
-Various polar code construction methods are included, like the Arikan's BEC, the Gaussian Approximation, the Polarization Weight, the Higher Order Polarization Weight methods. I also wrote a Reed-Muller construction so that $K$ does not have to be $m\choose \leq r$.
+This repo also contains some useful resources for the classical error correction community. See the organization tree below for where the files are located at.
 
-The goal of this project is to explore for the quantum polar code, whether the codewords in the list can be used to approximate the Maximum Likelihood decoding. Our approach is to weigh each codeword differently according to the distance to the noise (that is compatible with the syndrome), and then choose the equivalence class that has the maximum probability.
-Default decoding is syndrome decoding instead of codeword decoding.
+My (classical) polar code implementation is a simplified version of [aff3ct](https://github.com/aff3ct/aff3ct). I also reimplemented the Dumer's list decoder [ECCLab](https://github.com/kshabunov/ecclab) for the Reed-Muller code. Alternatively, people can use the polar code with the Reed-Muller construction. They give very similar FER performance.
 
 ## Build and Run
 
-To be compiled on Euler, first clone this repo and then run the following before `make`:
-```Shell
-env2lmod
-modoule load gcc/9.3.0
+Clone this repo, then build and run as:
 ```
-Then build and run as:
-```
-mkdir logs
 make
-./build/apps/program -N 1024 -K 513 -l 128 -pz 0.1 -n 10000 -con PW -exact 0 -seed 25
+mkdir logs
+./build/apps/program -N 128 -Kx 65 -Kz 65 -l 16 -px 0.1 -n 10000 -con PW -seed 42 &> logs/Polar_N128_Kx65_Kz65_l16_pz10_n10000_conPW_seed42.log
 ```
-On Euler, instead of the last command, run the following
-```
-bsub -W 24:00 "./build/apps/program -N 1024 -K 513 -l 128 -pz 0.1 -n 10000 -con PW -exact 0 -seed 25 &> logs/Polar_N1024_K513_l128_pz10_n10000_conPW_exact0_seed25_syndrome.log"
-```
+Alternatively, you can run the executable by interacting with the run_SCL.py script. 
 
-### Arguments
-We are using independent X and Z decoding. Currently the noise is generated and decoded unilaterally.
+## Arguments
+The independent bit- and phase-flip error model is used, hence only independent X and Z decoding is implemented. 
+By default, it simulates an ($N,K_x,K_z$) PW-QPC in the Z basis, i.e., detect and correct bit-flip (X-type) errors. To simulate this code in the X basis (correct phase-flip errors), it suffices to simulate an ($N,K_z,K_x$) PW-QPC in the Z basis.
 
 The possible options are
-* `-N` - The length of the code, use a power of two so that it is CSS.
-* `-K` - The number of information bits, use $\frac{N}{2}+1$ to make the degeneracy effect the most obvious.
-* `-l` - The list size. For $N=1024, K=513, l=512, n=10000$ the code runs ~48h on Euler. You can ask for more memory on Euler using `-R "rusage[mem=2048]"`.
-* `-n` - The number of samples. Ideally, the number of flips of the noise should follow a binomial distribution, but for $N=1024$, $10000$ samples are not enough to approximate the distribution well.
-* `-pz` - The probability of Z error happening on each bit (independently).
-* `-con` - The construction method. Can choose from `BEC` `RM` `PW` `HPW` `Q1`. Note that `BEC` is not guaranteed to be CSS (e.g. at $N\geq 256, K\geq 129$). `HPW` gives the same construction as `PW` for $N=256, K=129$, but not for the other $K=\frac{N}{2}+1$.
-* `-exact` - When `exact` is set to $0$, the number of flips of the noise is supposed to follow a binomial distribution. When `exact` is set to a non zero integer $t$, only noise that has flips $\lfloor N\cdot p_z - t \rfloor$ or $\lceil N\cdot p_z + t \rceil$ are generated.
+* `-N` - The length of the code, use a power of two.
+* `-Kx`,`-Kz` - The number of information bits in X and Z basis. $K_x+K_z$ should be larger than $N$.
+* `-l` - The list size. For $N=1024,\ K_x=K_z=513,\ l=128$, $10000$ samples take 4 hours on [Euler](https://scicomp.ethz.ch/wiki/FAQ). 
+* `-n` - The number of samples. 
+* `-px` - The probability of bit-flip error happening on each bit (independently).
+* `-con` - The construction method. Can choose from `PW` `HPW` `RM` `Q1` `BEC`. Note that the quantum polar code constructed from `BEC` is not guaranteed to be CSS.
 * `-seed` - The random seed used to generate the noise.
-* `-version` - Choose from `0` codeword decoding (default). `1` syndrome decoding. `2` direct syndrome decoding.
-* `-interval` - The print interval for showing intermediate results.
+* `-version` - Choose from `0` codeword decoding (default). `1` syndrome decoding.
+* `-interval` - The printing interval for showing intermediate results. Default value is $1000$.
+* `-beta` - The $\beta$ used in the `PW` construction. Default value is $2^{1/4}$.
 
+
+## Directory Layout
+    .
+    ├── run_SCL.py                               # run ./build/apps/program 
+    ├── distance.py                              # determine the distance of the code
+    └── src                   
+        ├── Util
+        │   └── Frozen_bits_generator.cpp        # construction methods
+        └── Simulation         
+            ├── Simulation_polar_SCL.cpp         # classical polar code
+            ├── Simulation_RM_SCL.cpp            # classical RM code
+            ├── Simulation_polar_codeword.cpp    # QPC codeword decoder (a lot of comments here to help you understand QPC)
+            └── Simulation_polar_syndrome.cpp    # QPC syndrome decoder
 

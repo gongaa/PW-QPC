@@ -136,32 +136,31 @@ void frozen_bits_generator_BSC_SC(const int& N, const int& K, const double& p, v
     for (int i = 0; i < K; i++) frozen_bits[best_channels[i]] = 0;
 }
 
-void frozen_bits_generator_PW(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits)
+void frozen_bits_generator_PW(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& X_stab_info_bits, double beta)
 {
-    cerr << "PW construction" << endl;
+    cerr << "PW construction, beta = " << beta << endl;
 	vector<double> z(N, 0);
 	int n = log2(N);
 	vector<int> bin(n, 0);
 	double temp = 0.0;
-	double base = pow(2, 0.25);
 	for (int i = 0; i < N; i++) {
 		decimal2binary(i, bin);
 		temp = 0.0;
 		for (int k = 0; k < n; k++) 
-			if (bin[k]) temp += pow(base, k);
+			if (bin[k]) temp += pow(beta, k);
 		z[i] = temp;
 	}
 	std::fill(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), 1);
-	std::fill(Z_stab_info_bits.begin(), Z_stab_info_bits.end(), 0);
+	std::fill(X_stab_info_bits.begin(), X_stab_info_bits.end(), 0);
     vector<uint32_t> best_channels(N);
     std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
     for (int i = 0; i < Kz; i++) Z_code_frozen_bits[best_channels[i]] = 0;
-	for (int i = 0; i < Kz; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
-	for (int i = 0; i < N-Kx; i++) Z_stab_info_bits[best_channels[i]] = 1;
+	for (int i = 0; i < Kz; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i])); // CSS check
+	for (int i = 0; i < N-Kx; i++) X_stab_info_bits[best_channels[i]] = 1;
 }
 
-void frozen_bits_generator_RM(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits)
+void frozen_bits_generator_RM(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& X_stab_info_bits)
 {
     cerr << "RM construction" << endl;
 	vector<double> z(N, 0);
@@ -177,63 +176,62 @@ void frozen_bits_generator_RM(const int& N, const int& Kz, const int& Kx, vector
 		cnt[weight]++;
 	}
 	std::fill(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), 1);
-	std::fill(Z_stab_info_bits.begin(), Z_stab_info_bits.end(), 0);
+	std::fill(X_stab_info_bits.begin(), X_stab_info_bits.end(), 0);
     vector<uint32_t> best_channels(N);
     std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
     for (int i = 0; i < Kz; i++) Z_code_frozen_bits[best_channels[i]] = 0;
 	for (int i = 0; i < Kz; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
-	for (int i = 0; i < N-Kx; i++) Z_stab_info_bits[best_channels[i]] = 1;
+	for (int i = 0; i < N-Kx; i++) X_stab_info_bits[best_channels[i]] = 1;
 }
 
-void frozen_bits_generator_HPW(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits)
+void frozen_bits_generator_HPW(const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& X_stab_info_bits)
 {
     cerr << "HPW construction" << endl;
 	vector<double> z(N, 0);
 	int n = log2(N);
 	vector<int> bin(n, 0);
 	double temp = 0.0;
-	double base = pow(2, 0.25);
-	double base_quad_root = pow(2, 0.25*0.25);
+	double beta1 = pow(2, 0.25);
+	double beta2 = pow(2, 0.25*0.25);
 	for (int i = 0; i < N; i++) {
 		decimal2binary(i, bin);
 		temp = 0.0;
 		for (int k = 0; k < n; k++) 
-			if (bin[k]) temp += pow(base, k) + 0.25 * pow(base_quad_root, k);
+			if (bin[k]) temp += pow(beta1, k) + 0.25 * pow(beta2, k);
 		z[i] = temp;
 	}
 	std::fill(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), 1);
-	std::fill(Z_stab_info_bits.begin(), Z_stab_info_bits.end(), 0);
+	std::fill(X_stab_info_bits.begin(), X_stab_info_bits.end(), 0);
     vector<uint32_t> best_channels(N);
     std::iota(best_channels.begin(), best_channels.end(), 0);
 	std::sort(best_channels.begin(), best_channels.end(), [z](int i1, int i2) { return z[i1] > z[i2]; });
     for (int i = 0; i < Kz; i++) Z_code_frozen_bits[best_channels[i]] = 0;
 	for (int i = 0; i < Kz; i++) assert (best_channels[i] == (N-1-best_channels[N-1-i]));
-	for (int i = 0; i < N-Kx; i++) Z_stab_info_bits[best_channels[i]] = 1;
+	for (int i = 0; i < N-Kx; i++) X_stab_info_bits[best_channels[i]] = 1;
 }
 
-bool construct_frozen_bits(CONSTRUCTION con, const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& Z_stab_info_bits) {
-	// the best Kz positions will be chosen as the info bits for Z code
-	// the best N-Kx positions will be chosen as the info bits for Z stabilizers
-	// the best N-Kz positions will be chosen as the info bits for X stabilizers (not in this function, as codeword decoding does not need X stabilizers)
+bool construct_frozen_bits(CONSTRUCTION con, const int& N, const int& Kz, const int& Kx, vector<bool>& Z_code_frozen_bits, vector<bool>& X_stab_info_bits, double beta) {
+	// the best Kz positions will be chosen as the info bits for Z code (C_Z, X-type codewords)
+	// the best N-Kx positions will be chosen as the info bits for X-type stabilizers (C_X^\perp)
     switch (con) {
         case BEC:
             cerr << "Do not use BEC for CSS code" << endl;
             return false;
         case RM:
-            frozen_bits_generator_RM(N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
+            frozen_bits_generator_RM(N, Kz, Kx, Z_code_frozen_bits, X_stab_info_bits);
             break;
         case PW:
-            frozen_bits_generator_PW(N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
+            frozen_bits_generator_PW(N, Kz, Kx, Z_code_frozen_bits, X_stab_info_bits, beta);
             break;
         case HPW:
-            frozen_bits_generator_HPW(N, Kz, Kx, Z_code_frozen_bits, Z_stab_info_bits);
+            frozen_bits_generator_HPW(N, Kz, Kx, Z_code_frozen_bits, X_stab_info_bits);
             break;
 		case Q1: // Kz+Kx=N+1, so N-Kx=Kz+1
 			std::fill(Z_code_frozen_bits.begin(), Z_code_frozen_bits.end(), 1);
-			std::fill(Z_stab_info_bits.begin(), Z_stab_info_bits.end(), 0);
+			std::fill(X_stab_info_bits.begin(), X_stab_info_bits.end(), 0);
 			for (int i = 0; i < Kz; i++) Z_code_frozen_bits[N-i-1] = 0;
-			for (int i = 0; i < N-Kx; i++) Z_stab_info_bits[N-i-1] = 1;
+			for (int i = 0; i < N-Kx; i++) X_stab_info_bits[N-i-1] = 1;
 			break;
         default:
             cerr << "Currently not supported" << endl;

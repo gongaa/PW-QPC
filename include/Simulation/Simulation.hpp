@@ -9,7 +9,6 @@
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"
 #include "Decoder/Decoder_RM_SCL.hpp"
-#include "Decoder/Decoder_RM_syndrome_SC.hpp"
 #include "Channel/Channel.hpp"
 #include "Encoder/Encoder_polar.hpp"
 #include "Decoder/Decoder_polar.hpp"

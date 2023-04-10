@@ -5,7 +5,6 @@
 #include "Encoder/Encoder_RM.hpp"
 #include "Decoder/Decoder_RM_SC.hpp"
 #include "Decoder/Decoder_RM_SCL.hpp"
-#include "Decoder/Decoder_RM_syndrome_SC.hpp"
 #include "Channel/Channel.hpp"
 #include "Util/CRC_polynomial.hpp"
 
@@ -241,85 +240,6 @@ void test_dumer_llr() {
         cerr << "decode successfully" << endl;
     else 
         cerr << "decoding failed" << endl;
-}
-
-void test_RM_syndrome_SC(int m, int r) {
-    // int m = 7, r = 3;
-    Encoder_RM* encoder = new Encoder_RM(m, r);
-    Decoder_RM_SC* decoder = new Decoder_RM_SC(m ,r, 1);
-    Decoder_RM_syndrome_SC* syndrome_decoder = new Decoder_RM_syndrome_SC(m, m-r-1, 1);
-    int K = encoder->get_K(), N = encoder->get_N(), dual_K = syndrome_decoder->K;
-    cerr << "For m=" << m << ", r="<< r << ", K=" << K << 
-    ", dual_K=" << dual_K << ", N=" << N << endl;
-    double p = 0.04;
-    cerr << "p=" << p << endl;
-    Channel_BSC* chn_bsc = new Channel_BSC(N, p, 42);
-    vector<int> info_bits(K, 1);
-    vector<int> codeword(N, 0);
-    vector<int> noise(N, 0);
-    vector<int> noisy_codeword(N, 0);
-    vector<int> syndrome(dual_K, 0);
-    vector<double> llr_noisy_codeword(N, 0);
-    vector<double> syndrome_llr(N, 0);
-    vector<int> codeword_error(N, 0);
-    vector<int> syndrome_error(N, 0);
-    vector<int> syndrome_of_syndrome_error(dual_K);
-    vector<int> denoised_codeword(N, 0);
-    int num_total = 100, SC_num_err = 0, syndrome_SC_num_err = 0, num_ml_failed = 0;
-    int SC_num_flips = 0, SCL_num_flips = 0, ml_flips=0;
-    for (int i = 0; i < num_total; i++) {
-        generate_random(K, info_bits.data());
-        encoder->encode(info_bits.data(), codeword.data(), 1);
-        ml_flips = chn_bsc->add_noise(codeword.data(), noisy_codeword.data(), 0);
-        xor_vec(N, codeword, noisy_codeword, noise);
-        encoder->parity_check(noisy_codeword.data(), syndrome.data());
-        if (p == 0.0)
-            for (int i = 0; i < N; i++) {
-                syndrome_llr[i] = 1.0; 
-                llr_noisy_codeword[i] = noisy_codeword[i] ? -1 : 1; // 0 -> 1.0; 1 -> -1.0
-            }
-        else 
-            for (int i = 0; i < N; i++) {
-                syndrome_llr[i] = log((1-p)/p);
-                llr_noisy_codeword[i] = noisy_codeword[i] ? -log((1-p)/p) : log((1-p)/p); // 0 -> 1.0; 1 -> -1.0
-            }
-            
-        decoder->decode(llr_noisy_codeword.data(), denoised_codeword.data(), 1);
-        xor_vec(N, denoised_codeword, noisy_codeword, codeword_error);
-        syndrome_decoder->decode(syndrome_llr.data(), syndrome.data(), syndrome_error.data(), 1);
-        encoder->parity_check(syndrome_error.data(), syndrome_of_syndrome_error.data());
-        assert (verify(dual_K, syndrome_of_syndrome_error, syndrome));
-        cerr << endl << "syndrome error: ";
-        for (int k : syndrome_error) cerr << k;
-        cerr << endl << "codeword error: ";
-        for (int k : codeword_error) cerr << k;
-        cerr << endl << "real noise    : ";
-        for (int k : noise) cerr << k;
-        cerr << endl;
-        if (verify(N, syndrome_error, codeword_error))
-            cerr << "syndrome decoding gave the same result as codeword decoding" << endl;
-        else 
-            cerr << "not the same" << endl;
-        if (verify(N, syndrome_error, noise)) {
-            cerr << "syndrome decoding succeeds" << endl;
-        } else {
-            cerr << "syndrome decoding fails" << endl;
-            syndrome_SC_num_err++;
-        }
-        if (!verify(N, codeword_error, noise)) {
-            SC_num_err++;
-        }
-    }
-    cerr << "SC_num_err: " << SC_num_err << ". syndrome_SC_num_err: " << syndrome_SC_num_err << endl;
-    cerr << "SC Frame Error Rate: " << (double)SC_num_err / num_total << endl;
-    cerr << "syndrome SC Frame Error Rate: " << (double)syndrome_SC_num_err / num_total << endl;
-}
-
-// test copy_until of Decoder_RM_SCL
-void test_copy_until() {
-    int m = 20, r = 5;
-    Decoder_RM_SCL* decoder = new Decoder_RM_SCL(m ,r, 2);
-    decoder->test_copy_until();
 }
 
 void verify_parity_check() {

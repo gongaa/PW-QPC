@@ -276,7 +276,7 @@ void simulation_polar_syndrome_direct(int N, int Kz, int Kx, int list_size, doub
                     max_class_prob[i] = temp_prob;
                     max_class_idx[i].clear();
                     max_class_idx[i].push_back(k);
-                } else if (temp_prob > (max_class_prob[i] - std::numeric_limits<double>::epsilon())) {
+                } else if (temp_prob >= (max_class_prob[i] - std::numeric_limits<double>::epsilon())) {
                     max_class_idx[i].push_back(k);
                 }
             }

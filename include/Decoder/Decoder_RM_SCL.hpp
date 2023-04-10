@@ -45,8 +45,6 @@ public:
     // input: an LLR array. output: a codeword (or a list of codewords)
     // NOTE: output codeword instead of information bits 
     virtual double decode(const double *Y_N, int *V_K, const size_t frame_id);
-    void test_copy_until();
-    void test_assign_path_idx();
     int is_codeword_in_list(const int* X_N);
     void copy_codeword_list(vector<vector<int>>& codeword_list, vector<double>& pm_list);
 

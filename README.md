@@ -1,6 +1,6 @@
 # List Decoder for PW-QPC 
 
-This repo contains the source code of the paper [Improved Logical Error Rate via List Decoding of Quantum Polar Codes][https://arxiv.org/pdf/2304.04743.pdf], where the Polarization Weight family of Quantum Polar Code is considered. 
+This repo contains the source code of the paper [Improved Logical Error Rate via List Decoding of Quantum Polar Codes](https://arxiv.org/pdf/2304.04743.pdf), where the Polarization Weight family of Quantum Polar Code is considered. 
 
 This repo also contains some codes the classical error correction community could use. See the directory layout below for where the files are located at. Also see the commented lines in `main.cpp`.
 

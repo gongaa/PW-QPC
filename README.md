@@ -53,6 +53,6 @@ For $N=1024,l=128$, $10^4$ samples take 4 hours on [Euler](https://scicomp.ethz.
             ├── Simulation_polar_SCL.cpp         # classical polar code decoded using SCL
             ├── Simulation_RM_SCL.cpp            # classical RM code decoded using Dumer's list decoder
             ├── Simulation_polar_codeword.cpp    # QPC codeword decoder (a lot of comments here)
-            ├── Simulation_polar_depolarize.cpp  # QPC codeword decoder for depolarize channel 
+            ├── Simulation_polar_depolarize.cpp  # QPC codeword decoder for depolarizing channel 
             └── Simulation_polar_syndrome.cpp    # QPC syndrome decoder
 

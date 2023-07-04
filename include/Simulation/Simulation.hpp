@@ -12,6 +12,7 @@
 #include "Channel/Channel.hpp"
 #include "Encoder/Encoder_polar.hpp"
 #include "Decoder/Decoder_polar.hpp"
+#include "Decoder/Decoder_depolarize.hpp"
 #include "Util/CRC_polynomial.hpp"
 #include "Util/Util.hpp"
 
@@ -40,6 +41,8 @@ int compare_equiv_classes();
 
 // Polar
 void simulation_polar_SCL(int N, int K, int L, double p, double db, double design_snr, CONSTRUCTION con=CONSTRUCTION::PW, int num_total=1000); 
+
+void simulation_polar_depolarize(int N, int K, int L, double p, int num_total, CONSTRUCTION con, double beta, int seed=42, int print_interval=10000);
 
 void simulation_polar_codeword(int N, int Kz, int Kx, int L, double p, int num_total, CONSTRUCTION con, double beta, int seed=42, int print_interval=1000);
 

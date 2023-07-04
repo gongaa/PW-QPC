@@ -2,6 +2,8 @@
 
 This repo contains the source code of the paper [Improved Logical Error Rate via List Decoding of Quantum Polar Codes](https://arxiv.org/pdf/2304.04743.pdf), where the Polarization Weight family of Quantum Polar Code is considered. 
 
+<span style="color:red">Update 2023/7/4: Decoding for depolarizing channel is added to the repo. Try it with the option `-dep 1` . I will update the paper with details of the algorithm later. As an overview, the decoding complexity is still $\mathcal{O}(LN\log N)$, where $L\leq \sqrt{N}$ is the same as the one used in SCL-E for independent bit and phase channel. The threshold of $[[N,2]]$ PW-QPC under this decoder is around $18\%$.</span>
+
 This repo also contains some codes the classical error correction community could use. See the directory layout below for where the files are located at. Also see the commented lines in `main.cpp`.
 
 My (classical) polar code implementation is a simplified version of [aff3ct](https://github.com/aff3ct/aff3ct). I also reimplemented the Dumer's list decoder [ECCLab](https://github.com/kshabunov/ecclab) for the Reed-Muller code. Alternatively, people can use the polar code with the Reed-Muller construction. They give very similar FER performance.
@@ -25,12 +27,13 @@ The possible options are
 * `-Kx`,`-Kz` - The number of information bits in X and Z basis. $K_x+K_z$ should be larger than $N$.
 * `-l` - The list size. 
 * `-n` - The number of samples. 
-* `-px` - The probability of bit-flip error happening on each bit (independently).
-* `-con` - The construction method. Can choose from `PW` `HPW` `RM` `Q1` `BEC`. Note that the quantum polar code constructed from `BEC` is not guaranteed to be CSS.
+* `-px` - The probability of bit-flip error happening on each bit (independently). Or the error probability for the depolarizing channel.
+* `-con` - The construction method. Can choose from `PW` (default), `HPW`, `RM`, `Q1`, `BEC`. Note that the quantum polar code constructed from `BEC` is not guaranteed to be CSS.
 * `-seed` - The random seed used to generate the noise.
 * `-version` - Choose from `0` codeword decoding (default). `1` syndrome decoding.
 * `-interval` - The printing interval for showing intermediate results. Default value is $1000$.
 * `-beta` - The $\beta$ used in the `PW` construction. Default value is $2^{1/4}$.
+* `-dep` - Choose from `0` independent bit and phase channel (default). `1` depolarizing channel, set error probabilty using `-px`.
 
 ## Expected Runtime
 For $N=1024,l=128$, $10^4$ samples take 4 hours on [Euler](https://scicomp.ethz.ch/wiki/FAQ). While for $N=1024,l=16$, $10^5$ samples take 2 hours.
@@ -44,10 +47,12 @@ For $N=1024,l=128$, $10^4$ samples take 4 hours on [Euler](https://scicomp.ethz.
         │   └── Frozen_bits_generator.cpp        # construction methods
         ├── Decoder
         │   ├── Decoder_polar.cpp                # polar code SCL decoder
+        │   ├── Decoder_depolarize.cpp           # QPC quaternary decoder for depolarizing channel
         │   └── Decoder_RM_SCL.cpp               # Dumer's list decoder
         └── Simulation         
             ├── Simulation_polar_SCL.cpp         # classical polar code decoded using SCL
             ├── Simulation_RM_SCL.cpp            # classical RM code decoded using Dumer's list decoder
             ├── Simulation_polar_codeword.cpp    # QPC codeword decoder (a lot of comments here)
+            ├── Simulation_polar_depolarize.cpp  # QPC codeword decoder for depolarize channel 
             └── Simulation_polar_syndrome.cpp    # QPC syndrome decoder
 

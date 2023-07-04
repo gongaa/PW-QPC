@@ -65,3 +65,59 @@ double Decoder::phi(const double& mu, const double& lambda, const int& u)
 #endif // USE_APPROXIMATION
     return new_mu;
 }
+
+void Decoder::f_plus_depolarize(const vector<double>* p_fst, const vector<double>* p_snd, 
+    const int size, vector<double>* p_new)
+{
+    for (int i = 0; i < size; i++) {
+        const vector<double>& p = p_fst[i];
+        // for (auto pp : p) cerr << pp << " ";
+        // cerr << endl;
+        const vector<double>& q = p_snd[i];
+        // for (auto pp : q) cerr << pp << " ";
+        // cerr << endl;
+        vector<double>& r = p_new[i];
+        // TODO: change to convolution
+        r[0] = p[0]*q[0] + p[1]*q[1] + p[2]*q[2] + p[3]*q[3]; // I
+        r[1] = p[0]*q[1] + p[1]*q[0] + p[2]*q[3] + p[3]*q[2]; // X
+        r[2] = p[0]*q[2] + p[1]*q[3] + p[2]*q[0] + p[3]*q[1]; // Z
+        r[3] = p[0]*q[3] + p[1]*q[2] + p[2]*q[1] + p[3]*q[0]; // Y
+    }
+}
+
+void Decoder::f_minus_depolarize(const vector<double>* p_fst, const vector<double>* p_snd, 
+    const vector<vector<int>>& u, const int size, vector<double>* p_new)
+{
+    for (int i = 0; i < size; i++) {
+        const vector<double>& p = p_fst[i];
+        const vector<double>& q = p_snd[i];
+        vector<double>& r = p_new[i];
+        const int ux = u[i][0], uz = u[i][1];
+        // TODO: write this in convolution
+        if (uz==0) {
+            if (ux == 0) {
+                r[0] = p[0]*q[0]; r[1] = p[1]*q[1]; r[2] = p[2]*q[2]; r[3] = p[3]*q[3];
+            } else {
+                r[0] = p[1]*q[0]; r[1] = p[0]*q[1]; r[2] = p[3]*q[2]; r[3] = p[2]*q[3];
+            }
+        } else {
+            if (ux == 0) {
+                r[0] = p[0]*q[2]; r[1] = p[1]*q[3]; r[2] = p[2]*q[0]; r[3] = p[3]*q[1];
+            } else {
+                r[0] = p[1]*q[2]; r[1] = p[0]*q[3]; r[2] = p[3]*q[0]; r[3] = p[2]*q[1];
+            }
+        }
+        double total = r[0] + r[1] + r[2] + r[3];
+        r[0] /= total; r[1] /= total; r[2] /= total; r[3] /= total;
+    }
+}
+
+double Decoder::phi_depolarize(const double& mu, const vector<double>& p, const int& ux, const int& uz)
+{   // path metric update function
+    // p = {p_I, p_X, p_Z, p_Y}
+    assert(!isnan(mu));
+    // TODO: write this in LLR
+    double new_mu = mu - log(p[2*uz + ux]);
+    assert(!isnan(new_mu));
+    return new_mu;
+}

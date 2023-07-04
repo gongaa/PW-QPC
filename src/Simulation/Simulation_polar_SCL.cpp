@@ -1,10 +1,6 @@
 #include "Simulation/Simulation.hpp"
 using namespace std;
 void simulation_polar_SCL(int N, int K, int L, double p, double db, double design_snr, CONSTRUCTION con, int num_total) {
-    // int K = 92, N = 256, L = 64;
-    // int K = 16, N = 32, L = 1;
-    // int K = 1024, N = 2048, L = 4;
-    // int K = 1723, N = 2048, L = 4;
     vector<int> info_bits(K);
     vector<int> codeword(N);
     vector<int> noisy_codeword(N);

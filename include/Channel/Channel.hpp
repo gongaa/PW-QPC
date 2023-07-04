@@ -75,11 +75,11 @@ protected:
 
 public:
     Channel_depolarize_q(const int N, double p, const int seed) 
-    : Channel_q(N, new Event_generator_unitary(seed, 2*p, p , 2*p)), p(p) {
-        if (3*p > 1)
-            cerr << "Depolarizing channel 3*p>1" << endl;
+    : Channel_q(N, new Event_generator_unitary(seed, 2*p/3, p/3 , 2*p/3)), p(p) {
+        if (p > 1)
+            cerr << "Depolarizing channel p>1" << endl;
     }
-    virtual void set_prob(double p) { this->event_generator->set_prob(2*p, p, 2*p); }
+    virtual void set_prob(double p) { this->event_generator->set_prob(2*p/3, p/3, 2*p/3); }
 };
 
 class Channel_BSC_q : public Channel_q

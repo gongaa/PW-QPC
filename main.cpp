@@ -51,8 +51,9 @@ int main(int argc, char** argv)
   int seed = 42;
   int print_interval = 1000;
 	double beta = pow(2, 0.25);
+  bool is_depolarize = false;
   string con_str;
-  CONSTRUCTION con;
+  CONSTRUCTION con = CONSTRUCTION::PW;
   for (int i = 1; i < argc; ++i) {
     string arg = argv[i];
     if ((arg == "-h") || (arg == "--help")) {
@@ -89,6 +90,8 @@ int main(int argc, char** argv)
       iss >> print_interval;
     } else if (arg == "-beta") {
       iss >> beta;
+    } else if ((arg == "-dep") || (arg == "--depolarize")) {
+      iss >> is_depolarize;
     } else {
       cerr << "Argument not supported." << endl;
       return 1;
@@ -107,7 +110,10 @@ int main(int argc, char** argv)
   // simulation_polar_SCL(N, K, list_size, pz, db, design_snr, CONSTRUCTION::RM, n);
   // simulation_RM_SCL(m, rx, list_size, pz, db, design_snr, n);
   auto start = std::chrono::high_resolution_clock::now();
-  if (version == 0)
+  
+  if (is_depolarize)
+    simulation_polar_depolarize(N, Kz, list_size, px, n, con, beta, seed, print_interval); // only codeword decoding is done for depolarizing channel
+  else if (version == 0)
     simulation_polar_codeword(N, Kz, Kx, list_size, px, n, con, beta, seed, print_interval);
   else if (version == 1)
     simulation_polar_syndrome_direct(N, Kz, Kx, list_size, px, n, con, beta, seed, print_interval);

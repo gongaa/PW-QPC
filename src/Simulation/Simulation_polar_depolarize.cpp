@@ -49,10 +49,10 @@ void simulation_polar_depolarize(int N, int K, int L, double p, int min_samples,
     int num_total = 0;
     while (1) {
         num_total++;
-        for (int i = 0; i < K; i++) info_bits[K] = d(gen);
+        for (int i = 0; i < K; i++) info_bits[i] = d(gen);
         for (int i = 0; i < Kq; i++) info_X[i] = info_bits[info_indices_K[i]];
         encoder->encode(info_bits.data(), codeword_X.data(), 0);
-        for (int i = 0; i < K; i++) info_bits[K] = d(gen);
+        for (int i = 0; i < K; i++) info_bits[i] = d(gen);
         for (int i = 0; i < Kq; i++) info_Z[i] = info_bits[info_indices_K[i]];
         encoder->encode(info_bits.data(), codeword_Z.data(), 0);
         bit_reversal(codeword_Z);

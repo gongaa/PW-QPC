@@ -2,7 +2,7 @@
 
 This repo contains the source code of the paper [Improved Logical Error Rate via List Decoding of Quantum Polar Codes](https://arxiv.org/pdf/2304.04743.pdf), where the Polarization Weight family of Quantum Polar Code is considered. 
 
-<span style="color:red">Update 2023/7/4: Decoding for depolarizing channel is added to the repo. Try it with the option `-dep 1` . I will update the paper with details of the algorithm later. As an overview, the decoding complexity is still $\mathcal{O}(LN\log N)$, where $L\leq \sqrt{N}$ is the same as the one used in SCL-E for independent bit and phase channel. The threshold of $[[N,2]]$ PW-QPC under this decoder is around $18\%$.</span>
+<span style="color:red">Update 2023/7/4: Decoding for depolarizing channel is added to the repo. Try it with the option `-dep 1` . The algorithm is sketched in the [ISIT version](https://ieeexplore.ieee.org/document/10619465) and the [slides](https://github.com/gongaa/PW-QPC/blob/main/ISIT%20polar.pptx) (feel free to email me for further discussions). As an overview, the decoding complexity is still $\mathcal{O}(LN\log N)$, where $L\leq \sqrt{N}$ is the same as the one used in SCL-E for independent bit and phase channel. The threshold of $[[N,2]]$ PW-QPC under this decoder is around $18\%$.</span>
 
 This repo also contains some codes the classical error correction community could use. See the directory layout below for where the files are located at. Also see the commented lines in `main.cpp`.
 
